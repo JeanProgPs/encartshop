@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Criar Nova Loja — EncartShop</title>
-  <link rel="icon" type="image/png" href="../assets/favicon.png">
-  <link rel="shortcut icon" href="../assets/favicon.png">
-  <link rel="apple-touch-icon" href="../assets/favicon.png">
-  <link rel="stylesheet" href="../style.css">
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="shortcut icon" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/favicon.png">
+  <link rel="stylesheet" href="/style.css">
   <style>
     body { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
            background:radial-gradient(ellipse 70% 60% at 50% 30%, rgba(34,197,94,0.12) 0%, transparent 70%); }
@@ -218,7 +218,7 @@
       <h2 id="success-title">Quase lá! 🎉</h2>
       <p id="success-sub">Sua conta foi criada. Agora só falta realizar a ativação do seu plano para liberar o painel.</p>
       <div class="success-links">
-        <a href="dashboard.html" class="btn btn-primary btn-lg w-full">Ir para Ativação →</a>
+        <a href="pagamento" class="btn btn-primary btn-lg w-full">Ir para Ativação →</a>
       </div>
     </div>
   </div>
@@ -226,13 +226,13 @@
 
 <div id="toast-container"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../js/core/supabaseClient.js"></script>
-<script src="../js/core/api.js"></script>
-<script src="../js/auth/authService.js"></script>
-<script src="../js/auth/authGuard.js"></script>
-<script src="../js/modules/store.js"></script>
-<script src="../js/ui/components.js"></script>
-<script src="../js/storage.js"></script>
+<script src="/js/core/supabaseClient.js"></script>
+<script src="/js/core/api.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="/js/auth/authGuard.js"></script>
+<script src="/js/modules/store.js"></script>
+<script src="/js/ui/components.js"></script>
+<script src="/js/storage.js"></script>
 <script>
   let selectedColor = '#e94560';
   let currentStep = 1;
@@ -388,7 +388,7 @@
       const loginResult = await AuthService.loginWithStore(result.id, email, password);
       if (!loginResult.success) {
         // Loja criada mas login falhou — vai para login manual
-        window.location.replace('index.html');
+        window.location.replace('admin');
         return;
       }
 

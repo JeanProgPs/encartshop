@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login — EncartShop</title>
   <meta name="description" content="Acesse o painel administrativo da sua loja no EncartShop.">
-  <link rel="icon" type="image/png" href="../assets/favicon.png">
-  <link rel="shortcut icon" href="../assets/favicon.png">
-  <link rel="apple-touch-icon" href="../assets/favicon.png">
-  <link rel="stylesheet" href="../style.css">
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="shortcut icon" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/favicon.png">
+  <link rel="stylesheet" href="/style.css">
   <style>
     body {
       display:flex; align-items:center; justify-content:center;
@@ -83,7 +83,7 @@
         Nenhuma loja cadastrada ainda.<br>Crie sua primeira loja abaixo!
       </div>
       <div class="divider-or" id="divider-or">ou</div>
-      <a href="setup.html" class="btn btn-outline w-full">🏪 Criar Nova Loja</a>
+      <a href="setup" class="btn btn-outline w-full">🏪 Criar Nova Loja</a>
     </div>
 
     <!-- Step 2: Email + Senha -->
@@ -107,19 +107,19 @@
   <div class="back-link">
     <a href="../index.html">← Voltar ao site</a>
     &nbsp;•&nbsp;
-    <a href="setup.html">🏪 Criar nova loja</a>
+    <a href="setup">🏪 Criar nova loja</a>
   </div>
 </div>
 
 <!-- Scripts: CDN → Core → Auth → Storage -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../js/core/supabaseClient.js"></script>
-<script src="../js/core/api.js"></script>
-<script src="../js/auth/authService.js"></script>
-<script src="../js/auth/authGuard.js"></script>
-<script src="../js/modules/store.js"></script>
-<script src="../js/ui/components.js"></script>
-<script src="../js/storage.js"></script>
+<script src="/js/core/supabaseClient.js"></script>
+<script src="/js/core/api.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="/js/auth/authGuard.js"></script>
+<script src="/js/modules/store.js"></script>
+<script src="/js/ui/components.js"></script>
+<script src="/js/storage.js"></script>
 <script>
   // Se já está autenticado, vai direto ao dashboard
   AuthGuard.checkAlreadyLoggedIn();
@@ -207,7 +207,7 @@
     const { success, error } = await AuthService.loginWithStore(selectedStoreId, email, password);
 
     if (success) {
-      window.location.replace('dashboard.html');
+      window.location.href = '/dashboard';
     } else {
       errEl.textContent = error || 'E-mail ou senha incorretos.';
       errEl.style.display = 'block';

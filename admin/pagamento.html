@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pagamento — EncartShop</title>
-  <link rel="icon" type="image/png" href="../assets/favicon.png">
-  <link rel="shortcut icon" href="../assets/favicon.png">
-  <link rel="apple-touch-icon" href="../assets/favicon.png">
-  <link rel="stylesheet" href="../style.css">
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="shortcut icon" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/favicon.png">
+  <link rel="stylesheet" href="/style.css">
   <style>
     body {
       display: flex; align-items: center; justify-content: center;
@@ -62,7 +62,7 @@
 
   <div class="form-stack">
     <button class="btn btn-primary btn-lg w-full" onclick="checkPayment()">Já realizei o pagamento</button>
-    <button class="btn btn-ghost w-full" onclick="AuthService.logout().then(() => window.location.replace('index.html'))">Sair e pagar depois</button>
+    <button class="btn btn-ghost w-full" onclick="AuthService.logout().then(() => window.location.replace('index'))">Sair e pagar depois</button>
   </div>
   
   <p style="font-size:0.75rem; color:var(--text-muted); margin-top:24px;">
@@ -73,10 +73,10 @@
 <div id="toast-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../js/core/supabaseClient.js"></script>
-<script src="../js/core/api.js"></script>
-<script src="../js/auth/authService.js"></script>
-<script src="../js/ui/components.js"></script>
+<script src="/js/core/supabaseClient.js"></script>
+<script src="/js/core/api.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="/js/ui/components.js"></script>
 <script>
   async function checkPayment() {
     const btn = document.querySelector('.btn-primary');
