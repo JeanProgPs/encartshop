@@ -16,18 +16,20 @@ const StoreAPI = {
     return data;
   },
   async getBySlug(slug) {
-    if (!slug) return null;
-    const { data, error } = await window.sb.from('stores').select('*').eq('slug', slug).single();
-    if (error && error.code !== 'PGRST116') { console.error('StoreAPI.getBySlug erro:', error); return null; }
-    return data;
+    // Desativado temporariamente pois a coluna slug não existe no banco
+    return null;
   },
   async create(storeData) {
-    const { data, error } = await window.sb.from('stores').insert([storeData]).select().single();
+    const cleanData = { ...storeData };
+    delete cleanData.slug; // Remove para evitar erro se a coluna não existir
+    const { data, error } = await window.sb.from('stores').insert([cleanData]).select().single();
     if (error) { console.error('StoreAPI.create erro:', error); throw error; }
     return data;
   },
   async update(id, storeData) {
-    const { data, error } = await window.sb.from('stores').update(storeData).eq('id', id).select().single();
+    const cleanData = { ...storeData };
+    delete cleanData.slug; // Remove para evitar erro se a coluna não existir
+    const { data, error } = await window.sb.from('stores').update(cleanData).eq('id', id).select().single();
     if (error) { console.error('StoreAPI.update erro:', error); throw error; }
     return data;
   },

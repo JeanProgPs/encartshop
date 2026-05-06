@@ -13,15 +13,8 @@ const StoreModule = (() => {
   async function create(storeData) {
     if (!storeData.name) throw new Error('Nome da loja é obrigatório');
     
-    // Gera o slug a partir do nome se não for fornecido
-    if (!storeData.slug) {
-      storeData.slug = storeData.name
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // remove acentos
-        .replace(/[^a-z0-9]+/g, '-')     // caracteres especiais por hífen
-        .replace(/(^-|-$)+/g, '');       // remove hífen do começo e fim
-    }
+    // Slug removido (coluna inexistente no banco)
+    // if (!storeData.slug) { ... }
     
     // Pega o usuário logado para vincular a loja a ele
     const user = await AuthService.getUser();
@@ -40,9 +33,7 @@ const StoreModule = (() => {
   function getStoreUrl(store) {
     if (!store) return '';
     
-    // Usa caminhos absolutos e URLs amigáveis
-    if (store.slug) return `/loja/${store.slug}`;
-    
+    // Usa apenas ID pois slug não existe no banco
     return `/loja/index.html?s=${store.id}`;
   }
 
@@ -50,15 +41,8 @@ const StoreModule = (() => {
     const id = AuthService.getActiveStoreId();
     if (!id) throw new Error('Loja não identificada');
     
-    // Regenera slug se o nome mudar (opcional, mas bom para consistência)
-    if (storeData.name) {
-      storeData.slug = storeData.name
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '');
-    }
+    // Slug removido
+    // if (storeData.name) { ... }
 
     try {
       await EncartAPI.StoreAPI.update(id, storeData);
