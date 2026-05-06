@@ -55,31 +55,31 @@ const UIRender = (() => {
   }
 
   function productStoreCard(p, cartQty = 0) {
-    const defaultImg = 'https://placehold.co/300x300/f1f5f9/94a3b8?text=?';
+    const isPromo = !!p.promo_price;
+    const price = isPromo ? p.promo_price : p.price;
+    const unit = p.unit || 'un';
+    const isKg = unit.toLowerCase() === 'kg';
+    const qtyLabel = isKg ? `${cartQty.toFixed(1).replace('.',',')}kg` : `${cartQty}x`;
+    const defaultImg = 'https://images.placeholders.dev/?width=400&height=400&text=Sem%20Imagem&bgColor=%23f1f5f9&textColor=%2364748b';
     const img = p.image || defaultImg;
-    const hasPromo = !!p.promo_price;
-    const isKg = p.unit?.toLowerCase() === 'kg';
-    
-    // Formatação da quantidade atual
-    const qtyLabel = isKg ? `${cartQty.toFixed(1).replace('.',',')}kg` : cartQty;
 
     return `
       <div class="product-card" id="prod-${p.id}">
-        ${hasPromo ? `<div class="promo-badge">PROMO</div>` : ''}
         <div class="product-image-wrap">
           <img src="${img}" alt="${p.name}" loading="lazy" onerror="this.src='${defaultImg}'">
+          ${isPromo ? `<div class="promo-badge">PROMO</div>` : ''}
         </div>
         <div class="product-info">
-          <div class="product-name">${p.name}</div>
-          <div class="product-unit">${p.unit || 'unid.'}</div>
+          <div class="product-name" title="${p.name}">${p.name}</div>
           <div class="product-price-row">
-            ${hasPromo 
+            ${isPromo 
               ? `<div class="price-normal">${fmtPrice(p.price)}</div><div class="price-promo">${fmtPrice(p.promo_price)}</div>`
               : `<div class="price-regular">${fmtPrice(p.price)}</div>`
             }
+            <span class="product-unit-label">/${unit}</span>
           </div>
           
-          <div class="product-card-actions" style="margin-top:12px;">
+          <div class="product-card-actions">
             ${cartQty > 0 
               ? `
                 <div class="qty-selector-card">

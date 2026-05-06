@@ -527,7 +527,7 @@ select.form-input option {
 /* ── Product Grid (Loja) ────────────────────────────────────── */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 16px;
 }
 
@@ -539,6 +539,8 @@ select.form-input option {
   transition: var(--transition);
   cursor: pointer;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 .product-card:hover {
   transform: translateY(-4px);
@@ -805,34 +807,83 @@ select.form-input option {
   .sidebar {
     transform: translateX(-100%);
   }
-  .sidebar.open {
+  .sidebar.active {
     transform: translateX(0);
   }
   .main-content {
     margin-left: 0;
   }
   .page-content {
-    padding: 20px 16px;
+    padding: 16px;
   }
   .topbar {
     padding: 0 16px;
+    height: 60px;
   }
   .product-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: 10px;
   }
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .btn-lg {
+    padding: 14px 24px;
+    font-size: 0.95rem;
   }
 }
 
 @media (max-width: 480px) {
   .product-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: 8px;
   }
-  .stats-grid {
-    grid-template-columns: 1fr;
+  .product-info {
+    padding: 10px;
+  }
+  .product-name {
+    font-size: 0.8rem;
+    height: 2.4em;
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+  .price-promo, .price-regular {
+    font-size: 0.95rem;
+  }
+  .btn-add-cart {
+    padding: 8px;
+    font-size: 0.75rem;
+  }
+  .cart-bubble {
+    padding: 12px;
+    bottom: 20px;
+    right: 20px;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    justify-content: center;
+  }
+  .cart-bubble span:not(.cart-count) { display: none; }
+  .cart-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--bg);
+  }
+  .store-banner {
+    font-size: 0.75rem;
+    padding: 8px 12px;
+  }
+  .section-heading {
+    font-size: 0.65rem;
+    margin: 20px 0 10px;
+  }
+  .modal {
+    width: 95%;
+    padding: 24px 20px;
   }
 }
 

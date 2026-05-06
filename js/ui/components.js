@@ -101,19 +101,24 @@ const UIComponents = (() => {
     }
 
     // Toggle button in header
-    let mainContent = document.querySelector('.admin-main');
+    let mainContent = document.querySelector('.main-content');
     if (mainContent) {
       let header = mainContent.querySelector('header');
       if (header && !header.querySelector('.mobile-toggle')) {
          let mobileBtn = document.createElement('button');
          mobileBtn.className = 'mobile-toggle';
-         mobileBtn.innerHTML = '☰';
-         mobileBtn.style.marginRight = '15px';
+         mobileBtn.innerHTML = `
+           <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+             <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+           </svg>`;
+         mobileBtn.style.marginRight = '12px';
          mobileBtn.style.background = 'none';
          mobileBtn.style.border = 'none';
-         mobileBtn.style.color = 'white';
-         mobileBtn.style.fontSize = '24px';
+         mobileBtn.style.color = 'var(--text)';
+         mobileBtn.style.display = 'flex';
+         mobileBtn.style.alignItems = 'center';
          mobileBtn.style.cursor = 'pointer';
+         mobileBtn.style.padding = '0';
          
          mobileBtn.addEventListener('click', () => {
             sidebar.classList.add('active');
