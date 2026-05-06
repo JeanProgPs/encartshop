@@ -15,9 +15,9 @@
     .config-card .desc { font-size:0.82rem; color:var(--text-muted); margin-bottom:20px; }
     .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
     .link-preview {
-      background:rgba(255,255,255,0.04); border:1.5px solid var(--border);
+      background:var(--primary-light); border:1px solid var(--border);
       border-radius:var(--radius); padding:12px 16px;
-      font-size:0.875rem; color:var(--accent); font-weight:600;
+      color:var(--brand); font-weight:600;
       display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
     }
     .link-preview span { word-break:break-all; }
@@ -204,8 +204,8 @@
     if (checked) {
       feeInput.disabled = true;
       feeInput.placeholder = 'A combinar';
-      freeInput.value = '';
-      freeInput.style.opacity = '0.5';
+      feeInput.value = '';
+      feeInput.style.opacity = '0.5';
       freeInput.disabled = true;
       freeInput.placeholder = 'A combinar';
       freeInput.value = '';
@@ -254,7 +254,9 @@
         if (newEmail) { showToast('E-mail atualizado. Faça login novamente.', 'info'); await AuthService.logout(); window.location.replace('index.html'); return; }
       }
 
-      document.getElementById('store-name-nav').textContent = name;
+      const nameEl = document.getElementById('sidebar-store-name');
+      if (nameEl) nameEl.textContent = name;
+      
       showToast('Configurações salvas com sucesso!', 'success');
       await load(); // atualiza link com novo slug
     } catch (err) {
