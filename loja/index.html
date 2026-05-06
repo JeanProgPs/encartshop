@@ -80,9 +80,11 @@
 <!-- Store Header -->
 <header class="store-header">
   <div class="store-logo-wrap">
-    <div class="store-logo-icon" id="store-logo-icon">7</div>
+    <div class="store-logo-icon" id="store-logo-icon" style="background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    </div>
     <div>
-      <div class="store-name-text" id="header-store-name">Carregando...</div>
+      <div class="store-name-text" id="header-store-name">...</div>
       <div class="store-hours" id="header-hours"></div>
     </div>
   </div>
@@ -154,10 +156,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/core/supabaseClient.js"></script>
 <script src="/js/core/api.js"></script>
+<script src="/js/auth/authService.js"></script>
 <script src="/js/modules/store.js"></script>
 <script src="/js/ui/render.js"></script>
 <script src="/js/storage.js"></script>
-<script src="loja.js"></script>
+<script src="/loja/loja.js"></script>
 </body>
 </html>
 
