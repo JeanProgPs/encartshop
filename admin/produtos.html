@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produtos — EncartShop</title>
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="shortcut icon" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/favicon.png">
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .product-admin-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
+    .prod-admin-card { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:var(--transition); }
+    .prod-admin-card:hover { border-color:rgba(255,255,255,0.12);transform:translateY(-2px); }
+    .prod-admin-card .img-wrap { aspect-ratio:4/3;overflow:hidden;background:var(--primary-light);position:relative; }
+    .prod-admin-card .img-wrap img { width:100%;height:100%;object-fit:cover; }
+    .prod-admin-card .card-body { padding:14px; }
+    .prod-admin-card .card-name { font-size:0.9rem;font-weight:700;margin-bottom:4px; }
+    .prod-admin-card .card-cat  { font-size:0.75rem;color:var(--text-muted);margin-bottom:10px; }
+    .prod-admin-card .prices    { display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
+    .card-actions { display:flex;gap:8px;margin-top:12px; }
+    .toolbar { display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap; }
+    .toolbar-left { display:flex;align-items:center;gap:12px;flex:1;min-width:200px; }
+    .search-input { flex:1;background:rgba(255,255,255,0.04);border:1.5px solid var(--border);border-radius:var(--radius);padding:10px 16px;color:var(--text);font-size:0.9rem; }
+    .search-input:focus { outline:none;border-color:var(--accent); }
+    .modal-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:24px; }
+    .modal-header h2 { font-size:1.1rem;font-weight:700; }
+    .modal-footer { display:flex;gap:12px;justify-content:flex-end;margin-top:24px; }
+    .form-row { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
+    .img-preview { width:100%;height:160px;border-radius:var(--radius);object-fit:cover;background:var(--primary-light);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.85rem;overflow:hidden; }
+    .img-preview img { width:100%;height:100%;object-fit:cover;border-radius:var(--radius); }
+    .mobile-menu-btn { display:none;background:none;border:none;color:var(--text);cursor:pointer;padding:8px; }
+    @media(max-width:768px){
+      .mobile-menu-btn{display:flex;}
+      .form-row{grid-template-columns:1fr;}
+      .product-admin-grid{grid-template-columns:repeat(2,1fr);}
+    }
+    @media(max-width:480px){ .product-admin-grid{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body data-page="produtos">
+
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="mobile-menu-btn" onclick="openSidebar()">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="topbar-title">Produtos</span>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openModal()">+ Adicionar Produto</button>
+    </header>
+
+    <div class="page-content">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <input type="text" id="search-input" class="search-input" placeholder="🔍 Buscar produto..." oninput="renderProducts()">
+          <select id="filter-cat" class="form-input" style="width:auto;min-width:150px;" onchange="renderProducts()">
+            <option value="">Todas as categorias</option>
+          </select>
+        </div>
+        <select id="filter-status" class="form-input" style="width:auto;" onchange="renderProducts()">
+          <option value="">Todos os status</option>
+          <option value="active">Ativos</option>
+          <option value="inactive">Inativos</option>
+          <option value="promo">Em Promoção</option>
+        </select>
+      </div>
+
+      <div id="product-count" style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px;"></div>
+      <div class="product-admin-grid" id="products-grid"></div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal Produto -->
+<div class="modal-overlay hidden" id="modal-overlay" onclick="UIComponents.handleOverlayClick(event,'modal-overlay')">
+  <div class="modal" style="max-width:600px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="modal-title">Adicionar Produto</h2>
+      <button class="btn btn-ghost btn-icon" onclick="closeModal()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nome do Produto *</label>
+          <input id="f-name" type="text" class="form-input" placeholder="Ex: Camiseta Premium">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoria *</label>
+          <input id="f-cat" type="text" class="form-input" list="cat-list" placeholder="Ex: Vestuário">
+          <datalist id="cat-list"></datalist>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Preço Normal (R$) *</label>
+          <input id="f-price" type="number" step="0.01" min="0.01" class="form-input" placeholder="0,00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Preço Promocional (R$)</label>
+          <input id="f-promo-price" type="number" step="0.01" class="form-input" placeholder="Deixe vazio se não tiver">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Unidade</label>
+          <select id="f-unit" class="form-input">
+            <option value="un">Unidade (un)</option>
+            <option value="kg">Quilograma (kg)</option>
+            <option value="pct">Pacote (pct)</option>
+            <option value="cx">Caixa (cx)</option>
+            <option value="lt">Litro (lt)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select id="f-active" class="form-input">
+            <option value="1">Ativo (visível na loja)</option>
+            <option value="0">Inativo (oculto)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">URL da Imagem</label>
+        <input id="f-image" type="text" class="form-input" placeholder="https://..." oninput="previewImg()">
+        <div id="img-preview" class="img-preview" style="margin-top:8px;">
+          <span>Pré-visualização da imagem</span>
+        </div>
+      </div>
+      <div id="form-errors" style="display:none;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.25);border-radius:var(--radius);padding:12px 16px;font-size:0.85rem;color:var(--danger);"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button id="save-btn" class="btn btn-primary" onclick="saveProduct()">Salvar Produto</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/core/supabaseClient.js"></script>
+<script src="../js/core/api.js"></script>
+<script src="../js/auth/authService.js"></script>
+<script src="../js/auth/authGuard.js"></script>
+<script src="../js/modules/store.js"></script>
+<script src="../js/modules/products.js"></script>
+<script src="../js/ui/components.js"></script>
+<script src="../js/ui/render.js"></script>
+<script src="../js/storage.js"></script>
+<script src="../js/admin-common.js"></script>
+<script>
+  let editingId  = null;
+  let allProducts = [];
+  const storeId   = () => AuthService.getActiveStoreId();
+
+  async function initAdmin() {
+    await loadCategories();
+    await renderProducts();
+  }
+
+  async function renderProducts() {
+    const q      = document.getElementById('search-input').value.toLowerCase();
+    const cat    = document.getElementById('filter-cat').value;
+    const status = document.getElementById('filter-status').value;
+
+    allProducts = await ProductsModule.getAll(storeId());
+    const filtered = ProductsModule.filter(allProducts, { query: q, category: cat, status });
+
+    document.getElementById('product-count').textContent = `${filtered.length} produto(s) encontrado(s)`;
+
+    const grid = document.getElementById('products-grid');
+    if (!filtered.length) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">` + UIRender.emptyState('📦', 'Nenhum produto encontrado', 'Tente ajustar os filtros ou adicione seu primeiro produto.') + `</div>`;
+      return;
+    }
+    grid.innerHTML = filtered.map(p => UIRender.productAdminCard(p, {
+      onEdit: 'editProduct', onToggle: 'toggleActive', onDelete: 'deleteProduct'
+    })).join('');
+  }
+
+  async function loadCategories() {
+    const prods = await ProductsModule.getAll(storeId());
+    const cats  = ProductsModule.getCategories(prods);
+    const sel   = document.getElementById('filter-cat');
+    const dl    = document.getElementById('cat-list');
+    // Limpa opções anteriores (exceto "Todas")
+    while (sel.options.length > 1) sel.remove(1);
+    dl.innerHTML = '';
+    cats.forEach(c => {
+      const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o);
+      const d = document.createElement('option'); d.value = c; dl.appendChild(d);
+    });
+  }
+
+  function openModal(id = null) {
+    editingId = id;
+    document.getElementById('modal-title').textContent = id ? 'Editar Produto' : 'Adicionar Produto';
+    document.getElementById('form-errors').style.display = 'none';
+    if (id) {
+      const p = allProducts.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById('f-name').value        = p.name;
+      document.getElementById('f-cat').value         = p.category;
+      document.getElementById('f-price').value       = p.price;
+      document.getElementById('f-promo-price').value = p.promo_price || '';
+      document.getElementById('f-unit').value        = p.unit || 'un';
+      document.getElementById('f-active').value      = p.active ? '1' : '0';
+      document.getElementById('f-image').value       = p.image || '';
+      previewImg();
+    } else {
+      ['f-name','f-cat','f-price','f-promo-price','f-image'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('f-unit').value   = 'un';
+      document.getElementById('f-active').value = '1';
+      document.getElementById('img-preview').innerHTML = '<span>Pré-visualização da imagem</span>';
+    }
+    UIComponents.openModal('modal-overlay');
+  }
+
+  function closeModal() { UIComponents.closeModal('modal-overlay'); editingId = null; }
+
+  function previewImg() {
+    const url = document.getElementById('f-image').value.trim();
+    const div = document.getElementById('img-preview');
+    div.innerHTML = url
+      ? `<img src="${url}" onerror="this.parentElement.innerHTML='<span>URL inválida</span>'">`
+      : '<span>Pré-visualização da imagem</span>';
+  }
+
+  async function saveProduct() {
+    const btn = document.getElementById('save-btn');
+    UIComponents.setLoading(btn, true, 'Salvar Produto');
+
+    try {
+      const promoVal = document.getElementById('f-promo-price').value;
+      const data = {
+        name:       document.getElementById('f-name').value.trim(),
+        category:   document.getElementById('f-cat').value.trim(),
+        price:      parseFloat(document.getElementById('f-price').value),
+        promo_price: promoVal ? parseFloat(promoVal) : null,
+        unit:       document.getElementById('f-unit').value,
+        active:     document.getElementById('f-active').value === '1',
+        image:      document.getElementById('f-image').value.trim(),
+      };
+
+      let errors = [];
+      if (editingId) {
+        const res = await ProductsModule.update(editingId, data);
+        errors = res.errors || [];
+        if (res.success) { 
+          showToast('Produto atualizado!', 'success'); 
+          closeModal(); 
+          await renderProducts(); 
+        }
+      } else {
+        const res = await ProductsModule.create(storeId(), data);
+        errors = res.errors || [];
+        if (res.success && !errors.length) { 
+          showToast('Produto adicionado!', 'success'); 
+          closeModal(); 
+          await renderProducts(); 
+          await loadCategories(); 
+        }
+      }
+
+      if (errors.length) {
+        const errEl = document.getElementById('form-errors');
+        errEl.innerHTML = errors.map(e => `• ${e}`).join('<br>');
+        errEl.style.display = 'block';
+      }
+    } catch (err) {
+      console.error("Erro ao salvar produto:", err);
+      showToast('Ocorreu um erro ao salvar o produto.', 'error');
+    } finally {
+      UIComponents.setLoading(btn, false, 'Salvar Produto');
+    }
+  }
+
+  function editProduct(id)  { openModal(id); }
+
+  async function toggleActive(id, current) {
+    await ProductsModule.toggleActive(id, current);
+    await renderProducts();
+    showToast(!current ? 'Produto ativado!' : 'Produto desativado.', 'info');
+  }
+
+  async function deleteProduct(id) {
+    if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+    await ProductsModule.remove(id);
+    await renderProducts();
+    showToast('Produto excluído.', 'info');
+  }
+
+  initAdmin();
+</script>
+</body>
+</html>

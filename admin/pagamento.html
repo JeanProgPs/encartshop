@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagamento — EncartShop</title>
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="shortcut icon" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/favicon.png">
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    body {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 24px;
+      background: radial-gradient(ellipse 70% 60% at 50% 30%, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+    }
+    .payment-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-xl); padding: 40px;
+      max-width: 480px; width: 100%; text-align: center;
+      box-shadow: var(--shadow-lg);
+    }
+    .payment-header { margin-bottom: 32px; }
+    .payment-header h1 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
+    .payment-header p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; }
+    
+    .qr-container {
+      background: #fff; padding: 20px; border-radius: var(--radius-lg);
+      margin: 0 auto 24px; width: fit-content;
+      box-shadow: 0 0 40px rgba(99, 102, 241, 0.2);
+    }
+    .qr-container img { width: 220px; height: 220px; display: block; }
+    
+    .pix-info { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 24px; }
+    .pix-key { font-family: monospace; font-size: 0.8rem; color: var(--accent); word-break: break-all; margin-top: 8px; }
+    
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(245, 158, 11, 0.1); color: #f59e0b;
+      padding: 6px 16px; border-radius: 99px; font-size: 0.8rem; font-weight: 700;
+      margin-bottom: 24px; border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+  </style>
+</head>
+<body>
+
+<div class="payment-card">
+  <div class="payment-header">
+    <div class="status-badge">🟡 Aguardando Pagamento</div>
+    <h1>Ative sua loja agora</h1>
+    <p>Realize o pagamento do plano via PIX para liberar o acesso total ao seu painel administrativo.</p>
+  </div>
+
+  <div class="qr-container">
+    <img src="../assets/pix_qr.png" alt="QR Code PIX">
+  </div>
+
+  <div class="pix-info">
+    <div style="font-size:0.85rem; font-weight:600;">Chave PIX (E-mail):</div>
+    <div class="pix-key">pagamentos@encartshop.com.br</div>
+  </div>
+
+  <div class="form-stack">
+    <button class="btn btn-primary btn-lg w-full" onclick="checkPayment()">Já realizei o pagamento</button>
+    <button class="btn btn-ghost w-full" onclick="AuthService.logout().then(() => window.location.replace('index.html'))">Sair e pagar depois</button>
+  </div>
+  
+  <p style="font-size:0.75rem; color:var(--text-muted); margin-top:24px;">
+    * A liberação ocorre automaticamente em até 5 minutos após a confirmação do pagamento.
+  </p>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/core/supabaseClient.js"></script>
+<script src="../js/core/api.js"></script>
+<script src="../js/auth/authService.js"></script>
+<script src="../js/ui/components.js"></script>
+<script>
+  async function checkPayment() {
+    const btn = document.querySelector('.btn-primary');
+    const oldText = btn.textContent;
+    btn.textContent = 'Verificando...';
+    btn.disabled = true;
+
+    // Simulação de verificação
+    setTimeout(async () => {
+      const storeId = AuthService.getActiveStoreId();
+      const store = await EncartAPI.StoreAPI.getById(storeId);
+      
+      if (store && store.status === 'active') {
+        UIComponents.showToast('Pagamento confirmado! Redirecionando...', 'success');
+        setTimeout(() => window.location.replace('dashboard.html'), 1500);
+      } else {
+        UIComponents.showToast('Pagamento ainda não detectado. Tente novamente em instantes.', 'info');
+        btn.textContent = oldText;
+        btn.disabled = false;
+      }
+    }, 2000);
+  }
+</script>
+</body>
+</html>

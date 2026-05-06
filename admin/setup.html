@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Criar Nova Loja — EncartShop</title>
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="shortcut icon" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/favicon.png">
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    body { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+           background:radial-gradient(ellipse 70% 60% at 50% 30%, rgba(34,197,94,0.12) 0%, transparent 70%); }
+    .setup-wrap { width:100%; max-width:520px; }
+    .setup-logo { text-align:center; margin-bottom:28px; }
+    .setup-logo .logo-icon { width:56px; height:56px; background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%); border-radius:16px;
+      display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.1rem;
+      color:#fff; font-family:var(--font-display); margin:0 auto 12px; box-shadow:var(--shadow-brand); letter-spacing:-0.03em; }
+    .setup-logo h1 { font-family:var(--font-display); font-size:1.6rem; font-weight:800; }
+    .setup-logo p  { color:var(--text-muted); font-size:0.9rem; margin-top:4px; }
+
+    /* Steps */
+    .steps-indicator { display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:28px; }
+    .step-dot { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+      font-size:0.75rem; font-weight:700; background:var(--bg-card); border:2px solid var(--border);
+      color:var(--text-muted); transition:var(--transition); flex-shrink:0; }
+    .step-dot.active { background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%); border-color:var(--brand); color:#fff; box-shadow:var(--shadow-brand); }
+    .step-dot.done   { background:var(--success); border-color:var(--success); color:#fff; }
+    .step-line { flex:1; height:2px; background:var(--border); max-width:44px; transition:var(--transition); }
+    .step-line.done { background:var(--success); }
+
+    .step-panel { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-xl); padding:28px; display:none; }
+    .step-panel.active { display:block; animation:slideUp 0.3s ease; }
+    @keyframes slideUp { from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:translateY(0);} }
+
+    .step-number { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--brand); margin-bottom:4px; }
+    .step-panel h2 { font-size:1.1rem; font-weight:700; margin-bottom:4px; }
+    .step-panel .desc { color:var(--text-muted); font-size:0.85rem; line-height:1.6; margin-bottom:20px; }
+    .form-stack { display:flex; flex-direction:column; gap:13px; }
+    .step-footer { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+    /* Color Picker */
+    .color-palette { display:flex; flex-wrap:wrap; gap:8px; }
+    .color-swatch { width:36px; height:36px; border-radius:10px; cursor:pointer;
+      border:2px solid transparent; transition:var(--transition); position:relative; }
+    .color-swatch:hover { transform:scale(1.15); }
+    .color-swatch.selected { border-color:#fff; box-shadow:0 0 0 2px rgba(255,255,255,0.6); transform:scale(1.1); }
+    .color-swatch.selected::after { content:'✓'; position:absolute; inset:0; display:flex; align-items:center;
+      justify-content:center; font-size:0.8rem; font-weight:800; color:#fff; }
+    .color-custom-wrap { display:flex; align-items:center; gap:10px; margin-top:8px; }
+    .color-preview-bar { height:6px; border-radius:3px; transition:background 0.2s; margin-top:8px; }
+
+    /* Success */
+    .success-panel { text-align:center; padding:8px 0; }
+    .success-icon  { font-size:3.5rem; margin-bottom:14px; }
+    .success-panel h2 { font-family:var(--font-display); font-size:1.3rem; font-weight:800; margin-bottom:8px; }
+    .success-panel p  { color:var(--text-muted); font-size:0.875rem; margin-bottom:20px; line-height:1.7; }
+    .success-links { display:flex; flex-direction:column; gap:10px; }
+
+    .warning-box { background:rgba(243,156,18,0.08); border:1px solid rgba(243,156,18,0.2);
+      border-radius:var(--radius); padding:12px 14px; font-size:0.8rem; color:var(--warning); line-height:1.6; }
+
+    @media(max-width:480px){ .form-row{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+<div class="setup-wrap">
+  <div class="setup-logo">
+    <div class="logo-icon" style="width:64px;height:64px;background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);border-radius:18px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;margin:0 auto 14px;box-shadow:var(--shadow-brand);">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    </div>
+    <h1 style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;margin-bottom:4px;">EncartShop</h1>
+    <p id="setup-sub-title">Configure sua loja em minutos</p>
+  </div>
+
+  <div class="steps-indicator">
+    <div class="step-dot active" id="dot-1">1</div>
+    <div class="step-line" id="line-1"></div>
+    <div class="step-dot" id="dot-2">2</div>
+    <div class="step-line" id="line-2"></div>
+    <div class="step-dot" id="dot-3">3</div>
+    <div class="step-line" id="line-3"></div>
+    <div class="step-dot" id="dot-4">4</div>
+  </div>
+
+  <!-- Step 1: Loja + Cor -->
+  <div class="step-panel active" id="step-1">
+    <div class="step-number">Passo 1 de 4</div>
+    <h2>🏪 Identidade da Loja</h2>
+    <p class="desc">Nome, endereço e <strong>cor da loja</strong> que seus clientes verão.</p>
+    <div class="form-stack">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nome do Estabelecimento *</label>
+          <input id="s1-name" type="text" class="form-input" placeholder="Ex: Boutique Elegance">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Slogan</label>
+          <input id="s1-slogan" type="text" class="form-input" placeholder="Ex: Sua loja de confiança!">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Endereço</label>
+        <input id="s1-address" type="text" class="form-input" placeholder="Rua das Flores, 123 — Centro">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Horário de Funcionamento</label>
+        <input id="s1-hours" type="text" class="form-input" placeholder="Seg–Sáb: 7h às 20h | Dom: 8h às 14h">
+      </div>
+      <!-- Color Picker -->
+      <div class="form-group">
+        <label class="form-label">🎨 Cor da Loja</label>
+        <div class="color-palette" id="color-palette"></div>
+        <div class="color-custom-wrap">
+          <input type="color" id="color-custom" value="#e94560" style="width:40px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px;background:transparent;">
+          <span style="font-size:0.82rem;color:var(--text-muted);">Ou escolha uma cor personalizada</span>
+          <span id="color-hex-label" style="font-size:0.82rem;font-weight:700;color:var(--text);">#e94560</span>
+        </div>
+        <div class="color-preview-bar" id="color-preview-bar" style="background:#e94560;"></div>
+      </div>
+    </div>
+    <div class="step-footer">
+      <span></span>
+      <button class="btn btn-primary" onclick="goStep(2)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- Step 2: WhatsApp -->
+  <div class="step-panel" id="step-2">
+    <div class="step-number">Passo 2 de 4</div>
+    <h2>💬 WhatsApp para Pedidos</h2>
+    <p class="desc">Qual número receberá os pedidos dos clientes?</p>
+    <div class="form-stack">
+      <div class="form-group">
+        <label class="form-label">Número do WhatsApp *</label>
+        <input id="s2-whatsapp" type="tel" class="form-input" placeholder="5511999999999">
+      </div>
+      <div style="font-size:0.8rem;color:var(--text-muted);line-height:1.7;background:rgba(255,255,255,0.03);border-radius:var(--radius);padding:12px 14px;border:1px solid var(--border);">
+        📌 Formato: <strong style="color:var(--text);">55</strong> (Brasil) + DDD + número<br>
+        Exemplo: <strong style="color:var(--accent);">5511987654321</strong>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Texto do Banner Promocional</label>
+        <input id="s2-banner" type="text" class="form-input" placeholder="🔥 Confira nossas novidades!">
+      </div>
+    </div>
+    <div class="step-footer">
+      <button class="btn btn-ghost" onclick="goStep(1)">← Voltar</button>
+      <button class="btn btn-primary" onclick="goStep(3)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Entrega -->
+  <div class="step-panel" id="step-3">
+    <div class="step-number">Passo 3 de 4</div>
+    <h2>🚚 Configuração de Entrega</h2>
+    <p class="desc">Define taxa de entrega e valor mínimo para frete grátis.</p>
+    <div class="form-stack">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Taxa de Entrega (R$)</label>
+          <input id="s3-fee" type="number" step="0.01" min="0" class="form-input" placeholder="0 = grátis" value="5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Frete Grátis acima de (R$)</label>
+          <input id="s3-free" type="number" step="0.01" min="0" class="form-input" placeholder="Ex: 50" value="50">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top: 8px;">
+        <label class="form-label" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <input type="checkbox" id="s3-combine" onchange="toggleCombineDelivery(this.checked)" style="width: 18px; height: 18px;">
+          <span>Entrega a combinar com o lojista</span>
+        </label>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-left: 28px; margin-top: 4px;">
+          Se marcado, o valor da entrega não será somado ao carrinho.
+        </p>
+      </div>
+    </div>
+    <div class="step-footer">
+      <button class="btn btn-ghost" onclick="goStep(2)">← Voltar</button>
+      <button class="btn btn-primary" onclick="goStep(4)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- Step 4: Acesso -->
+  <div class="step-panel" id="step-4">
+    <div class="step-number">Passo 4 de 4</div>
+    <h2>🔒 Dados de Acesso</h2>
+    <p class="desc">E-mail e senha do painel administrativo desta loja.</p>
+    <div class="form-stack">
+      <div class="form-group">
+        <label class="form-label">E-mail de Acesso *</label>
+        <input id="s4-email" type="email" class="form-input" placeholder="seu@email.com">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Senha *</label>
+          <input id="s4-pass" type="password" class="form-input" placeholder="Mín. 6 caracteres">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirmar Senha *</label>
+          <input id="s4-pass2" type="password" class="form-input" placeholder="Repita a senha">
+        </div>
+      </div>
+      <div id="setup-error" style="color:var(--danger);font-size:0.85rem;display:none;padding:10px 14px;background:rgba(231,76,60,0.08);border-radius:var(--radius);border:1px solid rgba(231,76,60,0.2);"></div>
+    </div>
+    <div class="step-footer">
+      <button class="btn btn-ghost" onclick="goStep(3)">← Voltar</button>
+      <button class="btn btn-primary btn-lg" onclick="createStore()">🚀 Criar Loja</button>
+    </div>
+  </div>
+
+  <!-- Step 5: Sucesso / Ativação -->
+  <div class="step-panel" id="step-5">
+    <div class="success-panel">
+      <div class="success-icon">🚀</div>
+      <h2 id="success-title">Quase lá! 🎉</h2>
+      <p id="success-sub">Sua conta foi criada. Agora só falta realizar a ativação do seu plano para liberar o painel.</p>
+      <div class="success-links">
+        <a href="dashboard.html" class="btn btn-primary btn-lg w-full">Ir para Ativação →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/core/supabaseClient.js"></script>
+<script src="../js/core/api.js"></script>
+<script src="../js/auth/authService.js"></script>
+<script src="../js/auth/authGuard.js"></script>
+<script src="../js/modules/store.js"></script>
+<script src="../js/ui/components.js"></script>
+<script src="../js/storage.js"></script>
+<script>
+  let selectedColor = '#e94560';
+  let currentStep = 1;
+
+  // ── Color Palette ─────────────────────────────────────────
+  function buildPalette() {
+    const pal = document.getElementById('color-palette');
+    pal.innerHTML = StoreModule.COLOR_PALETTE.map(c => `
+      <div class="color-swatch ${c.hex === selectedColor ? 'selected' : ''}"
+           style="background:${c.hex};" title="${c.name}"
+           onclick="pickColor('${c.hex}', this)"></div>`).join('');
+  }
+
+  function pickColor(hex, el) {
+    selectedColor = hex;
+    document.getElementById('color-custom').value = hex;
+    document.getElementById('color-hex-label').textContent = hex;
+    document.getElementById('color-preview-bar').style.background = hex;
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+    if (el) el.classList.add('selected');
+    StoreModule.applyColor(hex);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    buildPalette();
+    document.getElementById('color-custom').addEventListener('input', function() {
+      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+      pickColor(this.value, null);
+    });
+  });
+  
+  function toggleCombineDelivery(checked) {
+    const feeInput = document.getElementById('s3-fee');
+    const freeInput = document.getElementById('s3-free');
+    if (checked) {
+      feeInput.value = '';
+      feeInput.disabled = true;
+      feeInput.placeholder = 'A combinar';
+      freeInput.value = '';
+      freeInput.disabled = true;
+    } else {
+      feeInput.disabled = false;
+      feeInput.placeholder = '0 = grátis';
+      feeInput.value = '5';
+      freeInput.disabled = false;
+      freeInput.value = '50';
+    }
+  }
+
+  // ── Step Navigation ───────────────────────────────────────
+  function goStep(n) {
+    if (n > currentStep) {
+      const err = validateStep(currentStep);
+      if (err) { showToast(err, 'error'); return; }
+    }
+    document.getElementById(`step-${currentStep}`).classList.remove('active');
+    for (let i = 1; i <= 4; i++) {
+      const dot  = document.getElementById(`dot-${i}`);
+      const line = document.getElementById(`line-${i}`);
+      dot.classList.remove('active','done');
+      if (line) line.classList.remove('done');
+      if (i < n)  { dot.classList.add('done'); if (line) line.classList.add('done'); }
+      if (i === n) dot.classList.add('active');
+    }
+    currentStep = n;
+    document.getElementById(`step-${n}`).classList.add('active');
+  }
+
+  function validateStep(step) {
+    if (step === 1 && !document.getElementById('s1-name').value.trim()) return 'Informe o nome do estabelecimento.';
+    if (step === 2) {
+      const wa = document.getElementById('s2-whatsapp').value.trim();
+      if (!wa || wa.length < 10) return 'Informe um número de WhatsApp válido.';
+    }
+    if (step === 4) {
+      const email = document.getElementById('s4-email').value.trim();
+      const pass  = document.getElementById('s4-pass').value;
+      const pass2 = document.getElementById('s4-pass2').value;
+      if (!email || !email.includes('@')) return 'Informe um e-mail válido.';
+      if (pass.length < 6)  return 'A senha deve ter ao menos 6 caracteres.';
+      if (pass !== pass2)   return 'As senhas não coincidem.';
+    }
+    return null;
+  }
+
+  // ── Create Store com Supabase Auth ────────────────────────
+  async function createStore() {
+    const err = validateStep(4);
+    if (err) {
+      const errEl = document.getElementById('setup-error');
+      errEl.textContent = err; errEl.style.display = 'block';
+      return;
+    }
+    const name     = document.getElementById('s1-name').value.trim();
+    const email    = document.getElementById('s4-email').value.trim();
+    const password = document.getElementById('s4-pass').value;
+
+    const btn = document.querySelector('#step-4 .btn-lg');
+    const oldText = btn.textContent;
+    btn.textContent = 'Criando conta...';
+    btn.disabled = true;
+    document.getElementById('setup-error').style.display = 'none';
+
+    try {
+      // 1. Cria usuário no Supabase Auth
+      let { userId, error: authErr } = await AuthService.signUp(email, password);
+      
+      // Se deu erro de limite (rate limit) ou usuário já existe, tentamos apenas fazer o login!
+      // Isso salva a vida se a conta foi criada na tentativa anterior mas a loja não.
+      if (authErr && (authErr.includes('rate limit') || authErr.includes('already registered') || authErr.includes('already exists'))) {
+        console.log("Tentando fallback de login por causa do erro:", authErr);
+        const { data, error: loginErr } = await window.sb.auth.signInWithPassword({ email, password });
+        if (data && data.user) {
+          userId = data.user.id;
+          authErr = null; // Limpa o erro pois conseguimos logar
+        } else {
+          authErr = authErr + " (E o login também falhou: " + (loginErr?.message || "erro desconhecido") + ")";
+        }
+      }
+
+      if (authErr || !userId) {
+        showError(authErr || 'Falha ao criar conta. Tente novamente.');
+        btn.textContent = oldText; btn.disabled = false;
+        return;
+      }
+
+      btn.textContent = 'Criando loja...';
+
+      // 2. Cria a loja vinculada ao usuário
+      const result = await EncartAPI.StoreAPI.create({
+        name,
+        slogan:      document.getElementById('s1-slogan').value.trim(),
+        address:     document.getElementById('s1-address').value.trim(),
+        hours:       document.getElementById('s1-hours').value.trim(),
+        whatsapp:    document.getElementById('s2-whatsapp').value.trim(),
+        banner_text: document.getElementById('s2-banner').value.trim() || `🔥 Bem-vindo à ${name}!`,
+        delivery_fee: document.getElementById('s3-combine').checked ? -1 : (parseFloat(document.getElementById('s3-fee').value) || 0),
+        delivery_free: document.getElementById('s3-combine').checked ? 0 : (parseFloat(document.getElementById('s3-free').value) || 0),
+        color:       selectedColor,
+        owner_email: email,
+        user_id:     userId,
+        status:      'pending',
+      });
+
+      if (result.error || !result.id) {
+        showError(result.error || 'Erro ao criar loja.');
+        btn.textContent = oldText; btn.disabled = false;
+        return;
+      }
+
+      // 3. Define loja ativa e faz login
+      AuthService.setActiveStoreId(result.id);
+      const loginResult = await AuthService.loginWithStore(result.id, email, password);
+      if (!loginResult.success) {
+        // Loja criada mas login falhou — vai para login manual
+        window.location.replace('index.html');
+        return;
+      }
+
+      // 4. Tela de sucesso
+      document.getElementById('step-4').classList.remove('active');
+      document.getElementById('step-5').classList.add('active');
+      document.getElementById('success-title').textContent = `${name} está no ar! 🎉`;
+      const storeUrl = StoreModule.getStoreUrl(result);
+      const urlDisplay = document.getElementById('success-url');
+      if (urlDisplay) {
+        urlDisplay.textContent = storeUrl;
+        urlDisplay.href = storeUrl;
+      }
+      document.getElementById('loja-link-btn').href = storeUrl;
+      StoreModule.applyColor(selectedColor);
+
+    } catch (e) {
+      console.error('Erro fatal no setup:', e);
+      showError(`Erro inesperado: ${e.message}`);
+      btn.textContent = oldText; btn.disabled = false;
+    }
+  }
+
+  function showError(msg) {
+    const errEl = document.getElementById('setup-error');
+    errEl.innerHTML = `❌ ${msg}`;
+    errEl.style.display = 'block';
+  }
+
+  function showToast(msg, type='info') {
+    const icons = {success:'✅',error:'❌',info:'ℹ️'};
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+    let c = document.getElementById('toast-container');
+    if (!c) { c = document.createElement('div'); c.id = 'toast-container'; document.body.appendChild(c); }
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  buildPalette();
+</script>
+</body>
+</html>
+
+

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações — EncartShop</title>
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="shortcut icon" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/favicon.png">
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .config-sections { display:flex; flex-direction:column; gap:24px; max-width:720px; }
+    .config-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:28px; }
+    .config-card h3 { font-size:1rem; font-weight:700; margin-bottom:4px; }
+    .config-card .desc { font-size:0.82rem; color:var(--text-muted); margin-bottom:20px; }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .link-preview {
+      background:rgba(255,255,255,0.04); border:1.5px solid var(--border);
+      border-radius:var(--radius); padding:12px 16px;
+      font-size:0.875rem; color:var(--accent); font-weight:600;
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    }
+    .link-preview span { word-break:break-all; }
+    .mobile-menu-btn { display:none; background:none; border:none; color:var(--text); cursor:pointer; padding:8px; }
+    @media(max-width:768px) {
+      .mobile-menu-btn{display:flex;}
+      .form-grid{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+<body data-page="configuracoes">
+
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="mobile-menu-btn" onclick="openSidebar()">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="topbar-title">Configurações da Loja</span>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="saveAll()">💾 Salvar Tudo</button>
+    </header>
+
+    <div class="page-content">
+      <div class="config-sections">
+
+        <!-- Link da Loja -->
+        <div class="config-card">
+          <h3>🔗 Link da sua Loja</h3>
+          <p class="desc">Compartilhe este link com seus clientes no WhatsApp e redes sociais.</p>
+          <div class="link-preview">
+            <span id="loja-link">Carregando...</span>
+            <button class="btn btn-ghost btn-sm" onclick="copyLink()">📋 Copiar</button>
+          </div>
+        </div>
+
+        <!-- Informações da Loja -->
+        <div class="config-card">
+          <h3>🏪 Informações da Loja</h3>
+          <p class="desc">Nome, slogan e endereço que aparecerão na loja para seus clientes.</p>
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Nome da Loja *</label>
+                <input id="s-name" type="text" class="form-input" placeholder="Ex: Boutique Elegance">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Slogan</label>
+                <input id="s-slogan" type="text" class="form-input" placeholder="Ex: Sua loja de confiança!">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Endereço</label>
+              <input id="s-address" type="text" class="form-input" placeholder="Rua das Flores, 123 - Centro">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Horário de Funcionamento</label>
+              <input id="s-hours" type="text" class="form-input" placeholder="Seg–Sáb: 7h às 20h | Dom: 8h às 14h">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Texto do Banner Promocional</label>
+              <input id="s-banner" type="text" class="form-input" placeholder="🔥 Promoções da semana! Aproveite!">
+            </div>
+          </div>
+        </div>
+
+        <!-- WhatsApp -->
+        <div class="config-card">
+          <h3>💬 WhatsApp para Pedidos</h3>
+          <p class="desc">Número que receberá os pedidos dos clientes. Use o formato internacional sem espaços.</p>
+          <div class="form-group">
+            <label class="form-label">Número do WhatsApp *</label>
+            <input id="s-whatsapp" type="tel" class="form-input" placeholder="5511999999999 (com DDD e código do país)">
+          </div>
+          <div style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);line-height:1.6;">
+            ℹ️ Exemplo: Brasil (55) + DDD (11) + número (999999999) = <strong style="color:var(--text);">5511999999999</strong>
+          </div>
+        </div>
+
+        <!-- Entrega -->
+        <div class="config-card">
+          <h3>🚚 Configuração de Entrega</h3>
+          <p class="desc">Define se há taxa de entrega e valor mínimo para frete grátis.</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Taxa de Entrega (R$)</label>
+              <input id="s-delivery-fee" type="number" step="0.01" min="0" class="form-input" placeholder="0 = grátis">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Frete Grátis acima de (R$)</label>
+              <input id="s-delivery-free" type="number" step="0.01" min="0" class="form-input" placeholder="Ex: 50 = grátis acima de R$ 50">
+            </div>
+          </div>
+          <div class="form-group" style="margin-top: 10px;">
+            <label class="form-label" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+              <input type="checkbox" id="s-delivery-combine" onchange="toggleCombineDelivery(this.checked)" style="width: 18px; height: 18px;">
+              <span>Entrega a combinar com o lojista</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Segurança -->
+        <div class="config-card">
+          <h3>🔒 Segurança do Painel</h3>
+          <p class="desc">Altere seu e-mail e senha de acesso ao painel administrativo.</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Novo E-mail de Acesso</label>
+              <input id="s-auth-email" type="email" class="form-input" placeholder="novo@email.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nova Senha</label>
+              <input id="s-auth-pass" type="password" class="form-input" placeholder="Deixe vazio para não alterar">
+            </div>
+          </div>
+          <div style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);">
+            ⚠️ Ao alterar o e-mail, você precisará fazer login novamente.
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg" onclick="saveAll()" style="align-self:flex-start;">💾 Salvar Configurações</button>
+
+        <!-- Zona de Perigo -->
+        <div class="config-card" style="border-color:rgba(231,76,60,0.2);background:rgba(231,76,60,0.04);">
+          <h3 style="color:var(--danger);">⚠️ Zona de Perigo</h3>
+          <p class="desc">Estas ações são irreversíveis. Use com cuidado.</p>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:16px;background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.15);border-radius:var(--radius);">
+              <div>
+                <div style="font-weight:700;font-size:0.9rem;margin-bottom:2px;">🗑️ Limpar Pedidos</div>
+                <div style="font-size:0.8rem;color:var(--text-muted);">Remove todos os pedidos, mantendo produtos e configurações.</div>
+              </div>
+              <button class="btn btn-danger btn-sm" onclick="clearOrders()">🗑️ Limpar</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/core/supabaseClient.js"></script>
+<script src="../js/core/api.js"></script>
+<script src="../js/auth/authService.js"></script>
+<script src="../js/auth/authGuard.js"></script>
+<script src="../js/modules/store.js"></script>
+<script src="../js/ui/components.js"></script>
+<script src="../js/storage.js"></script>
+<script src="../js/admin-common.js"></script>
+<script>
+  let _store = null;
+
+  async function load() {
+    _store = await StoreModule.getActive();
+    if (!_store) return;
+
+    const storeUrl = StoreModule.getStoreUrl(_store);
+    document.getElementById('loja-link').textContent = storeUrl;
+
+    document.getElementById('s-name').value          = _store.name          || '';
+    document.getElementById('s-slogan').value        = _store.slogan        || '';
+    document.getElementById('s-address').value       = _store.address       || '';
+    document.getElementById('s-hours').value         = _store.hours         || '';
+    document.getElementById('s-banner').value        = _store.banner_text   || '';
+    document.getElementById('s-whatsapp').value      = _store.whatsapp      || '';
+    
+    const isCombine = _store.delivery_fee === -1;
+    document.getElementById('s-delivery-combine').checked = isCombine;
+    document.getElementById('s-delivery-fee').value  = isCombine ? '' : (_store.delivery_fee  || 0);
+    document.getElementById('s-delivery-free').value = isCombine ? '' : (_store.delivery_free || 0);
+    toggleCombineDelivery(isCombine);
+  }
+
+  function toggleCombineDelivery(checked) {
+    const feeInput = document.getElementById('s-delivery-fee');
+    const freeInput = document.getElementById('s-delivery-free');
+    if (checked) {
+      feeInput.disabled = true;
+      feeInput.placeholder = 'A combinar';
+      freeInput.value = '';
+      freeInput.style.opacity = '0.5';
+      freeInput.disabled = true;
+      freeInput.placeholder = 'A combinar';
+      freeInput.value = '';
+      freeInput.style.opacity = '0.5';
+    } else {
+      feeInput.disabled = false;
+      feeInput.placeholder = '0 = grátis';
+      feeInput.style.opacity = '1';
+      freeInput.disabled = false;
+      freeInput.placeholder = 'Ex: 50';
+      freeInput.style.opacity = '1';
+    }
+  }
+
+  async function saveAll() {
+    try {
+      const name = document.getElementById('s-name').value.trim();
+      const wa   = document.getElementById('s-whatsapp').value.trim();
+      if (!name) { showToast('Informe o nome da loja.', 'error'); return; }
+      if (!wa || wa.replace(/\D/g,'').length < 10) { showToast('Informe um número de WhatsApp válido.', 'error'); return; }
+
+      const isCombine = document.getElementById('s-delivery-combine').checked;
+
+      const { success, error } = await StoreModule.save({
+        name,
+        slogan:        document.getElementById('s-slogan').value.trim(),
+        address:       document.getElementById('s-address').value.trim(),
+        hours:         document.getElementById('s-hours').value.trim(),
+        banner_text:   document.getElementById('s-banner').value.trim(),
+        whatsapp:      wa,
+        delivery_fee:  isCombine ? -1 : (parseFloat(document.getElementById('s-delivery-fee').value) || 0),
+        delivery_free: isCombine ? 0 : (parseFloat(document.getElementById('s-delivery-free').value) || 0),
+      });
+
+      if (!success) { showToast(error || 'Falha ao salvar.', 'error'); return; }
+
+      // Atualiza credenciais de auth (Supabase Auth)
+      const newEmail = document.getElementById('s-auth-email').value.trim();
+      const newPass  = document.getElementById('s-auth-pass').value;
+      if (newEmail || newPass) {
+        const { error: authErr } = await AuthService.updateCredentials({
+          email:    newEmail || undefined,
+          password: newPass  || undefined,
+        });
+        if (authErr) { showToast('Configurações salvas, mas falha ao atualizar credenciais: ' + authErr, 'warning'); return; }
+        if (newEmail) { showToast('E-mail atualizado. Faça login novamente.', 'info'); await AuthService.logout(); window.location.replace('index.html'); return; }
+      }
+
+      document.getElementById('store-name-nav').textContent = name;
+      showToast('Configurações salvas com sucesso!', 'success');
+      await load(); // atualiza link com novo slug
+    } catch (err) {
+      console.error("Erro ao salvar configurações:", err);
+      showToast('Erro inesperado ao salvar.', 'error');
+    }
+  }
+
+  function copyLink() {
+    if (!_store) return;
+    const url = StoreModule.getStoreUrl(_store);
+    navigator.clipboard.writeText(url).then(() => showToast('Link copiado!', 'success'));
+  }
+
+  async function clearOrders() {
+    if (!confirm('Tem certeza que deseja excluir TODOS os pedidos?\nEsta ação não pode ser desfeita.')) return;
+    await EncartAPI.OrderAPI.clearByStore(AuthService.getActiveStoreId());
+    showToast('Todos os pedidos foram removidos.', 'info');
+  }
+
+  load();
+</script>
+</body>
+</html>

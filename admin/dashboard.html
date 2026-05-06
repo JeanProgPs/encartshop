@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — EncartShop</title>
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="shortcut icon" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/favicon.png">
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .welcome-banner {
+      background:linear-gradient(135deg,var(--primary-mid) 0%,rgba(34,197,94,0.08) 100%);
+      border:1px solid rgba(34,197,94,0.15); border-radius:var(--radius-xl);
+      padding:28px 32px; margin-bottom:32px;
+      display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;
+    }
+    .welcome-banner h2 { font-family:var(--font-display); font-size:1.3rem; font-weight:800; margin-bottom:4px; }
+    .welcome-banner p  { color:var(--text-muted); font-size:0.9rem; }
+    .quick-actions { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-top:32px; }
+    .quick-card {
+      background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg);
+      padding:24px; text-align:center; cursor:pointer; transition:var(--transition);
+      text-decoration:none; display:flex; flex-direction:column; align-items:center; gap:10px;
+    }
+    .quick-card:hover { border-color:var(--accent); transform:translateY(-3px); box-shadow:var(--shadow-accent); }
+    .quick-card .icon { font-size:2rem; }
+    .quick-card h4 { font-size:0.9rem; font-weight:700; color:var(--text); }
+    .quick-card p  { font-size:0.8rem; color:var(--text-muted); }
+    .recent-orders { margin-top:32px; }
+    .order-row {
+      display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+      padding:16px 0; border-bottom:1px solid rgba(255,255,255,0.05);
+    }
+    .order-row:last-child { border-bottom:none; }
+    .order-info h4 { font-size:0.9rem; font-weight:600; margin-bottom:2px; }
+    .order-info p  { font-size:0.78rem; color:var(--text-muted); }
+    .store-link-box {
+      background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.15);
+      border-radius:var(--radius); padding:12px 16px; margin-top:16px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    }
+    .store-link-box span { font-size:0.82rem; color:var(--accent); font-weight:600; word-break:break-all; }
+  </style>
+</head>
+<body data-page="dashboard">
+
+<div class="admin-layout">
+  <!-- Sidebar injetado pelo admin-common.js -->
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="mobile-menu-btn" onclick="openSidebar()">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="topbar-title">Dashboard</span>
+      </div>
+      <div class="topbar-actions">
+        <a href="produtos.html" class="btn btn-primary btn-sm">+ Novo Produto</a>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <!-- Boas-vindas -->
+      <div class="welcome-banner">
+        <div>
+          <h2 id="welcome-text">Olá! 👋</h2>
+          <p id="store-subtitle">Gerencie seus produtos e acompanhe os pedidos</p>
+        </div>
+        <a id="view-store-btn" href="#" target="_blank" class="btn btn-outline btn-sm">Ver Loja →</a>
+      </div>
+
+      <!-- Link da loja -->
+      <div class="store-link-box">
+        <span id="store-url-display">Carregando link...</span>
+        <button class="btn btn-ghost btn-sm" onclick="copyStoreLink()">📋 Copiar Link</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid" id="stats-grid" style="margin-top:24px;"></div>
+
+      <!-- Ações Rápidas -->
+      <h3 style="font-size:1rem;font-weight:700;margin:32px 0 16px;">Ações Rápidas</h3>
+      <div class="quick-actions">
+        <a href="produtos.html" class="quick-card">
+          <div class="icon">📦</div><h4>Gerenciar Produtos</h4><p>Adicionar ou editar produtos</p>
+        </a>
+        <a href="pedidos.html" class="quick-card">
+          <div class="icon">🛒</div><h4>Ver Pedidos</h4><p>Acompanhar pedidos recebidos</p>
+        </a>
+        <a href="configuracoes.html" class="quick-card">
+          <div class="icon">⚙️</div><h4>Configurações</h4><p>WhatsApp, entrega e loja</p>
+        </a>
+        <a id="qa-store-link" href="#" target="_blank" class="quick-card">
+          <div class="icon">🔗</div><h4>Link da Loja</h4><p>Compartilhar com clientes</p>
+        </a>
+      </div>
+
+      <!-- Pedidos Recentes -->
+      <div class="recent-orders">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <h3 style="font-size:1rem;font-weight:700;">Pedidos Recentes</h3>
+          <a href="pedidos.html" style="font-size:0.85rem;color:var(--accent);font-weight:600;">Ver todos →</a>
+        </div>
+        <div class="card" style="padding:20px;">
+          <div id="recent-orders-list"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/core/supabaseClient.js"></script>
+<script src="../js/core/api.js"></script>
+<script src="../js/auth/authService.js"></script>
+<script src="../js/auth/authGuard.js"></script>
+<script src="../js/modules/store.js"></script>
+<script src="../js/modules/products.js"></script>
+<script src="../js/modules/orders.js"></script>
+<script src="../js/ui/components.js"></script>
+<script src="../js/ui/render.js"></script>
+<script src="../js/storage.js"></script>
+<script src="../js/admin-common.js"></script>
+<script>
+  let _store = null;
+
+  async function initDashboard() {
+    _store = await StoreModule.getActive();
+    if (!_store) return;
+
+    document.getElementById('welcome-text').textContent   = `Olá, ${_store.name}! 👋`;
+    document.getElementById('store-subtitle').textContent = 'Gerencie seus produtos e acompanhe os pedidos';
+
+    const storeUrl = StoreModule.getStoreUrl(_store);
+    document.getElementById('store-url-display').textContent = storeUrl;
+    document.getElementById('view-store-btn').href  = storeUrl;
+    document.getElementById('qa-store-link').href   = storeUrl;
+
+    const storeId  = AuthService.getActiveStoreId();
+    const products = await EncartAPI.ProductAPI.getByStore(storeId);
+    const orders   = await EncartAPI.OrderAPI.getByStore(storeId);
+
+    const activeProds = products.filter(p => p.active).length;
+    const promoProds  = products.filter(p => p.promo && p.active).length;
+    const newOrders   = orders.filter(o => o.status === 'novo').length;
+    const totalOrders = orders.length;
+
+    document.getElementById('stats-grid').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(34,197,94,0.12);">📦</div>
+        <div><div class="stat-value">${activeProds}</div><div class="stat-label">Produtos Ativos</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(245,166,35,0.12);">🏷️</div>
+        <div><div class="stat-value">${promoProds}</div><div class="stat-label">Em Promoção</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(52,152,219,0.12);">🛒</div>
+        <div><div class="stat-value">${newOrders}</div><div class="stat-label">Pedidos Novos</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(39,174,96,0.12);">📋</div>
+        <div><div class="stat-value">${totalOrders}</div><div class="stat-label">Total de Pedidos</div></div>
+      </div>`;
+
+    const recentList = document.getElementById('recent-orders-list');
+    if (!orders.length) {
+      recentList.innerHTML = UIRender.emptyState('🛒', 'Nenhum pedido ainda', 'Os pedidos recebidos via WhatsApp aparecerão aqui.');
+    } else {
+      const fmt = v => UIRender.fmtPrice(v);
+      const fmtD = d => UIRender.fmtDateShort(d);
+      recentList.innerHTML = orders.slice(0, 5).map(o => `
+        <div class="order-row">
+          <div class="order-info">
+            <h4>#${String(o.id).slice(-5)} — ${o.customerName || 'Cliente'}</h4>
+            <p>${fmtD(o.createdAt)} · ${Array.isArray(o.items) ? o.items.length : '?'} item(s)</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-weight:700;">${fmt(o.total)}</span>
+            <span class="badge ${OrdersModule.getStatusClass(o.status)}">${OrdersModule.getStatusLabel(o.status)}</span>
+          </div>
+        </div>`).join('');
+    }
+  }
+
+  function copyStoreLink() {
+    if (!_store) return;
+    const url = StoreModule.getStoreUrl(_store);
+    navigator.clipboard.writeText(url).then(() => showToast('Link copiado!', 'success'));
+  }
+
+  initDashboard();
+</script>
+</body>
+</html>

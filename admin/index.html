@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — EncartShop</title>
+  <meta name="description" content="Acesse o painel administrativo da sua loja no EncartShop.">
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="shortcut icon" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/favicon.png">
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    body {
+      display:flex; align-items:center; justify-content:center;
+      min-height:100vh; padding:24px;
+      background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(34,197,94,0.1) 0%, transparent 70%);
+    }
+    .login-wrap  { width:100%; max-width:440px; }
+    .login-logo  { text-align:center; margin-bottom:32px; }
+    .login-logo .logo-icon {
+      width:56px; height:56px;
+      background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);
+      border-radius:16px; display:flex; align-items:center; justify-content:center;
+      font-weight:900; font-size:1.1rem; color:#fff; font-family:var(--font-display);
+      margin:0 auto 12px; box-shadow:var(--shadow-brand); letter-spacing:-0.03em;
+    }
+    .login-logo h1 { font-family:var(--font-display); font-size:1.6rem; font-weight:800; }
+    .login-logo p  { color:var(--text-muted); font-size:0.9rem; margin-top:4px; }
+
+    /* Store selector */
+    .store-selector { display:flex; flex-direction:column; gap:10px; margin-bottom:8px; }
+    .store-option {
+      display:flex; align-items:center; gap:14px; padding:14px 16px;
+      background:rgba(255,255,255,0.03); border:1.5px solid var(--border);
+      border-radius:var(--radius); cursor:pointer; transition:var(--transition);
+    }
+    .store-option:hover   { border-color:rgba(255,255,255,0.15); background:rgba(255,255,255,0.06); }
+    .store-option.selected{ border-color:var(--accent); background:rgba(255,255,255,0.05); }
+    .store-color-dot { width:36px; height:36px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; color:#fff; }
+    .store-option-info h4 { font-size:0.95rem; font-weight:700; margin-bottom:2px; }
+    .store-option-info p  { font-size:0.75rem; color:var(--text-muted); }
+    .store-option .check  { margin-left:auto; color:var(--accent); font-size:1.1rem; opacity:0; transition:var(--transition); }
+    .store-option.selected .check { opacity:1; }
+
+    .login-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-xl); padding:28px; }
+    .login-card h2 { font-size:1.1rem; font-weight:700; margin-bottom:6px; }
+    .login-card .sub { color:var(--text-muted); font-size:0.875rem; margin-bottom:20px; }
+    .form-stack { display:flex; flex-direction:column; gap:14px; }
+    .error-msg {
+      background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.25);
+      border-radius:var(--radius); padding:12px 16px;
+      font-size:0.85rem; color:var(--danger); display:none;
+    }
+    .back-link { text-align:center; margin-top:16px; font-size:0.85rem; color:var(--text-muted); }
+    .back-link a { color:var(--brand); font-weight:600; }
+    .divider-or { display:flex; align-items:center; gap:12px; margin:8px 0; color:var(--text-muted); font-size:0.8rem; }
+    .divider-or::before, .divider-or::after { content:''; flex:1; height:1px; background:var(--border); }
+    .no-stores-hint { text-align:center; padding:24px; color:var(--text-muted); font-size:0.875rem; line-height:1.7; }
+    .no-stores-hint .icon { font-size:2.5rem; margin-bottom:8px; }
+  </style>
+</head>
+<body>
+
+<div class="login-wrap">
+  <div class="login-logo">
+    <div class="logo-icon" style="width:64px;height:64px;background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);border-radius:18px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;margin:0 auto 14px;box-shadow:var(--shadow-brand);">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    </div>
+    <h1 style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;margin-bottom:4px;">EncartShop</h1>
+    <p>Painel Administrativo</p>
+  </div>
+
+  <div class="login-card">
+    <h2 id="card-title">Selecione sua loja</h2>
+    <p class="sub" id="card-sub">Escolha a loja que deseja gerenciar.</p>
+    <div id="error-msg" class="error-msg"></div>
+
+    <!-- Step 1: Seleção de loja -->
+    <div id="step-select">
+      <div class="store-selector" id="store-list"></div>
+      <div id="no-stores" class="no-stores-hint hidden">
+        <div class="icon">🏪</div>
+        Nenhuma loja cadastrada ainda.<br>Crie sua primeira loja abaixo!
+      </div>
+      <div class="divider-or" id="divider-or">ou</div>
+      <a href="setup.html" class="btn btn-outline w-full">🏪 Criar Nova Loja</a>
+    </div>
+
+    <!-- Step 2: Email + Senha -->
+    <div id="step-password" class="hidden">
+      <div id="selected-store-preview" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,0.04);border-radius:var(--radius);margin-bottom:16px;"></div>
+      <div class="form-stack">
+        <div class="form-group">
+          <label class="form-label">E-mail</label>
+          <input id="login-email" type="email" class="form-input" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Senha</label>
+          <input id="login-password" type="password" class="form-input" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button id="login-btn" class="btn btn-primary w-full btn-lg" onclick="doLogin()">Entrar no Painel</button>
+        <button class="btn btn-ghost w-full btn-sm" onclick="backToSelect()">← Trocar de loja</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="back-link">
+    <a href="../index.html">← Voltar ao site</a>
+    &nbsp;•&nbsp;
+    <a href="setup.html">🏪 Criar nova loja</a>
+  </div>
+</div>
+
+<!-- Scripts: CDN → Core → Auth → Storage -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/core/supabaseClient.js"></script>
+<script src="../js/core/api.js"></script>
+<script src="../js/auth/authService.js"></script>
+<script src="../js/auth/authGuard.js"></script>
+<script src="../js/modules/store.js"></script>
+<script src="../js/ui/components.js"></script>
+<script src="../js/storage.js"></script>
+<script>
+  // Se já está autenticado, vai direto ao dashboard
+  AuthGuard.checkAlreadyLoggedIn();
+
+  let selectedStoreId = null;
+
+  async function renderStores() {
+    const stores  = await EncartAPI.StoreAPI.getAll();
+    const list    = document.getElementById('store-list');
+    const noStores = document.getElementById('no-stores');
+    const divider  = document.getElementById('divider-or');
+
+    if (!stores.length) {
+      list.innerHTML = '';
+      noStores.classList.remove('hidden');
+      divider.style.display = 'none';
+      document.getElementById('card-title').textContent = 'Bem-vindo!';
+      document.getElementById('card-sub').textContent   = 'Crie sua primeira loja para começar.';
+      return;
+    }
+
+    noStores.classList.add('hidden');
+    list.innerHTML = stores.map(s => `
+      <div class="store-option" id="opt-${s.id}" onclick="selectStore('${s.id}')">
+        <div class="store-color-dot" style="background:${s.color || '#22c55e'};">ES</div>
+        <div class="store-option-info">
+          <h4>${s.name}</h4>
+          <p>Clique para entrar</p>
+        </div>
+        <span class="check">✓</span>
+      </div>`).join('');
+
+    // Auto-seleciona se só houver 1 loja
+    if (stores.length === 1) selectStore(stores[0].id);
+  }
+
+  async function selectStore(id) {
+    selectedStoreId = id;
+    const store = await EncartAPI.StoreAPI.getById(id);
+
+    document.querySelectorAll('.store-option').forEach(el => el.classList.remove('selected'));
+    const opt = document.getElementById(`opt-${id}`);
+    if (opt) opt.classList.add('selected');
+
+    document.getElementById('step-select').classList.add('hidden');
+    document.getElementById('step-password').classList.remove('hidden');
+    document.getElementById('card-title').textContent = store?.name || 'Sua Loja';
+    document.getElementById('card-sub').textContent   = 'Digite suas credenciais para entrar.';
+    document.getElementById('error-msg').style.display = 'none';
+
+    document.getElementById('selected-store-preview').innerHTML = `
+      <div style="width:36px;height:36px;border-radius:10px;background:${store?.color || '#22c55e'};display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;">ES</div>
+      <div><div style="font-weight:700;font-size:0.9rem;">${store?.name || ''}</div><div style="font-size:0.75rem;color:var(--text-muted);">Loja selecionada</div></div>`;
+
+    if (store?.color) StoreModule.applyColor(store.color);
+    document.getElementById('login-email').focus();
+  }
+
+  function backToSelect() {
+    selectedStoreId = null;
+    document.getElementById('step-select').classList.remove('hidden');
+    document.getElementById('step-password').classList.add('hidden');
+    document.getElementById('error-msg').style.display = 'none';
+    document.getElementById('card-title').textContent = 'Selecione sua loja';
+    document.getElementById('card-sub').textContent   = 'Escolha a loja que deseja gerenciar.';
+  }
+
+  async function doLogin() {
+    if (!selectedStoreId) return;
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errEl    = document.getElementById('error-msg');
+    const btn      = document.getElementById('login-btn');
+
+    if (!email || !password) {
+      errEl.textContent = 'Preencha e-mail e senha.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    errEl.style.display = 'none';
+    btn.textContent = 'Entrando...';
+    btn.disabled = true;
+
+    const { success, error } = await AuthService.loginWithStore(selectedStoreId, email, password);
+
+    if (success) {
+      window.location.replace('dashboard.html');
+    } else {
+      errEl.textContent = error || 'E-mail ou senha incorretos.';
+      errEl.style.display = 'block';
+      btn.textContent = 'Entrar no Painel';
+      btn.disabled = false;
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !document.getElementById('step-password').classList.contains('hidden')) doLogin();
+  });
+
+  renderStores();
+</script>
+</body>
+</html>

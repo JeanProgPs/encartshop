@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedidos — EncartShop</title>
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="shortcut icon" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/favicon.png">
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .order-card { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;transition:var(--transition); }
+    .order-card:hover { border-color:rgba(255,255,255,0.12); }
+    .order-header { display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px; }
+    .order-id       { font-size:0.75rem;color:var(--text-muted);font-weight:600;letter-spacing:0.05em; }
+    .order-customer { font-weight:700;font-size:1rem;margin:2px 0; }
+    .order-meta     { font-size:0.8rem;color:var(--text-muted); }
+    .order-items    { border-top:1px solid var(--border);padding-top:14px;display:flex;flex-direction:column;gap:8px; }
+    .order-item     { display:flex;justify-content:space-between;font-size:0.875rem; }
+    .order-item .item-name { color:var(--text-light); }
+    .order-item .item-qty  { color:var(--text-muted); }
+    .order-total       { border-top:1px solid var(--border);padding-top:12px;margin-top:4px;display:flex;justify-content:space-between;align-items:center; }
+    .order-total-label { font-size:0.85rem;color:var(--text-muted); }
+    .order-total-value { font-size:1.1rem;font-weight:800; }
+    .order-actions  { display:flex;gap:8px;flex-wrap:wrap;margin-top:16px; }
+    .order-action-btn { border-radius:var(--radius); }
+
+    .filter-bar { display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;align-items:center; }
+    .filter-tab { padding:8px 16px;border-radius:99px;font-size:0.82rem;font-weight:600;cursor:pointer;transition:var(--transition);border:1.5px solid var(--border);background:transparent;color:var(--text-muted); }
+    .filter-tab:hover  { border-color:var(--accent);color:var(--accent); }
+    .filter-tab.active { background:var(--accent);border-color:var(--accent);color:#fff; }
+    .filter-tab .count { display:inline-block;background:rgba(255,255,255,0.2);border-radius:99px;padding:1px 7px;font-size:0.72rem;margin-left:6px; }
+
+    .mobile-menu-btn { display:none;background:none;border:none;color:var(--text);cursor:pointer;padding:8px; }
+    @media(max-width:768px){ .mobile-menu-btn{display:flex;} }
+  </style>
+</head>
+<body data-page="pedidos">
+
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="mobile-menu-btn" onclick="openSidebar()">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="topbar-title">Pedidos</span>
+      </div>
+      <div class="topbar-actions">
+        <span id="new-orders-badge" class="badge badge-info" style="display:none;"></span>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <!-- Filtros por status -->
+      <div class="filter-bar" id="filter-bar">
+        <button class="filter-tab active" data-filter="all" onclick="setFilter('all',this)">
+          Todos <span class="count" id="cnt-all">0</span>
+        </button>
+        <button class="filter-tab" data-filter="novo" onclick="setFilter('novo',this)">
+          🆕 Novos <span class="count" id="cnt-novo">0</span>
+        </button>
+        <button class="filter-tab" data-filter="confirmado" onclick="setFilter('confirmado',this)">
+          ✅ Confirmados <span class="count" id="cnt-confirmado">0</span>
+        </button>
+        <button class="filter-tab" data-filter="em_entrega" onclick="setFilter('em_entrega',this)">
+          🚚 Em Entrega <span class="count" id="cnt-em_entrega">0</span>
+        </button>
+        <button class="filter-tab" data-filter="finalizado" onclick="setFilter('finalizado',this)">
+          🏁 Finalizados <span class="count" id="cnt-finalizado">0</span>
+        </button>
+        <button class="filter-tab" data-filter="cancelado" onclick="setFilter('cancelado',this)">
+          ❌ Cancelados <span class="count" id="cnt-cancelado">0</span>
+        </button>
+      </div>
+
+      <div id="orders-list"></div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/core/supabaseClient.js"></script>
+<script src="../js/core/api.js"></script>
+<script src="../js/auth/authService.js"></script>
+<script src="../js/auth/authGuard.js"></script>
+<script src="../js/modules/store.js"></script>
+<script src="../js/modules/orders.js"></script>
+<script src="../js/ui/components.js"></script>
+<script src="../js/ui/render.js"></script>
+<script src="../js/storage.js"></script>
+<script src="../js/admin-common.js"></script>
+<script>
+  let currentFilter = 'all';
+  let allOrders     = [];
+  const storeId     = () => AuthService.getActiveStoreId();
+
+  async function initAdmin() {
+    await renderOrders();
+  }
+
+  function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderOrderList();
+  }
+
+  async function renderOrders() {
+    allOrders = await OrdersModule.getAll(storeId());
+    updateCounts();
+    renderOrderList();
+  }
+
+  function updateCounts() {
+    const counts = OrdersModule.countByStatus(allOrders);
+    document.getElementById('cnt-all').textContent       = counts.all       || 0;
+    document.getElementById('cnt-novo').textContent      = counts.novo      || 0;
+    document.getElementById('cnt-confirmado').textContent= counts.confirmado|| 0;
+    document.getElementById('cnt-em_entrega').textContent= counts.em_entrega|| 0;
+    document.getElementById('cnt-finalizado').textContent= counts.finalizado || 0;
+    document.getElementById('cnt-cancelado').textContent = counts.cancelado  || 0;
+
+    const badge = document.getElementById('new-orders-badge');
+    if (counts.novo > 0) { badge.textContent = `${counts.novo} novo(s)`; badge.style.display = ''; }
+    else badge.style.display = 'none';
+  }
+
+  function renderOrderList() {
+    const filtered = OrdersModule.filter(allOrders, currentFilter);
+    const list = document.getElementById('orders-list');
+    if (!filtered.length) {
+      list.innerHTML = UIRender.emptyState('🛒', 'Nenhum pedido', 'Os pedidos aparecerão aqui assim que os clientes finalizarem pelo WhatsApp.');
+      return;
+    }
+    list.innerHTML = filtered.map(o => UIRender.orderAdminCard(o)).join('');
+  }
+
+  async function handleOrderStatus(btn) {
+    const orderId       = btn.dataset.orderId;
+    const currentStatus = btn.dataset.currentStatus;
+    const newStatus     = btn.dataset.newStatus;
+
+    const { success, error } = await OrdersModule.updateStatus(orderId, currentStatus, newStatus);
+    if (success) {
+      showToast(`Status atualizado: ${OrdersModule.getStatusLabel(newStatus)}`, 'success');
+      await renderOrders();
+    } else {
+      showToast(error || 'Falha ao atualizar status.', 'error');
+    }
+  }
+
+  async function handleDeleteOrder(id) {
+    if (!confirm('Excluir este pedido?')) return;
+    await OrdersModule.remove(id);
+    await renderOrders();
+    showToast('Pedido excluído.', 'info');
+  }
+
+  initAdmin();
+</script>
+</body>
+</html>
