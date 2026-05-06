@@ -743,6 +743,10 @@ select.form-input option {
   color: #fff;
 }
 
+.category-section {
+  scroll-margin-top: 130px;
+}
+
 /* ── Store Header / Banner ──────────────────────────────────── */
 .store-banner {
   background: linear-gradient(135deg, var(--primary-mid) 0%, var(--primary-light) 100%);

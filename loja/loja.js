@@ -76,17 +76,90 @@ function loadStoreUI() {
 async function loadProducts() {
   const prods = await EncartAPI.ProductAPI.getActiveByStore(STORE_ID);
   allProducts = prods;
+  renderCategoryTabs();
   renderProducts();
+}
+
+function renderCategoryTabs() {
+  const tabsWrap = document.getElementById('cat-tabs');
+  if (!tabsWrap) return;
+
+  const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+  
+  if (categories.length === 0) {
+    tabsWrap.parentElement.classList.add('hidden');
+    return;
+  }
+
+  tabsWrap.parentElement.classList.remove('hidden');
+  const html = [
+    `<button class="cat-tab ${activeCategory === 'Todos' ? 'active' : ''}" onclick="setCategory('Todos')">Todos</button>`,
+    ...categories.map(cat => `
+      <button class="cat-tab ${activeCategory === cat ? 'active' : ''}" onclick="setCategory('${cat}')">${cat}</button>
+    `)
+  ].join('');
+  
+  tabsWrap.innerHTML = html;
+}
+
+function setCategory(cat) {
+  activeCategory = cat;
+  renderCategoryTabs();
+  renderProducts();
+  
+  // Se for "Todos", sobe pro topo, senão tenta scrollar pra seção
+  if (cat === 'Todos') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    const el = document.getElementById(`cat-sec-${cat}`);
+    if (el) {
+      const top = el.offsetTop - 120; // Compensar header + tabs
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  }
 }
 
 function renderProducts() {
   const area = document.getElementById('products-area');
   if (!area) return;
+
   if (!allProducts.length) {
     area.innerHTML = UIRender.emptyState('📦', 'Nenhum produto', 'Volte em breve!');
     return;
   }
-  area.innerHTML = `<div class="product-grid">${allProducts.map(p => UIRender.productStoreCard(p, _cartQty(p.id))).join('')}</div>`;
+
+  // Filtragem
+  const filtered = activeCategory === 'Todos' 
+    ? allProducts 
+    : allProducts.filter(p => p.category === activeCategory);
+
+  // Agrupamento (sempre agrupa se for "Todos")
+  if (activeCategory === 'Todos') {
+    const groups = {};
+    filtered.forEach(p => {
+      const cat = p.category || 'Diversos';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(p);
+    });
+
+    area.innerHTML = Object.entries(groups).map(([cat, prods]) => `
+      <div class="category-section" id="cat-sec-${cat}">
+        <div class="section-heading">${cat}</div>
+        <div class="product-grid">
+          ${prods.map(p => UIRender.productStoreCard(p, _cartQty(p.id))).join('')}
+        </div>
+      </div>
+    `).join('');
+  } else {
+    area.innerHTML = `
+      <div class="category-section">
+        <div class="section-heading">${activeCategory}</div>
+        <div class="product-grid">
+          ${filtered.map(p => UIRender.productStoreCard(p, _cartQty(p.id))).join('')}
+        </div>
+      </div>
+    `;
+  }
 }
 
 // ── Carrinho Refinado ──────────────────────────────────────────
