@@ -7,25 +7,25 @@
 
 /* ── CSS Variables ─────────────────────────────────────────── */
 :root {
-  /* Tons base — Midnight Tech */
-  --primary: #0a0a0f;
-  --primary-light: #12121a;
-  --primary-mid: #1a1a24;
+  /* Tons base — Clean Light */
+  --primary: #ffffff;
+  --primary-light: #f8fafc;
+  --primary-mid: #f1f5f9;
 
   /* Indigo Vibrant — Marca Universal (Confiança, Tecnologia) */
-  --brand: #6366f1;
-  --brand-dark: #4f46e5;
-  --brand-light: #818cf8;
-  --brand-glow: rgba(99, 102, 241, 0.25);
+  --brand: #4f46e5;
+  --brand-dark: #3730a3;
+  --brand-light: #6366f1;
+  --brand-glow: rgba(79, 70, 229, 0.1);
 
   /* Rose/Violet — Accent (Energia, Varejo, Destaque) */
   --accent: #d946ef;
-  --accent-glow: rgba(217, 70, 239, 0.25);
+  --accent-glow: rgba(217, 70, 239, 0.1);
   --accent-hover: #c026d3;
 
   /* Amarelo Oferta (mantido para utilidade comercial) */
-  --promo: #facc15;
-  --promo-glow: rgba(250, 204, 21, 0.25);
+  --promo: #f59e0b;
+  --promo-glow: rgba(245, 158, 11, 0.1);
 
   /* Semânticas */
   --success: #10b981;
@@ -34,16 +34,16 @@
   --danger: #f43f5e;
 
   /* Backgrounds */
-  --bg: #050508;
-  --bg-card: #111118;
-  --bg-card-hover: #161621;
-  --border: rgba(255,255,255,0.06);
-  --border-accent: rgba(99, 102, 241, 0.3);
+  --bg: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --border: rgba(0, 0, 0, 0.06);
+  --border-accent: rgba(79, 70, 229, 0.2);
 
   /* Texto */
-  --text: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-light: #cbd5e1;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --text-light: #475569;
 
   --font: 'Inter', sans-serif;
   --font-display: 'Outfit', sans-serif;
@@ -53,8 +53,8 @@
   --radius-xl: 32px;
   --radius-full: 9999px;
 
-  --shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.7);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1);
   --shadow-accent: 0 8px 32px var(--accent-glow);
   --shadow-brand: 0 8px 32px var(--brand-glow);
 
@@ -92,9 +92,9 @@ input, textarea, select { font-family: var(--font); outline: none; }
 
 /* ── Scrollbar ──────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--primary); }
-::-webkit-scrollbar-thumb { background: var(--brand-dark); border-radius: var(--radius-full); }
-::-webkit-scrollbar-thumb:hover { background: var(--brand); }
+::-webkit-scrollbar-track { background: var(--primary-light); }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 /* ── Utility Classes ────────────────────────────────────────── */
 .flex { display: flex; }
@@ -147,11 +147,12 @@ input, textarea, select { font-family: var(--font); outline: none; }
 }
 
 .btn-ghost {
-  background: rgba(255,255,255,0.05);
-  color: var(--text);
+  background: rgba(0,0,0,0.03);
+  color: var(--text-muted);
 }
 .btn-ghost:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.06);
+  color: var(--text);
 }
 
 .btn-success {
@@ -207,8 +208,8 @@ input, textarea, select { font-family: var(--font); outline: none; }
 }
 
 .form-input {
-  background: rgba(255,255,255,0.04);
-  border: 1.5px solid var(--border);
+  background: #ffffff;
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 12px 16px;
   color: var(--text);
@@ -217,9 +218,9 @@ input, textarea, select { font-family: var(--font); outline: none; }
   width: 100%;
 }
 .form-input:focus {
-  border-color: var(--accent);
-  background: rgba(233, 69, 96, 0.05);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  border-color: var(--brand);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px var(--brand-glow);
 }
 .form-input::placeholder { color: var(--text-muted); }
 
@@ -287,8 +288,8 @@ select.form-input option {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(6px);
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -397,11 +398,11 @@ select.form-input option {
   cursor: pointer;
 }
 .nav-item:hover {
-  background: rgba(255,255,255,0.06);
+  background: var(--primary-mid);
   color: var(--text);
 }
 .nav-item.active {
-  background: rgba(34, 197, 94, 0.12);
+  background: var(--brand-glow);
   color: var(--brand);
   font-weight: 600;
 }
@@ -520,7 +521,7 @@ select.form-input option {
   vertical-align: middle;
 }
 .data-table tr:hover td {
-  background: rgba(255,255,255,0.02);
+  background: var(--primary-light);
 }
 
 /* ── Product Grid (Loja) ────────────────────────────────────── */
@@ -635,6 +636,41 @@ select.form-input option {
   transform: scale(1.02);
 }
 .btn-add-cart:active { transform: scale(0.98); }
+
+/* ── Quantity Selector Card ─────────────────────────────────── */
+ .qty-selector-card {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   background: var(--primary-light);
+   border: 1px solid var(--border);
+   border-radius: 8px;
+   overflow: hidden;
+ }
+ .qty-btn-card {
+   width: 40px;
+   height: 40px;
+   background: var(--primary-mid);
+   color: var(--text);
+   font-size: 1.2rem;
+   font-weight: 700;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   transition: var(--transition-fast);
+ }
+ .qty-btn-card:hover {
+   background: var(--brand-glow);
+   color: var(--brand);
+ }
+ .qty-num-card {
+   font-weight: 800;
+   font-size: 0.9rem;
+   color: var(--text);
+   min-width: 40px;
+   text-align: center;
+   font-family: var(--font-display);
+ }
 
 /* ── Cart Bubble ────────────────────────────────────────────── */
 .cart-bubble {

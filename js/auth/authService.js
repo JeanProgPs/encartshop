@@ -91,12 +91,22 @@ const AuthService = (() => {
     localStorage.removeItem(STORAGE_KEY_ACTIVE_STORE);
   }
 
+  async function updateCredentials(data) {
+    const { error } = await window.sb.auth.updateUser(data);
+    if (error) {
+      console.error('AuthService.updateCredentials erro:', error);
+      return { error: error.message };
+    }
+    return { error: null };
+  }
+
   return {
     signUp,
     login,
     loginWithStore,
     logout,
     getUser,
+    updateCredentials,
     getActiveStoreId,
     setActiveStoreId,
     clearActiveStoreId

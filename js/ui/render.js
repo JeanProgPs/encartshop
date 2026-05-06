@@ -55,32 +55,47 @@ const UIRender = (() => {
   }
 
   function productStoreCard(p, cartQty = 0) {
-    const defaultImg = 'https://placehold.co/300x300/1a1a2e/888?text=?';
+    const defaultImg = 'https://placehold.co/300x300/f1f5f9/94a3b8?text=?';
     const img = p.image || defaultImg;
-    const price = p.promo_price ? p.promo_price : p.price;
     const hasPromo = !!p.promo_price;
+    const isKg = p.unit?.toLowerCase() === 'kg';
     
+    // Formatação da quantidade atual
+    const qtyLabel = isKg ? `${cartQty.toFixed(1).replace('.',',')}kg` : cartQty;
+
     return `
-      <div class="product-card" id="prod-${p.id}" onclick="addToCart('${p.id}')">
+      <div class="product-card" id="prod-${p.id}">
         ${hasPromo ? `<div class="promo-badge">PROMO</div>` : ''}
         <div class="product-image-wrap">
           <img src="${img}" alt="${p.name}" loading="lazy" onerror="this.src='${defaultImg}'">
         </div>
         <div class="product-info">
           <div class="product-name">${p.name}</div>
-          <div class="product-unit">${p.unit ? p.unit : 'unid.'}</div>
+          <div class="product-unit">${p.unit || 'unid.'}</div>
           <div class="product-price-row">
             ${hasPromo 
               ? `<div class="price-normal">${fmtPrice(p.price)}</div><div class="price-promo">${fmtPrice(p.promo_price)}</div>`
               : `<div class="price-regular">${fmtPrice(p.price)}</div>`
             }
           </div>
-          <button class="btn-add-cart">
+          
+          <div class="product-card-actions" style="margin-top:12px;">
             ${cartQty > 0 
-              ? `<span>Adicionado (${p.unit?.toLowerCase() === 'kg' ? cartQty.toFixed(1).replace('.',',') + 'kg' : cartQty})</span>` 
-              : `<span>Adicionar</span>`}
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-          </button>
+              ? `
+                <div class="qty-selector-card">
+                  <button class="qty-btn-card" onclick="event.stopPropagation(); changeQty('${p.id}', -1)">−</button>
+                  <span class="qty-num-card">${qtyLabel}</span>
+                  <button class="qty-btn-card" onclick="event.stopPropagation(); changeQty('${p.id}', 1)">+</button>
+                </div>
+              `
+              : `
+                <button class="btn-add-cart" onclick="event.stopPropagation(); addToCart('${p.id}')">
+                  <span>Adicionar</span>
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                </button>
+              `
+            }
+          </div>
         </div>
       </div>
     `;

@@ -13,7 +13,7 @@
     body {
       display:flex; align-items:center; justify-content:center;
       min-height:100vh; padding:24px;
-      background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(34,197,94,0.1) 0%, transparent 70%);
+      background: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(79, 70, 229, 0.05) 0%, #f8fafc 70%);
     }
     .login-wrap  { width:100%; max-width:440px; }
     .login-logo  { text-align:center; margin-bottom:32px; }
@@ -22,7 +22,7 @@
       background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);
       border-radius:16px; display:flex; align-items:center; justify-content:center;
       font-weight:900; font-size:1.1rem; color:#fff; font-family:var(--font-display);
-      margin:0 auto 12px; box-shadow:var(--shadow-brand); letter-spacing:-0.03em;
+      margin:0 auto 12px; letter-spacing:-0.03em;
     }
     .login-logo h1 { font-family:var(--font-display); font-size:1.6rem; font-weight:800; }
     .login-logo p  { color:var(--text-muted); font-size:0.9rem; margin-top:4px; }
@@ -31,11 +31,11 @@
     .store-selector { display:flex; flex-direction:column; gap:10px; margin-bottom:8px; }
     .store-option {
       display:flex; align-items:center; gap:14px; padding:14px 16px;
-      background:rgba(255,255,255,0.03); border:1.5px solid var(--border);
+      background:#ffffff; border:1px solid var(--border);
       border-radius:var(--radius); cursor:pointer; transition:var(--transition);
     }
-    .store-option:hover   { border-color:rgba(255,255,255,0.15); background:rgba(255,255,255,0.06); }
-    .store-option.selected{ border-color:var(--accent); background:rgba(255,255,255,0.05); }
+    .store-option:hover   { border-color:var(--brand-light); background:var(--primary-light); }
+    .store-option.selected{ border-color:var(--brand); background:var(--brand-glow); }
     .store-color-dot { width:36px; height:36px; border-radius:10px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; color:#fff; }
     .store-option-info h4 { font-size:0.95rem; font-weight:700; margin-bottom:2px; }
     .store-option-info p  { font-size:0.75rem; color:var(--text-muted); }
@@ -63,7 +63,7 @@
 
 <div class="login-wrap">
   <div class="login-logo">
-    <div class="logo-icon" style="width:64px;height:64px;background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);border-radius:18px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;margin:0 auto 14px;box-shadow:var(--shadow-brand);">
+    <div class="logo-icon" style="width:64px;height:64px;background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);border-radius:18px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;margin:0 auto 14px;">
       <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
     </div>
     <h1 style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;margin-bottom:4px;">EncartShop</h1>
@@ -88,7 +88,7 @@
 
     <!-- Step 2: Email + Senha -->
     <div id="step-password" class="hidden">
-      <div id="selected-store-preview" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,0.04);border-radius:var(--radius);margin-bottom:16px;"></div>
+      <div id="selected-store-preview" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--primary-light);border-radius:var(--radius);margin-bottom:16px;"></div>
       <div class="form-stack">
         <div class="form-group">
           <label class="form-label">E-mail</label>
