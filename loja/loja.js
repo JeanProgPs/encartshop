@@ -1,6 +1,6 @@
 /**
- * EncartShop — Loja Pública v6
- * Resiliente - Modo compatibilidade (sem dependência de coluna slug)
+ * EncartShop — Loja Pública v8
+ * Refinamento: Incremento de 100g para Kg e melhorias no Carrinho
  */
 
 // ── Detecta loja via URL ──────────────────────────────────────
@@ -16,47 +16,25 @@ let STORE_ID      = STORE_ID_PARAM;
 
 // ── Init ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('[EncartShop] Iniciando vitrine...');
-  const storeNameEl = document.getElementById('header-store-name');
-
   try {
-    if (!window.sb) throw new Error('Erro de conexão com o banco.');
+    if (!window.sb) throw new Error('Conexão com o banco falhou.');
 
-    // 1. Resolve a loja por ID
     if (STORE_ID) {
-      console.log('[EncartShop] Buscando loja por ID:', STORE_ID);
-      const found = await EncartAPI.StoreAPI.getById(STORE_ID);
-      if (found) store = found;
+      store = await EncartAPI.StoreAPI.getById(STORE_ID) || {};
     }
 
-    // 2. Fallback: se não houver ID na URL, pega a primeira loja disponível
     if (!STORE_ID || !store.id) {
-      console.log('[EncartShop] Sem loja definida, buscando fallback...');
       const all = await EncartAPI.StoreAPI.getAll();
-      if (all && all.length > 0) {
-        store = all[0];
-        STORE_ID = all[0].id;
-      }
+      if (all && all.length > 0) { store = all[0]; STORE_ID = all[0].id; }
     }
 
-    // 3. Validação final
-    if (!STORE_ID || !store || !store.name) {
-      throw new Error('Link de loja inválido.');
-    }
+    if (!STORE_ID) throw new Error('Loja não encontrada.');
 
-    // 4. Verificação de ativação
     if (store.status === 'pending') {
-      document.body.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px;font-family:Inter,sans-serif;background:#0a0a1a;color:#f0f0f5;">
-          <div style="font-size:3rem;margin-bottom:16px;">🚀</div>
-          <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:8px;">Loja em Ativação</h2>
-          <p style="color:#8888aa;max-width:320px;line-height:1.6;">Esta loja ainda não foi ativada. Se você é o dono, acesse o painel administrativo.</p>
-          <a href="/admin" style="margin-top:24px; color:var(--brand); font-weight:600; text-decoration:none;">Painel Admin →</a>
-        </div>`;
+      document.body.innerHTML = `<div style="text-align:center;padding:100px 20px;"><h2>Loja em Ativação 🚀</h2><a href="/admin">Ir para o Painel</a></div>`;
       return;
     }
 
-    // 5. Inicializa UI e Dados
     cart = _loadCart();
     if (store.color) {
       document.documentElement.style.setProperty('--accent', store.color);
@@ -66,46 +44,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadStoreUI();
     await loadProducts();
     updateCartUI();
-
-    console.info('[EncartShop] Vitrine carregada:', store.name);
-
   } catch (err) {
-    console.error('[EncartShop] Erro:', err);
-    if (storeNameEl) storeNameEl.textContent = 'Erro';
-    const area = document.getElementById('products-area');
-    if (area) area.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#e74c3c;">⚠️ ${err.message}</div>`;
+    document.body.innerHTML = `<div style="text-align:center;padding:100px 20px;">⚠️ ${err.message}</div>`;
   }
 });
 
-// ── UI ────────────────────────────────────────────────────────
 function loadStoreUI() {
   document.title = store.name + ' — EncartShop';
   const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   setEl('header-store-name', store.name);
   setEl('header-hours',      store.hours || '');
-  setEl('store-banner',      store.banner_text || 'Confira nossas ofertas!');
-
-  const logoEl = document.getElementById('store-logo-icon');
-  if (logoEl && store.color) {
-     logoEl.style.background = `linear-gradient(135deg, ${store.color} 0%, rgba(0,0,0,0.3) 100%)`;
-  }
+  setEl('store-banner',      store.banner_text || 'Ofertas da Semana!');
 
   const infoBar = document.getElementById('store-info-bar');
   if (infoBar) {
     const parts = [];
     if (store.address) parts.push(`📍 <strong>${store.address}</strong>`);
-    const fee = store.delivery_fee || 0;
-    parts.push(fee > 0 ? `🚚 Entrega: R$ ${Number(fee).toFixed(2).replace('.',',')}` : '🚚 Entrega Grátis');
+    
+    const fee = store.delivery_fee ?? 0;
+    if (fee === -1) {
+      parts.push('🚚 <strong>Entrega a combinar</strong>');
+    } else if (fee > 0) {
+      parts.push(`🚚 Entrega: <strong>R$ ${Number(fee).toFixed(2).replace('.',',')}</strong>`);
+    } else {
+      parts.push('🚚 <strong>Entrega Grátis</strong>');
+    }
     infoBar.innerHTML = parts.map(p => `<div class="info-item">${p}</div>`).join('');
   }
 }
 
 async function loadProducts() {
-  try {
-    const prods = await EncartAPI.ProductAPI.getActiveByStore(STORE_ID);
-    allProducts = prods;
-    renderProducts();
-  } catch (err) { console.error(err); }
+  const prods = await EncartAPI.ProductAPI.getActiveByStore(STORE_ID);
+  allProducts = prods;
+  renderProducts();
 }
 
 function renderProducts() {
@@ -118,21 +89,48 @@ function renderProducts() {
   area.innerHTML = `<div class="product-grid">${allProducts.map(p => UIRender.productStoreCard(p, _cartQty(p.id))).join('')}</div>`;
 }
 
+// ── Carrinho Refinado ──────────────────────────────────────────
 function addToCart(id) {
   const product = allProducts.find(p => p.id === id);
   if (!product) return;
+  
+  // Incremento: 100g para Kg, 1un para outros
+  const isKg = product.unit?.toLowerCase() === 'kg';
+  const step = isKg ? 0.1 : 1;
+  const price = product.promo_price || product.price;
+  
   const existing = cart.find(c => c.id === id);
-  if (existing) { existing.qty += 1; }
-  else { cart.push({ id: product.id, name: product.name, price: product.promo_price || product.price, qty: 1 }); }
-  _saveCart(); updateCartUI(); _refreshProductCard(id);
+  if (existing) {
+    existing.qty += step;
+  } else {
+    cart.push({ id: product.id, name: product.name, price, image: product.image, unit: product.unit, qty: step });
+  }
+
+  _saveCart();
+  updateCartUI();
+  _refreshProductCard(id);
 }
 
 function changeQty(id, delta) {
-  const idx = cart.findIndex(c => c.id === id);
-  if (idx === -1) return;
-  cart[idx].qty += delta;
-  if (cart[idx].qty <= 0) cart.splice(idx, 1);
-  _saveCart(); updateCartUI(); _refreshProductCard(id);
+  const item = cart.find(c => c.id === id);
+  if (!item) return;
+
+  const isKg = item.unit?.toLowerCase() === 'kg';
+  const step = isKg ? 0.1 : 1;
+  
+  item.qty += (delta * step);
+  // Arredonda para evitar imprecisões de float (ex: 0.300000000004)
+  if (isKg) item.qty = Math.round(item.qty * 10) / 10;
+
+  if (item.qty <= 0) {
+    const idx = cart.indexOf(item);
+    cart.splice(idx, 1);
+  }
+
+  _saveCart();
+  updateCartUI();
+  _refreshProductCard(id);
+  if (!document.getElementById('cart-modal').classList.contains('hidden')) renderCartBody();
 }
 
 function _refreshProductCard(id) {
@@ -151,9 +149,102 @@ function _cartQty(id) {
 }
 
 function updateCartUI() {
-  const total = cart.reduce((s, i) => s + i.qty, 0);
-  ['cart-count', 'header-cart-count'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = total; });
-  document.getElementById('cart-bubble')?.classList.toggle('hidden', total === 0);
+  const countEl = document.getElementById('cart-count');
+  const hCountEl = document.getElementById('header-cart-count');
+  const totalItems = cart.length; // Conta quantos produtos diferentes tem
+  
+  if (countEl) countEl.textContent = totalItems;
+  if (hCountEl) hCountEl.textContent = totalItems;
+  
+  document.getElementById('cart-bubble')?.classList.toggle('hidden', totalItems === 0);
+  const hBtn = document.getElementById('header-cart-btn');
+  if (hBtn) hBtn.style.display = totalItems > 0 ? '' : 'none';
+}
+
+function openCart() {
+  document.getElementById('cart-modal')?.classList.remove('hidden');
+  renderCartBody();
+}
+
+function closeCart() {
+  document.getElementById('cart-modal')?.classList.add('hidden');
+}
+
+function renderCartBody() {
+  const body = document.getElementById('cart-body');
+  const footer = document.getElementById('cart-subtotals');
+  if (!body) return;
+
+  if (!cart.length) {
+    body.innerHTML = '<p style="text-align:center;padding:40px;color:var(--text-muted);">Seu carrinho está vazio.</p>';
+    if (footer) footer.innerHTML = '';
+    return;
+  }
+
+  body.innerHTML = cart.map(item => {
+    const isKg = item.unit?.toLowerCase() === 'kg';
+    const qtyLabel = isKg ? `${item.qty.toFixed(1).replace('.',',')} kg` : `${item.qty}x`;
+    return `
+    <div class="cart-item">
+      <div class="cart-item-info">
+        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-price">${UIRender.fmtPrice(item.price * item.qty)}</div>
+      </div>
+      <div class="qty-control">
+        <button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button>
+        <span class="qty-num" style="min-width:65px;">${qtyLabel}</span>
+        <button class="qty-btn" onclick="changeQty('${item.id}',1)">+</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const feeBase = store.delivery_fee ?? 0;
+  const freeThreshold = store.delivery_free || 0;
+  
+  let fee = 0;
+  let feeText = 'Grátis';
+  
+  if (feeBase === -1) {
+    feeText = 'A combinar';
+  } else if (feeBase > 0) {
+    if (subtotal >= freeThreshold && freeThreshold > 0) {
+      feeText = 'Grátis';
+    } else {
+      feeText = UIRender.fmtPrice(feeBase);
+      fee = feeBase;
+    }
+  }
+
+  if (footer) {
+    footer.innerHTML = `
+      <div class="cart-row"><span>Subtotal</span><span>${UIRender.fmtPrice(subtotal)}</span></div>
+      <div class="cart-row"><span>Entrega</span><span style="color:var(--accent);">${feeText}</span></div>
+      <div class="cart-total-row" style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+        <span>Total</span><span>${UIRender.fmtPrice(subtotal + fee)}</span>
+      </div>
+    `;
+  }
+}
+
+async function checkout() {
+  const name = document.getElementById('customer-name')?.value.trim();
+  if (!name) { alert('Informe seu nome para o pedido.'); return; }
+
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const feeBase = store.delivery_fee ?? 0;
+  const feeText = feeBase === -1 ? 'A combinar' : (subtotal >= (store.delivery_free || 0) && (store.delivery_free || 0) > 0 ? 'Grátis' : UIRender.fmtPrice(feeBase));
+  
+  const itemsText = cart.map(i => {
+    const q = i.unit?.toLowerCase() === 'kg' ? i.qty.toFixed(1).replace('.',',') + 'kg' : i.qty + 'x';
+    return `• ${q} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`;
+  }).join('\n');
+
+  const total = subtotal + (feeBase > 0 && feeText !== 'Grátis' ? feeBase : 0);
+  const message = `🛒 *Novo Pedido - ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Entrega:* ${feeText}\n*Total:* ${UIRender.fmtPrice(total)}\n\n_Enviado via EncartShop_`;
+  
+  const wa = (store.whatsapp || '').replace(/\D/g, '');
+  window.open(`https://wa.me/${wa}?text=${encodeURIComponent(message)}`, '_blank');
 }
 
 function _saveCart() { localStorage.setItem(`encart_cart_${STORE_ID}`, JSON.stringify(cart)); }

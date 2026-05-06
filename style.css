@@ -224,6 +224,11 @@ input, textarea, select { font-family: var(--font); outline: none; }
 .form-input::placeholder { color: var(--text-muted); }
 
 select.form-input { cursor: pointer; }
+select.form-input option {
+  background: var(--bg-card);
+  color: var(--text);
+  padding: 8px;
+}
 
 /* ── Badges ─────────────────────────────────────────────────── */
 .badge {

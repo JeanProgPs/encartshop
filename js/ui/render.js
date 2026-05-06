@@ -76,7 +76,9 @@ const UIRender = (() => {
             }
           </div>
           <button class="btn-add-cart">
-            ${cartQty > 0 ? `<span>Adicionado (${cartQty})</span>` : `<span>Adicionar</span>`}
+            ${cartQty > 0 
+              ? `<span>Adicionado (${p.unit?.toLowerCase() === 'kg' ? cartQty.toFixed(1).replace('.',',') + 'kg' : cartQty})</span>` 
+              : `<span>Adicionar</span>`}
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
           </button>
         </div>
