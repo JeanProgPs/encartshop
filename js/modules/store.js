@@ -40,20 +40,10 @@ const StoreModule = (() => {
   function getStoreUrl(store) {
     if (!store) return '';
     
-    // Detecta se estamos no diretório admin para ajustar o path relativo
-    const isInAdmin = window.location.pathname.includes('/admin/');
-    const pathPrefix = isInAdmin ? '../loja/index.html' : 'loja/index.html';
+    // Usa caminhos absolutos e URLs amigáveis
+    if (store.slug) return `/loja/${store.slug}`;
     
-    const relativePath = store.slug 
-      ? `${pathPrefix}?slug=${store.slug}`
-      : `${pathPrefix}?s=${store.id}`;
-
-    // Converte para URL absoluta para garantir que funcione ao copiar/compartilhar
-    try {
-      return new URL(relativePath, window.location.href).href;
-    } catch (e) {
-      return relativePath;
-    }
+    return `/loja/index.html?s=${store.id}`;
   }
 
   async function save(storeData) {

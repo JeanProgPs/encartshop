@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div style="font-size:3rem;margin-bottom:16px;">🏪</div>
         <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:8px;">${title}</h2>
         <p style="color:#8888aa;max-width:320px;line-height:1.6;">${msg}</p>
-        ${store?.status === 'pending' ? '<a href="../admin/index.html" style="margin-top:24px; color:var(--brand); font-weight:600; text-decoration:none;">Ir para o Painel →</a>' : ''}
+        ${store?.status === 'pending' ? '<a href="/admin" style="margin-top:24px; color:var(--brand); font-weight:600; text-decoration:none;">Ir para o Painel →</a>' : ''}
       </div>`;
     return;
   }
@@ -104,10 +104,17 @@ function loadStoreUI() {
 
 // ── Produtos ──────────────────────────────────────────────────
 async function loadProducts() {
-  const prods  = await EncartAPI.ProductAPI.getActiveByStore(STORE_ID);
-  allProducts  = prods;
-  buildCategoryTabs();
-  renderProducts();
+  console.log('[EncartShop] Carregando produtos para STORE_ID:', STORE_ID);
+  try {
+    const prods = await EncartAPI.ProductAPI.getActiveByStore(STORE_ID);
+    console.log('[EncartShop] Produtos carregados:', prods.length);
+    allProducts = prods;
+    buildCategoryTabs();
+    renderProducts();
+  } catch (err) {
+    console.error('[EncartShop] Erro ao carregar produtos:', err);
+    document.getElementById('products-area').innerHTML = '<p style="text-align:center;padding:40px;color:var(--danger);">Erro ao carregar produtos. Verifique o console.</p>';
+  }
 }
 
 function buildCategoryTabs() {
