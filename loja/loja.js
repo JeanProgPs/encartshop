@@ -314,7 +314,6 @@ async function checkout() {
   const originalContent = btn.innerHTML;
   
   try {
-    // 1. Cálculos síncronos (extremamente rápidos, no mesmo tick do clique)
     const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
     const feeBase = store.delivery_fee ?? 0;
     const feeText = feeBase === -1 ? 'A combinar' : (subtotal >= (store.delivery_free || 0) && (store.delivery_free || 0) > 0 ? 'Grátis' : UIRender.fmtPrice(feeBase));
@@ -326,36 +325,34 @@ async function checkout() {
 
     const total = subtotal + (feeBase > 0 && feeText !== 'Grátis' ? feeBase : 0);
     const message = `🛒 *Novo Pedido - ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Entrega:* ${feeText}\n*Total:* ${UIRender.fmtPrice(total)}\n\n_Enviado via EncartShop_`;
-    
-    // URL oficial e robusta
     const waUrl = `https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(message)}`;
 
-    // 2. Abertura da janela IMEDIATAMENTE. Sem await antes disso.
-    // Isso garante que o navegador veja como ação direta do usuário.
+    // 1. Tenta abrir o WhatsApp imediatamente
     const win = window.open(waUrl, '_blank');
-    
-    // Se por algum motivo bizarro o win.open falhar (ex: bloqueador agressivo), usamos fallback na mesma aba
-    if (!win) {
-      window.location.href = waUrl;
-      return; // Interrompe para não desativar o botão antes do redirecionamento
-    }
 
-    // 3. Processamento assíncrono em background (não bloqueia a experiência do usuário)
+    // 2. Prepara os dados para o banco
+    const orderData = {
+      customer_name: name,
+      address: document.getElementById('customer-address')?.value.trim() || '',
+      items: cart,
+      total: total,
+      delivery_fee: feeBase > 0 && feeText !== 'Grátis' ? feeBase : 0,
+      status: 'novo'
+    };
+
+    // 3. Gerencia o salvamento e o redirecionamento (caso win seja null)
     btn.disabled = true;
     btn.innerHTML = '<span>🚀 Salvando pedido...</span>';
 
     try {
-      const orderData = {
-        customer_name: name,
-        address: document.getElementById('customer-address')?.value.trim() || '',
-        items: cart,
-        total: total,
-        delivery_fee: feeBase > 0 && feeText !== 'Grátis' ? feeBase : 0,
-        status: 'novo'
-      };
       await OrderModule.create(STORE_ID, orderData);
     } catch (dbErr) {
       console.error("Erro ao salvar pedido no banco:", dbErr);
+    }
+
+    if (!win) {
+      // Se o pop-up foi bloqueado, redirecionamos a própria aba AGORA que já salvamos no banco
+      window.location.href = waUrl;
     }
 
   } catch (err) {

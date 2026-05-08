@@ -84,7 +84,7 @@ const OrderAPI = {
   },
   async create(storeId, orderData) {
     const payload = { ...orderData, store_id: storeId };
-    const { data, error } = await window.sb.from('orders').insert([payload]).select().single();
+    const { data, error } = await window.sb.from('orders').insert([payload]).select();
     if (error) { console.error('OrderAPI.create erro:', error); throw error; }
     return data;
   },
