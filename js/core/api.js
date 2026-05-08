@@ -84,9 +84,9 @@ const OrderAPI = {
   },
   async create(storeId, orderData) {
     const payload = { ...orderData, store_id: storeId };
-    const { data, error } = await window.sb.from('orders').insert([payload]).select();
+    const { error } = await window.sb.from('orders').insert([payload]);
     if (error) { console.error('OrderAPI.create erro:', error); throw error; }
-    return data;
+    return true;
   },
   async updateStatus(id, newStatus) {
     const { data, error } = await window.sb.from('orders').update({ status: newStatus }).eq('id', id).select().single();

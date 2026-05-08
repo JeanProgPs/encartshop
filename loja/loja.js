@@ -337,27 +337,33 @@ async function checkout() {
       items: cart,
       total: total,
       delivery_fee: feeBase > 0 && feeText !== 'Grátis' ? feeBase : 0,
-      status: 'novo'
+      status: 'novo',
+      created_at: new Date().toISOString()
     };
 
-    // 3. Gerencia o salvamento e o redirecionamento (caso win seja null)
+    // 3. Gerencia o salvamento e o redirecionamento
     btn.disabled = true;
-    btn.innerHTML = '<span>🚀 Salvando pedido...</span>';
+    btn.innerHTML = '<span>🚀 Gravando pedido...</span>';
 
     try {
-      await OrderModule.create(STORE_ID, orderData);
+      // Usamos store.id que é o ID real da loja no banco
+      if (!store.id) throw new Error('ID da loja não encontrado. Tente recarregar a página.');
+      
+      await OrderModule.create(store.id, orderData);
+      console.log("Pedido salvo no banco com sucesso.");
     } catch (dbErr) {
       console.error("Erro ao salvar pedido no banco:", dbErr);
+      const msg = dbErr.message || (typeof dbErr === 'string' ? dbErr : JSON.stringify(dbErr));
+      alert('⚠️ O pedido foi enviado ao WhatsApp, mas NÃO pôde ser salvo no painel.\n\nMotivo: ' + msg);
     }
 
     if (!win) {
-      // Se o pop-up foi bloqueado, redirecionamos a própria aba AGORA que já salvamos no banco
       window.location.href = waUrl;
     }
 
   } catch (err) {
     console.error("Erro no checkout:", err);
-    alert('Ocorreu um erro ao processar seu pedido. Tente novamente.');
+    alert('Erro crítico no checkout: ' + err.message);
   } finally {
     btn.disabled = false;
     btn.innerHTML = originalContent;
