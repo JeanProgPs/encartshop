@@ -141,19 +141,19 @@
     const products = await EncartAPI.ProductAPI.getByStore(storeId);
     const orders   = await EncartAPI.OrderAPI.getByStore(storeId);
 
-    const activeProds = products.filter(p => p.active).length;
-    const promoProds  = products.filter(p => !!p.promo_price && p.active).length;
-    const newOrders   = orders.filter(o => o.status === 'novo').length;
-    const totalOrders = orders.length;
+    const activeProds  = products.filter(p => p.active).length;
+    const promoProds   = products.filter(p => !!p.promo_price && p.active).length;
+    const newOrders    = orders.filter(o => o.status === 'novo').length;
+    const validOrders  = orders.filter(o => o.status !== 'cancelado');
+    const totalOrders  = orders.length;
+    const totalRevenue = validOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+
+    const fmt = v => UIRender.fmtPrice(v);
 
     document.getElementById('stats-grid').innerHTML = `
-      <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(34,197,94,0.12);">📦</div>
-        <div><div class="stat-value">${activeProds}</div><div class="stat-label">Produtos Ativos</div></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(245,166,35,0.12);">🏷️</div>
-        <div><div class="stat-value">${promoProds}</div><div class="stat-label">Em Promoção</div></div>
+      <div class="stat-card" style="border-bottom: 2px solid var(--success);">
+        <div class="stat-icon" style="background:rgba(34,197,94,0.12);">💰</div>
+        <div><div class="stat-value" style="font-size:1.5rem;color:var(--success);">${fmt(totalRevenue)}</div><div class="stat-label">Faturamento Total</div></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background:rgba(52,152,219,0.12);">🛒</div>
@@ -162,6 +162,14 @@
       <div class="stat-card">
         <div class="stat-icon" style="background:rgba(39,174,96,0.12);">📋</div>
         <div><div class="stat-value">${totalOrders}</div><div class="stat-label">Total de Pedidos</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(34,197,94,0.12);">📦</div>
+        <div><div class="stat-value">${activeProds}</div><div class="stat-label">Produtos Ativos</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(245,166,35,0.12);">🏷️</div>
+        <div><div class="stat-value">${promoProds}</div><div class="stat-label">Em Promoção</div></div>
       </div>`;
 
     const recentList = document.getElementById('recent-orders-list');

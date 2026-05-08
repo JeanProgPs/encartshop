@@ -83,9 +83,23 @@ const OrderModule = (() => {
   }
 
   function countByStatus(orders) {
-    const counts = { all: orders.length, novo: 0, confirmado: 0, em_entrega: 0, finalizado: 0, cancelado: 0 };
+    const counts = { 
+      all: orders.length, 
+      novo: 0, 
+      em_preparo: 0, 
+      confirmado: 0, 
+      em_entrega: 0, 
+      entregue: 0, 
+      finalizado: 0, 
+      cancelado: 0 
+    };
     orders.forEach(o => {
-      if (counts[o.status] !== undefined) counts[o.status]++;
+      if (counts[o.status] !== undefined) {
+        counts[o.status]++;
+      } else {
+        // Se o status não for conhecido, pelo menos não quebramos a soma
+        // mas idealmente todos os status devem estar aqui.
+      }
     });
     return counts;
   }
