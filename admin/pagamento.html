@@ -52,12 +52,13 @@
   </div>
 
   <div class="qr-container">
-    <img src="../assets/pix_qr.png" alt="QR Code PIX">
+    <img id="pix-qr-img" src="../assets/pix_qr.png" alt="QR Code PIX">
   </div>
 
   <div class="pix-info">
-    <div style="font-size:0.85rem; font-weight:600;">Chave PIX (E-mail):</div>
-    <div class="pix-key">pagamentos@encartshop.com.br</div>
+    <div style="font-size:0.85rem; font-weight:600;">Código PIX Copia e Cola:</div>
+    <div class="pix-key" id="pix-copy-paste">Aguardando geração...</div>
+    <button id="pix-copy-btn" class="btn btn-outline btn-sm w-full hidden" style="margin-top:12px;" onclick="copyPix()">📋 Copiar Código PIX</button>
   </div>
 
   <div class="form-stack">
@@ -78,27 +79,75 @@
 <script src="/js/auth/authService.js"></script>
 <script src="/js/ui/components.js"></script>
 <script>
+  async function loadPaymentInfo() {
+    const storeId = AuthService.getActiveStoreId();
+    if (!storeId) { window.location.replace('index'); return; }
+
+    const store = await EncartAPI.StoreAPI.getById(storeId);
+    if (!store) return;
+
+    // Se já estiver ativa, redireciona
+    if (store.status === 'active') {
+      window.location.replace('dashboard.html');
+      return;
+    }
+
+    // Se não tiver dados do Asaas ainda, tenta gerar
+    if (!store.asaas_pix_qr_code) {
+      try {
+        await EncartAPI.AsaasAPI.createPayment(storeId);
+        // Recarrega a página para pegar os novos dados salvos no banco pelo webhook/function
+        setTimeout(() => location.reload(), 2000);
+        return;
+      } catch (e) {
+        console.error('Erro ao gerar pagamento:', e);
+      }
+    }
+
+    // Atualiza UI com dados do Asaas
+    if (store.asaas_pix_qr_code) {
+      document.getElementById('pix-qr-img').src = `data:image/png;base64,${store.asaas_pix_qr_code}`;
+      document.getElementById('pix-copy-paste').textContent = store.asaas_pix_code || 'Chave não disponível';
+      document.getElementById('pix-copy-btn').classList.remove('hidden');
+    }
+  }
+
   async function checkPayment() {
     const btn = document.querySelector('.btn-primary');
     const oldText = btn.textContent;
     btn.textContent = 'Verificando...';
     btn.disabled = true;
 
-    // Simulação de verificação
-    setTimeout(async () => {
-      const storeId = AuthService.getActiveStoreId();
-      const store = await EncartAPI.StoreAPI.getById(storeId);
-      
-      if (store && store.status === 'active') {
-        UIComponents.showToast('Pagamento confirmado! Redirecionando...', 'success');
-        setTimeout(() => window.location.replace('dashboard.html'), 1500);
-      } else {
-        UIComponents.showToast('Pagamento ainda não detectado. Tente novamente em instantes.', 'info');
-        btn.textContent = oldText;
-        btn.disabled = false;
-      }
-    }, 2000);
+    const storeId = AuthService.getActiveStoreId();
+    const store = await EncartAPI.StoreAPI.getById(storeId);
+    
+    if (store && store.status === 'active') {
+      UIComponents.showToast('Pagamento confirmado! Redirecionando...', 'success');
+      setTimeout(() => window.location.replace('dashboard.html'), 1500);
+    } else {
+      UIComponents.showToast('Pagamento ainda não detectado. Se você já pagou, aguarde alguns instantes.', 'info');
+      btn.textContent = oldText;
+      btn.disabled = false;
+    }
   }
+
+  function copyPix() {
+    const code = document.getElementById('pix-copy-paste').textContent;
+    navigator.clipboard.writeText(code);
+    UIComponents.showToast('Código PIX copiado!', 'success');
+  }
+
+  // Inicialização e Polling (verifica a cada 10 segundos)
+  loadPaymentInfo();
+  setInterval(async () => {
+    const storeId = AuthService.getActiveStoreId();
+    if (!storeId) return;
+    const store = await EncartAPI.StoreAPI.getById(storeId);
+    if (store && store.status === 'active') {
+      UIComponents.showToast('Pagamento confirmado!', 'success');
+      setTimeout(() => window.location.replace('dashboard.html'), 1000);
+    }
+  }, 10000);
 </script>
 </body>
 </html>

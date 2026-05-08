@@ -101,7 +101,55 @@ const UIRender = (() => {
     `;
   }
 
-  return { emptyState, fmtPrice, fmtDateShort, productAdminCard, productStoreCard };
+  function orderAdminCard(o) {
+    const statusLabel = OrderModule.getStatusLabel(o.status);
+    const statusClass = OrderModule.getStatusClass(o.status);
+    const dateStr = fmtDateShort(o.created_at);
+    const totalStr = fmtPrice(o.total);
+    const itemsCount = Array.isArray(o.items) ? o.items.length : 0;
+    
+    // Determine next actions based on status flow
+    const nextActions = OrderModule.STATUS_FLOW[o.status] || [];
+    const actionButtons = nextActions.map(next => {
+      const label = OrderModule.getStatusLabel(next);
+      return `<button class="btn btn-outline btn-sm order-action-btn" 
+                data-order-id="${o.id}" 
+                data-current-status="${o.status}" 
+                data-new-status="${next}" 
+                onclick="handleOrderStatus(this)">${label}</button>`;
+    }).join('');
+
+    return `
+      <div class="order-card" id="order-${o.id}">
+        <div class="order-header">
+          <div>
+            <div class="order-id">#${String(o.id).slice(-5).toUpperCase()}</div>
+            <div class="order-customer">${o.customer_name || 'Cliente'}</div>
+            <div class="order-meta">${dateStr} · ${itemsCount} item(s)</div>
+          </div>
+          <span class="badge ${statusClass}">${statusLabel}</span>
+        </div>
+        <div class="order-items">
+          ${(o.items || []).map(item => `
+            <div class="order-item">
+              <span class="item-name">${item.name}</span>
+              <span class="item-qty">${item.qty || item.quantity}x</span>
+            </div>
+          `).join('')}
+        </div>
+        <div class="order-total">
+          <span class="order-total-label">Total</span>
+          <span class="order-total-value">${totalStr}</span>
+        </div>
+        <div class="order-actions">
+          ${actionButtons}
+          <button class="btn btn-ghost btn-icon" style="color:var(--danger);margin-left:auto;" onclick="handleDeleteOrder('${o.id}')" title="Excluir">🗑️</button>
+        </div>
+      </div>
+    `;
+  }
+
+  return { emptyState, fmtPrice, fmtDateShort, productAdminCard, productStoreCard, orderAdminCard };
 })();
 
 window.UIRender = UIRender;

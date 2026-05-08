@@ -106,8 +106,37 @@ const OrderAPI = {
   }
 };
 
+const AsaasAPI = {
+  /**
+   * Solicita a criação de uma cobrança para a loja através da Edge Function.
+   * @param {string} storeId 
+   */
+  async createPayment(storeId) {
+    if (!storeId) throw new Error('Store ID é obrigatório');
+    const { data, error } = await window.sb.functions.invoke('asaas-payment', {
+      body: { action: 'createPayment', storeId }
+    });
+    if (error) { console.error('AsaasAPI.createPayment erro:', error); throw error; }
+    return data;
+  },
+
+  /**
+   * Consulta o status atual de uma cobrança.
+   * @param {string} paymentId 
+   */
+  async getPaymentStatus(paymentId) {
+    if (!paymentId) return null;
+    const { data, error } = await window.sb.functions.invoke('asaas-payment', {
+      body: { action: 'getPaymentStatus', paymentId }
+    });
+    if (error) { console.error('AsaasAPI.getPaymentStatus erro:', error); return null; }
+    return data;
+  }
+};
+
 window.EncartAPI = {
   StoreAPI,
   ProductAPI,
-  OrderAPI
+  OrderAPI,
+  AsaasAPI
 };

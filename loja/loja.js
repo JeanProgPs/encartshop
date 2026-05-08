@@ -304,20 +304,50 @@ async function checkout() {
   const name = document.getElementById('customer-name')?.value.trim();
   if (!name) { alert('Informe seu nome para o pedido.'); return; }
 
-  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const feeBase = store.delivery_fee ?? 0;
-  const feeText = feeBase === -1 ? 'A combinar' : (subtotal >= (store.delivery_free || 0) && (store.delivery_free || 0) > 0 ? 'Grátis' : UIRender.fmtPrice(feeBase));
-  
-  const itemsText = cart.map(i => {
-    const q = i.unit?.toLowerCase() === 'kg' ? i.qty.toFixed(1).replace('.',',') + 'kg' : i.qty + 'x';
-    return `• ${q} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`;
-  }).join('\n');
+  const btn = document.getElementById('whatsapp-btn');
+  const originalContent = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span>🚀 Enviando pedido...</span>';
 
-  const total = subtotal + (feeBase > 0 && feeText !== 'Grátis' ? feeBase : 0);
-  const message = `🛒 *Novo Pedido - ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Entrega:* ${feeText}\n*Total:* ${UIRender.fmtPrice(total)}\n\n_Enviado via EncartShop_`;
-  
-  const wa = (store.whatsapp || '').replace(/\D/g, '');
-  window.open(`https://wa.me/${wa}?text=${encodeURIComponent(message)}`, '_blank');
+  try {
+    const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    const feeBase = store.delivery_fee ?? 0;
+    const feeText = feeBase === -1 ? 'A combinar' : (subtotal >= (store.delivery_free || 0) && (store.delivery_free || 0) > 0 ? 'Grátis' : UIRender.fmtPrice(feeBase));
+    
+    const itemsText = cart.map(i => {
+      const q = i.unit?.toLowerCase() === 'kg' ? i.qty.toFixed(1).replace('.',',') + 'kg' : i.qty + 'x';
+      return `• ${q} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`;
+    }).join('\n');
+
+    const total = subtotal + (feeBase > 0 && feeText !== 'Grátis' ? feeBase : 0);
+    
+    // Salva o pedido no banco de dados
+    try {
+      const orderData = {
+        customer_name: name,
+        address: document.getElementById('customer-address')?.value.trim() || '',
+        items: cart,
+        total: total,
+        delivery_fee: feeBase > 0 && feeText !== 'Grátis' ? feeBase : 0,
+        status: 'novo'
+      };
+      await OrderModule.create(STORE_ID, orderData);
+    } catch (dbErr) {
+      console.error("Erro ao salvar pedido no banco:", dbErr);
+      // Não bloqueia o WhatsApp se o banco falhar, mas loga o erro.
+    }
+
+    const message = `🛒 *Novo Pedido - ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Entrega:* ${feeText}\n*Total:* ${UIRender.fmtPrice(total)}\n\n_Enviado via EncartShop_`;
+    
+    const wa = (store.whatsapp || '').replace(/\D/g, '');
+    window.open(`https://wa.me/${wa}?text=${encodeURIComponent(message)}`, '_blank');
+  } catch (err) {
+    console.error("Erro no checkout:", err);
+    alert('Ocorreu um erro ao processar seu pedido. Tente novamente.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalContent;
+  }
 }
 
 function _saveCart() { localStorage.setItem(`encart_cart_${STORE_ID}`, JSON.stringify(cart)); }
