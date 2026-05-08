@@ -304,12 +304,17 @@ async function checkout() {
   const name = document.getElementById('customer-name')?.value.trim();
   if (!name) { alert('Informe seu nome para o pedido.'); return; }
 
+  const wa = (store.whatsapp || '').replace(/\D/g, '');
+  if (!wa) {
+    alert('Esta loja ainda não configurou um número de WhatsApp para receber pedidos.');
+    return;
+  }
+
   const btn = document.getElementById('whatsapp-btn');
   const originalContent = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<span>🚀 Enviando pedido...</span>';
-
+  
   try {
+    // 1. Cálculos síncronos (extremamente rápidos, no mesmo tick do clique)
     const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
     const feeBase = store.delivery_fee ?? 0;
     const feeText = feeBase === -1 ? 'A combinar' : (subtotal >= (store.delivery_free || 0) && (store.delivery_free || 0) > 0 ? 'Grátis' : UIRender.fmtPrice(feeBase));
@@ -320,8 +325,25 @@ async function checkout() {
     }).join('\n');
 
     const total = subtotal + (feeBase > 0 && feeText !== 'Grátis' ? feeBase : 0);
+    const message = `🛒 *Novo Pedido - ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Entrega:* ${feeText}\n*Total:* ${UIRender.fmtPrice(total)}\n\n_Enviado via EncartShop_`;
     
-    // Salva o pedido no banco de dados
+    // URL oficial e robusta
+    const waUrl = `https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(message)}`;
+
+    // 2. Abertura da janela IMEDIATAMENTE. Sem await antes disso.
+    // Isso garante que o navegador veja como ação direta do usuário.
+    const win = window.open(waUrl, '_blank');
+    
+    // Se por algum motivo bizarro o win.open falhar (ex: bloqueador agressivo), usamos fallback na mesma aba
+    if (!win) {
+      window.location.href = waUrl;
+      return; // Interrompe para não desativar o botão antes do redirecionamento
+    }
+
+    // 3. Processamento assíncrono em background (não bloqueia a experiência do usuário)
+    btn.disabled = true;
+    btn.innerHTML = '<span>🚀 Salvando pedido...</span>';
+
     try {
       const orderData = {
         customer_name: name,
@@ -334,13 +356,8 @@ async function checkout() {
       await OrderModule.create(STORE_ID, orderData);
     } catch (dbErr) {
       console.error("Erro ao salvar pedido no banco:", dbErr);
-      // Não bloqueia o WhatsApp se o banco falhar, mas loga o erro.
     }
 
-    const message = `🛒 *Novo Pedido - ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Entrega:* ${feeText}\n*Total:* ${UIRender.fmtPrice(total)}\n\n_Enviado via EncartShop_`;
-    
-    const wa = (store.whatsapp || '').replace(/\D/g, '');
-    window.open(`https://wa.me/${wa}?text=${encodeURIComponent(message)}`, '_blank');
   } catch (err) {
     console.error("Erro no checkout:", err);
     alert('Ocorreu um erro ao processar seu pedido. Tente novamente.');
