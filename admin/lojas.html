@@ -100,8 +100,20 @@
 <script>
   SevenStorage.requireAuth();
 
-  function getStoreUrl(id) {
-    return `${window.location.origin}/loja/index.html?s=${id}`;
+  function slugify(text) {
+    if (!text) return '';
+    return text.toString().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+  }
+
+  function getStoreUrl(storeName) {
+    const slug = slugify(storeName || 'loja');
+    return `${window.location.origin}/loja/index.html?s=${slug}`;
   }
 
   function enterStore(id) {
@@ -147,7 +159,8 @@
       const orders = ordersList.length;
       const newOrds = ordersList.filter(o => o.status === 'novo').length;
       const isActive = s.id === activeId;
-      const lojaUrl = `../loja/index.html?s=${s.id}`;
+      const slug = slugify(s.name || 'loja');
+      const lojaUrl = `../loja/index.html?s=${slug}`;
       
       html += `
         <div class="store-card">
@@ -190,5 +203,3 @@
 </script>
 </body>
 </html>
-
-
