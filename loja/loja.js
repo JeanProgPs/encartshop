@@ -347,10 +347,7 @@ async function checkout() {
     const message = `🛒 *Novo Pedido - ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Entrega:* ${feeText}\n*Total:* ${UIRender.fmtPrice(total)}\n\n_Enviado via EncartShop_`;
     const waUrl = `https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(message)}`;
 
-    // 1. Tenta abrir o WhatsApp imediatamente
-    const win = window.open(waUrl, '_blank');
-
-    // 2. Prepara os dados para o banco
+    // 1. Prepara os dados para o banco
     const orderData = {
       customer_name: name,
       address: document.getElementById('customer-address')?.value.trim() || '',
@@ -361,7 +358,7 @@ async function checkout() {
       created_at: new Date().toISOString()
     };
 
-    // 3. Gerencia o salvamento e o redirecionamento
+    // 2. Gerencia o salvamento e o redirecionamento
     btn.disabled = true;
     btn.innerHTML = '<span>🚀 Gravando pedido...</span>';
 
@@ -371,20 +368,27 @@ async function checkout() {
       
       await OrderModule.create(store.id, orderData);
       console.log("Pedido salvo no banco com sucesso.");
+      
+      // Limpa o carrinho
+      cart = [];
+      _saveCart();
+      updateCartUI();
+      closeCart();
+
+      // Redireciona para o WhatsApp
+      window.location.href = waUrl;
     } catch (dbErr) {
       console.error("Erro ao salvar pedido no banco:", dbErr);
       const msg = dbErr.message || (typeof dbErr === 'string' ? dbErr : JSON.stringify(dbErr));
       alert('⚠️ O pedido foi enviado ao WhatsApp, mas NÃO pôde ser salvo no painel.\n\nMotivo: ' + msg);
-    }
-
-    if (!win) {
+      
+      // Mesmo com erro no banco, tenta enviar para o WhatsApp
       window.location.href = waUrl;
     }
 
   } catch (err) {
     console.error("Erro no checkout:", err);
     alert('Erro crítico no checkout: ' + err.message);
-  } finally {
     btn.disabled = false;
     btn.innerHTML = originalContent;
   }
