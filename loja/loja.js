@@ -105,21 +105,27 @@ function renderCategoryTabs() {
   if (!tabsWrap) return;
 
   const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+  const hasPromo = allProducts.some(p => p.promo_price);
   
-  if (categories.length === 0) {
+  if (categories.length === 0 && !hasPromo) {
     tabsWrap.parentElement.classList.add('hidden');
     return;
   }
 
   tabsWrap.parentElement.classList.remove('hidden');
-  const html = [
-    `<button class="cat-tab ${activeCategory === 'Todos' ? 'active' : ''}" onclick="setCategory('Todos')">Todos</button>`,
-    ...categories.map(cat => `
-      <button class="cat-tab ${activeCategory === cat ? 'active' : ''}" onclick="setCategory('${cat}')">${cat}</button>
-    `)
-  ].join('');
   
-  tabsWrap.innerHTML = html;
+  const html = [];
+  html.push(`<button class="cat-tab ${activeCategory === 'Todos' ? 'active' : ''}" onclick="setCategory('Todos')">Todos</button>`);
+  
+  if (hasPromo) {
+    html.push(`<button class="cat-tab ${activeCategory === 'Ofertas' ? 'active' : ''}" onclick="setCategory('Ofertas')" style="color:var(--danger); border-color:var(--danger); font-weight:700;"><span style="margin-right:4px;">🔥</span> Ofertas</button>`);
+  }
+  
+  categories.forEach(cat => {
+    html.push(`<button class="cat-tab ${activeCategory === cat ? 'active' : ''}" onclick="setCategory('${cat}')">${cat}</button>`);
+  });
+  
+  tabsWrap.innerHTML = html.join('');
 }
 
 function setCategory(cat) {
@@ -127,14 +133,15 @@ function setCategory(cat) {
   renderCategoryTabs();
   renderProducts();
   
-  // Se for "Todos", sobe pro topo, senão tenta scrollar pra seção
-  if (cat === 'Todos') {
+  if (cat === 'Todos' || cat === 'Ofertas') {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } else {
     const el = document.getElementById(`cat-sec-${cat}`);
     if (el) {
       const top = el.offsetTop - 120; // Compensar header + tabs
       window.scrollTo({ top, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 }
@@ -149,9 +156,19 @@ function renderProducts() {
   }
 
   // Filtragem
-  const filtered = activeCategory === 'Todos' 
-    ? allProducts 
-    : allProducts.filter(p => p.category === activeCategory);
+  let filtered = [];
+  if (activeCategory === 'Todos') {
+    filtered = allProducts;
+  } else if (activeCategory === 'Ofertas') {
+    filtered = allProducts.filter(p => !!p.promo_price);
+  } else {
+    filtered = allProducts.filter(p => p.category === activeCategory);
+  }
+
+  if (filtered.length === 0) {
+    area.innerHTML = UIRender.emptyState('😔', 'Nenhum produto', 'Não há produtos para exibir aqui.');
+    return;
+  }
 
   // Agrupamento (sempre agrupa se for "Todos")
   if (activeCategory === 'Todos') {
@@ -170,6 +187,15 @@ function renderProducts() {
         </div>
       </div>
     `).join('');
+  } else if (activeCategory === 'Ofertas') {
+    area.innerHTML = `
+      <div class="category-section">
+        <div class="section-heading" style="color:var(--danger);">🔥 Ofertas Especiais</div>
+        <div class="product-grid">
+          ${filtered.map(p => UIRender.productStoreCard(p, _cartQty(p.id))).join('')}
+        </div>
+      </div>
+    `;
   } else {
     area.innerHTML = `
       <div class="category-section">

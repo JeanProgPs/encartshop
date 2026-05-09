@@ -67,7 +67,7 @@ const UIRender = (() => {
       <div class="product-card" id="prod-${p.id}">
         <div class="product-image-wrap">
           <img src="${img}" alt="${p.name}" loading="lazy" onerror="this.src='${defaultImg}'">
-          ${isPromo ? `<div class="promo-badge">PROMO</div>` : ''}
+          ${isPromo ? `<div class="promo-badge">🔥 OFERTA</div>` : ''}
         </div>
         <div class="product-info">
           <div class="product-name" title="${p.name}">${p.name}</div>
