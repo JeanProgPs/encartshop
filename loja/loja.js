@@ -20,7 +20,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!window.sb) throw new Error('Conexão com o banco falhou.');
 
     if (STORE_ID) {
-      store = await EncartAPI.StoreAPI.getById(STORE_ID) || {};
+      // Verifica se é um UUID
+      const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(STORE_ID);
+      
+      if (isUUID) {
+        store = await EncartAPI.StoreAPI.getById(STORE_ID) || {};
+      } else {
+        // Se for um slug (nome da loja), busca todas e tenta encontrar match
+        const allStores = await EncartAPI.StoreAPI.getAll();
+        const slugify = text => (text || '').toString().toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, '-')
+          .replace(/[^\w\-]+/g, '')
+          .replace(/\-\-+/g, '-')
+          .replace(/^-+/, '')
+          .replace(/-+$/, '');
+          
+        store = allStores.find(s => slugify(s.name) === slugify(STORE_ID)) || {};
+        if (store && store.id) {
+          STORE_ID = store.id; // Atualiza global para os próximos requests
+        }
+      }
     }
 
     if (!STORE_ID || !store.id) {

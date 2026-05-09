@@ -30,11 +30,23 @@ const StoreModule = (() => {
     document.documentElement.style.setProperty('--primary-color', hexColor);
   }
 
+  function slugify(text) {
+    if (!text) return '';
+    return text.toString().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+  }
+
   function getStoreUrl(store) {
     if (!store) return '';
     
-    // Usa apenas ID pois slug não existe no banco
-    return `/loja/index.html?s=${store.id}`;
+    // Usa nome da loja convertido para slug
+    const slug = slugify(store.name || 'loja');
+    return `${window.location.origin}/loja/index.html?s=${slug}`;
   }
 
   async function save(storeData) {
