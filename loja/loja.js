@@ -161,6 +161,12 @@ function renderProducts() {
     filtered = allProducts;
   } else if (activeCategory === 'Ofertas') {
     filtered = allProducts.filter(p => !!p.promo_price);
+    // Ordena do maior desconto percentual para o menor
+    filtered.sort((a, b) => {
+      const descA = (a.price - a.promo_price) / a.price;
+      const descB = (b.price - b.promo_price) / b.price;
+      return descB - descA;
+    });
   } else {
     filtered = allProducts.filter(p => p.category === activeCategory);
   }
