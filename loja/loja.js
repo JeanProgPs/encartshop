@@ -353,7 +353,6 @@ async function checkout() {
       address: document.getElementById('customer-address')?.value.trim() || '',
       items: cart,
       total: total,
-      delivery_fee: feeBase > 0 && feeText !== 'Grátis' ? feeBase : 0,
       status: 'novo',
       created_at: new Date().toISOString()
     };
