@@ -24,7 +24,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { action, storeId, paymentId } = await req.json()
+    const { action, storeId, paymentId, cpfCnpj } = await req.json()
 
     if (action === 'createPayment') {
       // 1. Busca dados da loja e do dono
@@ -44,6 +44,7 @@ serve(async (req) => {
           body: JSON.stringify({
             name: store.name,
             email: store.owner_email,
+            cpfCnpj: cpfCnpj,
             externalReference: store.id
           })
         })

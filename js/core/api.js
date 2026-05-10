@@ -110,11 +110,12 @@ const AsaasAPI = {
   /**
    * Solicita a criação de uma cobrança para a loja através da Edge Function.
    * @param {string} storeId 
+   * @param {string} cpfCnpj
    */
-  async createPayment(storeId) {
+  async createPayment(storeId, cpfCnpj) {
     if (!storeId) throw new Error('Store ID é obrigatório');
     const { data, error } = await window.sb.functions.invoke('asaas-payment', {
-      body: { action: 'createPayment', storeId }
+      body: { action: 'createPayment', storeId, cpfCnpj }
     });
     if (error) { console.error('AsaasAPI.createPayment erro:', error); throw error; }
     return data;
