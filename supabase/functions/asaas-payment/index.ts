@@ -8,7 +8,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY") || ""
-const ASAAS_URL = "https://sandbox.asaas.com/v3" // Use https://api.asaas.com/v3 para produção
+const ASAAS_URL = "https://api.asaas.com/v3" // Alterado para produção para simulação real
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
