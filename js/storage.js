@@ -29,7 +29,11 @@ const SevenStorage = (() => {
   function clearActiveStore()  { AuthService.clearActiveStoreId(); }
 
   // ── Lojas ─────────────────────────────────────────────────
-  async function getAllStores()     { return await EncartAPI.StoreAPI.getAll(); }
+  async function getAllStores() {
+    const user = await AuthService.getUser();
+    if (!user) return [];
+    return await EncartAPI.StoreAPI.getByUser(user.id);
+  }
   async function getStoreById(id)  { return await EncartAPI.StoreAPI.getById(id); }
   async function getStore(id)      { return id ? await EncartAPI.StoreAPI.getById(id) : await StoreModule.getActive() || {}; }
   async function saveStore(data, id) {

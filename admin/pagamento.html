@@ -120,7 +120,7 @@
     const storeId = AuthService.getActiveStoreId();
     if (!storeId) return;
 
-    const cpfCnpj = document.getElementById('cpf-input').value.replace(/\D/g, '');
+    const cpfCnpj = document.getElementById('cpf-input').value.replace(/\\D/g, '');
     if (cpfCnpj.length < 11) {
       UIComponents.showToast('Por favor, informe um CPF ou CNPJ válido.', 'error');
       return;

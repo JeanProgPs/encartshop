@@ -9,6 +9,12 @@ const StoreAPI = {
     if (error) { console.error('StoreAPI.getAll erro:', error); return []; }
     return data || [];
   },
+  async getByUser(userId) {
+    if (!userId) return [];
+    const { data, error } = await window.sb.from('stores').select('*').eq('user_id', userId);
+    if (error) { console.error('StoreAPI.getByUser erro:', error); return []; }
+    return data || [];
+  },
   async getById(id) {
     if (!id) return null;
     const { data, error } = await window.sb.from('stores').select('*').eq('id', id).single();

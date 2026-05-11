@@ -27,15 +27,19 @@ serve(async (req) => {
       console.log('Loja:', store.name, '| API Key OK:', ASAAS_API_KEY.length > 10)
       console.log('CPF/CNPJ:', cpfCnpj)
 
-      // Sempre cria um novo customer se não tiver ID válido
+      // Cria ou atualiza customer no Asaas com CPF/CNPJ
       let asaasCustomerId = store.asaas_customer_id
       if (!asaasCustomerId) {
+        const ownerEmail = store.owner_email && store.owner_email.includes('@')
+          ? store.owner_email
+          : `loja${storeId.slice(0, 8)}@encartshop.com.br`
+
         const custRes = await fetch(`${ASAAS_URL}/customers`, {
           method: 'POST',
           headers: { 'access_token': ASAAS_API_KEY, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: store.name,
-            email: store.owner_email || 'contato@encartshop.com.br',
+            email: ownerEmail,
             cpfCnpj: cpfCnpj,
             externalReference: store.id
           })
@@ -45,12 +49,38 @@ serve(async (req) => {
         console.log('Asaas customer response:', JSON.stringify(custData))
 
         if (!custRes.ok || custData.errors) {
-          const errMsg = custData.errors?.[0]?.description || custData.message || `HTTP ${custRes.status}`
-          throw new Error(`Erro Asaas (cliente): ${errMsg}`)
+          // Se o CPF já existe no Asaas, busca o customer existente
+          const errDesc = custData.errors?.[0]?.description || ''
+          if (custRes.status === 400 && errDesc.toLowerCase().includes('cpf')) {
+            console.log('CPF já cadastrado, buscando customer existente...')
+            const searchRes = await fetch(`${ASAAS_URL}/customers?cpfCnpj=${cpfCnpj}`, {
+              headers: { 'access_token': ASAAS_API_KEY }
+            })
+            const searchData = await searchRes.json()
+            console.log('Busca por CPF:', JSON.stringify(searchData))
+            if (searchData.data && searchData.data.length > 0) {
+              asaasCustomerId = searchData.data[0].id
+              console.log('Customer existente encontrado:', asaasCustomerId)
+            } else {
+              throw new Error(`Erro Asaas (cliente): ${errDesc}`)
+            }
+          } else {
+            const errMsg = errDesc || custData.message || `HTTP ${custRes.status}`
+            throw new Error(`Erro Asaas (cliente): ${errMsg}`)
+          }
+        } else {
+          asaasCustomerId = custData.id
         }
 
-        asaasCustomerId = custData.id
         await supabaseClient.from('stores').update({ asaas_customer_id: asaasCustomerId }).eq('id', storeId)
+      } else {
+        // Atualiza o cliente existente com CPF (pode ter sido criado sem CPF antes)
+        console.log('Atualizando customer existente com CPF:', asaasCustomerId)
+        await fetch(`${ASAAS_URL}/customers/${asaasCustomerId}`, {
+          method: 'PUT',
+          headers: { 'access_token': ASAAS_API_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cpfCnpj: cpfCnpj })
+        })
       }
 
       // Cria cobrança PIX

@@ -44,8 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (!STORE_ID || !store.id) {
-      const all = await EncartAPI.StoreAPI.getAll();
-      if (all && all.length > 0) { store = all[0]; STORE_ID = all[0].id; }
+      throw new Error('Loja não encontrada. Verifique o link informado.');
     }
 
     if (!STORE_ID) throw new Error('Loja não encontrada.');
