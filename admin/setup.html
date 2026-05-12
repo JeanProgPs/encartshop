@@ -82,6 +82,8 @@
     <div class="step-dot" id="dot-3">3</div>
     <div class="step-line" id="line-3"></div>
     <div class="step-dot" id="dot-4">4</div>
+    <div class="step-line" id="line-4"></div>
+    <div class="step-dot" id="dot-5">5</div>
   </div>
 
   <!-- Step 1: Loja + Cor -->
@@ -183,9 +185,62 @@
     </div>
   </div>
 
-  <!-- Step 4: Acesso -->
+  <!-- Step 4: Escolha do Plano -->
   <div class="step-panel" id="step-4">
-    <div class="step-number">Passo 4 de 4</div>
+    <div class="step-number">Passo 4 de 5</div>
+    <h2>💎 Escolha seu Plano</h2>
+    <p class="desc">Selecione o plano ideal para o seu momento atual.</p>
+    
+    <div style="display:grid; grid-template-columns:1fr; gap:12px;">
+      <div class="card plan-option selected" onclick="pickPlan(59.90, this)" style="cursor:pointer; border-width:2px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong style="display:block; font-size:1.1rem;">Start</strong>
+            <span style="font-size:0.8rem; color:var(--text-muted);">Até 100 produtos</span>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:1.2rem; font-weight:800; color:var(--brand);">R$ 59,90</span>
+            <span style="display:block; font-size:0.7rem; color:var(--text-muted);">/mês</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card plan-option" onclick="pickPlan(99.90, this)" style="cursor:pointer; border-width:2px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong style="display:block; font-size:1.1rem;">Pro</strong>
+            <span style="font-size:0.8rem; color:var(--text-muted);">Produtos ilimitados + Banners</span>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:1.2rem; font-weight:800; color:var(--brand);">R$ 99.90</span>
+            <span style="display:block; font-size:0.7rem; color:var(--text-muted);">/mês</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card plan-option" onclick="pickPlan(199.90, this)" style="cursor:pointer; border-width:2px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong style="display:block; font-size:1.1rem;">Business</strong>
+            <span style="font-size:0.8rem; color:var(--text-muted);">Domínio próprio + Gerente</span>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:1.2rem; font-weight:800; color:var(--brand);">R$ 199.90</span>
+            <span style="display:block; font-size:0.7rem; color:var(--text-muted);">/mês</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-footer">
+      <button class="btn btn-ghost" onclick="goStep(3)">← Voltar</button>
+      <button class="btn btn-primary" onclick="goStep(5)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- Step 5: Acesso -->
+  <div class="step-panel" id="step-5">
+    <div class="step-number">Passo 5 de 5</div>
     <h2>🔒 Dados de Acesso</h2>
     <p class="desc">E-mail e senha do painel administrativo desta loja.</p>
     <div class="form-stack">
@@ -206,7 +261,7 @@
       <div id="setup-error" style="color:var(--danger);font-size:0.85rem;display:none;padding:10px 14px;background:rgba(231,76,60,0.08);border-radius:var(--radius);border:1px solid rgba(231,76,60,0.2);"></div>
     </div>
     <div class="step-footer">
-      <button class="btn btn-ghost" onclick="goStep(3)">← Voltar</button>
+      <button class="btn btn-ghost" onclick="goStep(4)">← Voltar</button>
       <button class="btn btn-primary btn-lg" onclick="createStore()">🚀 Criar Loja</button>
     </div>
   </div>
@@ -235,6 +290,7 @@
 <script src="/js/storage.js"></script>
 <script>
   let selectedColor = '#e94560';
+  let selectedPlanValue = 59.90;
   let currentStep = 1;
 
   // ── Color Palette ─────────────────────────────────────────
@@ -289,7 +345,7 @@
       if (err) { showToast(err, 'error'); return; }
     }
     document.getElementById(`step-${currentStep}`).classList.remove('active');
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= 5; i++) {
       const dot  = document.getElementById(`dot-${i}`);
       const line = document.getElementById(`line-${i}`);
       dot.classList.remove('active','done');
@@ -301,13 +357,23 @@
     document.getElementById(`step-${n}`).classList.add('active');
   }
 
+  function pickPlan(val, el) {
+    selectedPlanValue = val;
+    document.querySelectorAll('.plan-option').forEach(p => {
+      p.classList.remove('selected');
+      p.style.borderColor = 'var(--border)';
+    });
+    el.classList.add('selected');
+    el.style.borderColor = 'var(--brand)';
+  }
+
   function validateStep(step) {
     if (step === 1 && !document.getElementById('s1-name').value.trim()) return 'Informe o nome do estabelecimento.';
     if (step === 2) {
       const wa = document.getElementById('s2-whatsapp').value.trim();
       if (!wa || wa.length < 10) return 'Informe um número de WhatsApp válido.';
     }
-    if (step === 4) {
+    if (step === 5) {
       const email = document.getElementById('s4-email').value.trim();
       const pass  = document.getElementById('s4-pass').value;
       const pass2 = document.getElementById('s4-pass2').value;
@@ -375,6 +441,7 @@
         owner_email: email,
         user_id:     userId,
         status:      'pending',
+        plan_value:  selectedPlanValue,
         expires_at:  new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 dias de trial/setup
       });
 
@@ -405,8 +472,8 @@
       }
 
       // 4. Tela de sucesso
-      document.getElementById('step-4').classList.remove('active');
-      document.getElementById('step-5').classList.add('active');
+      document.getElementById('step-5').classList.remove('active');
+      document.getElementById('step-5').classList.add('active'); // Mantém o painel 5
       document.getElementById('success-title').textContent = `${name} está no ar! 🎉`;
       const storeUrl = StoreModule.getStoreUrl(result);
       const urlDisplay = document.getElementById('success-url');

@@ -240,6 +240,18 @@
 
     // 4. Caso contrário (pendente sem QR Code), mostra seleção
     showPlanSelection(store);
+
+    // Auto-seleciona o plano escolhido no onboarding
+    if (store.plan_value) {
+      const pVal = parseFloat(store.plan_value);
+      const cards = document.querySelectorAll('.plan-card');
+      cards.forEach(c => {
+        const priceText = c.querySelector('.price').textContent.replace('R$ ', '').replace(',', '.');
+        if (parseFloat(priceText) === pVal) {
+          selectPlan(pVal, c.querySelector('h4').textContent, c);
+        }
+      });
+    }
   }
 
   function showPlanSelection(store) {
@@ -305,11 +317,12 @@
       // Passa o valor do plano selecionado
       await EncartAPI.AsaasAPI.createPayment(storeId, cpfCnpj, selectedPlanValue);
       
-      // Marca que acabamos de gerar para o loadPaymentInfo mostrar o QR Code
-      sessionStorage.setItem('just_generated_pix', 'true');
+      // Busca a loja atualizada para pegar os novos dados do PIX
+      const updatedStore = await EncartAPI.StoreAPI.getById(storeId);
+      _store = updatedStore;
       
       UIComponents.showToast('Cobrança gerada com sucesso!', 'success');
-      setTimeout(() => location.reload(), 1500);
+      showPixSection(updatedStore);
     } catch (e) {
       console.error('Erro ao gerar pagamento:', e);
       UIComponents.showToast('Erro ao gerar PIX. Verifique os dados.', 'error');
