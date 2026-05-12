@@ -139,7 +139,7 @@
     // Se tiver apenas 1 loja, entra direto
     if (stores.length === 1) {
       AuthService.setActiveStoreId(stores[0].id);
-      window.location.href = '/dashboard';
+      window.location.href = 'dashboard.html';
       return;
     }
 
@@ -160,7 +160,7 @@
 
   async function selectAndGo(id) {
     AuthService.setActiveStoreId(id);
-    window.location.href = '/dashboard';
+    window.location.href = 'dashboard.html';
   }
 
   async function doLogin() {

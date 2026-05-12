@@ -22,9 +22,15 @@ serve(async (req) => {
 
     if (action === 'createPayment') {
       const { storeId, cpfCnpj, planValue } = body
-      console.log('Recebido planValue:', planValue)
-      const paymentValue = parseFloat(planValue) || 59.90
-      console.log('Valor final do pagamento:', paymentValue)
+      
+      // Trava de segurança: impede valores abusivamente baixos (como os R$ 5 relatados)
+      let paymentValue = parseFloat(planValue)
+      if (!paymentValue || paymentValue < 50) {
+        console.warn(`[asaas-payment] Valor recebido (${planValue}) inválido ou muito baixo. Forçando padrão 59.90.`);
+        paymentValue = 59.90
+      }
+      
+      console.log(`[asaas-payment] Criando cobrança de R$ ${paymentValue.toFixed(2)} para loja ${storeId}`);
       const { data: store, error: storeErr } = await supabaseClient
         .from('stores').select('*').eq('id', storeId).single()
       if (storeErr || !store) throw new Error('Loja não encontrada')

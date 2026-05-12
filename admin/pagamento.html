@@ -148,7 +148,7 @@
 
   <div id="footer-actions" class="form-stack hidden">
     <button class="btn btn-primary btn-lg w-full" onclick="checkPayment()">Confirmar pagamento</button>
-    <button class="btn btn-ghost w-full" onclick="AuthService.logout().then(() => window.location.replace('index'))">Sair e pagar depois</button>
+    <button class="btn btn-ghost w-full" onclick="AuthService.logout().then(() => window.location.replace('index.html'))">Sair e pagar depois</button>
   </div>
   
   <p style="font-size:0.75rem; color:var(--text-muted); margin-top:24px; line-height:1.5;">
@@ -207,7 +207,7 @@
 
   async function loadPaymentInfo() {
     const storeId = AuthService.getActiveStoreId();
-    if (!storeId) { window.location.replace('index'); return; }
+    if (!storeId) { window.location.replace('index.html'); return; }
 
     _store = await EncartAPI.StoreAPI.getById(storeId);
     if (!_store) return;
@@ -331,8 +331,10 @@
     btn.disabled = true;
 
     try {
-      // Passa o valor do plano selecionado
-      await EncartAPI.AsaasAPI.createPayment(storeId, cpfCnpj, selectedPlanValue);
+      const planValue = parseFloat(selectedPlanValue);
+      console.log(`[Pagamento] Gerando PIX de R$ ${planValue.toFixed(2)} para loja ${storeId}`);
+      
+      await EncartAPI.AsaasAPI.createPayment(storeId, cpfCnpj, planValue);
       
       // Busca a loja atualizada para pegar os novos dados do PIX
       const updatedStore = await EncartAPI.StoreAPI.getById(storeId);
