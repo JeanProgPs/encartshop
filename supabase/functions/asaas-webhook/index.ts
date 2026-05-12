@@ -17,19 +17,47 @@ serve(async (req) => {
       const paymentId = body.payment?.id
 
       if (paymentId) {
-        // Atualiza a loja que possui esse asaas_payment_id
-        const { data, error } = await supabaseClient
+        // 1. Busca a loja atual para ver se já tem um vencimento
+        const { data: store, error: fetchErr } = await supabaseClient
           .from('stores')
-          .update({ status: 'active' })
+          .select('id, expires_at')
           .eq('asaas_payment_id', paymentId)
-          .select()
+          .single()
 
-        if (error) {
-          console.error('Erro ao atualizar status da loja:', error)
+        if (fetchErr || !store) {
+          console.error('Loja não encontrada para paymentId:', paymentId)
+          return new Response(JSON.stringify({ error: 'Loja não encontrada' }), { status: 404 })
+        }
+
+        // 2. Calcula o novo vencimento
+        const now = new Date()
+        let newExpiresAt = new Date(now)
+        newExpiresAt.setDate(now.getDate() + 30)
+
+        // Se a loja já tiver um vencimento futuro, soma 30 dias a ele (renovação antecipada)
+        if (store.expires_at) {
+          const currentExpires = new Date(store.expires_at)
+          if (currentExpires > now) {
+            newExpiresAt = new Date(currentExpires)
+            newExpiresAt.setDate(currentExpires.getDate() + 30)
+          }
+        }
+
+        // 3. Atualiza a loja
+        const { error: updateErr } = await supabaseClient
+          .from('stores')
+          .update({ 
+            status: 'active', 
+            expires_at: newExpiresAt.toISOString() 
+          })
+          .eq('id', store.id)
+
+        if (updateErr) {
+          console.error('Erro ao atualizar status e vencimento da loja:', updateErr)
           return new Response(JSON.stringify({ error: 'Erro ao atualizar banco' }), { status: 500 })
         }
         
-        console.log(`Loja com paymentId ${paymentId} ativada com sucesso.`)
+        console.log(`Loja ${store.id} ativada até ${newExpiresAt.toISOString()}.`)
       }
     }
 

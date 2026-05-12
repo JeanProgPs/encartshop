@@ -23,9 +23,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Verifica se é um UUID
       const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(STORE_ID);
       
-      if (isUUID) {
-        store = await EncartAPI.StoreAPI.getById(STORE_ID) || {};
-      } else {
+     // 1. Busca dados da loja
+    let storeData = await EncartAPI.StoreAPI.getById(STORE_ID);
+    
+    // 2. Verifica se a loja existe e se não está bloqueada por vencimento
+    if (storeData) {
+      store = storeData;
+      const subStatus = SubscriptionModule.getStatus(store.expires_at);
+      if (subStatus.blocked) {
+        document.body.innerHTML = `
+          <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; font-family:sans-serif; background:#f8fafc;">
+            <div style="font-size:4rem; margin-bottom:20px;">🏪</div>
+            <h1 style="font-size:1.5rem; color:#0f172a; margin-bottom:8px;">Loja Temporariamente Indisponível</h1>
+            <p style="color:#64748b; max-width:400px; line-height:1.6;">Esta loja está passando por uma manutenção ou sua assinatura expirou. Por favor, tente novamente mais tarde.</p>
+            <a href="/" style="margin-top:24px; color:#4f46e5; text-decoration:none; font-weight:600;">← Voltar ao EncartShop</a>
+          </div>`;
+        return;
+      }
+    } else {
         // Se for um slug (nome da loja), busca todas e tenta encontrar match
         const allStores = await EncartAPI.StoreAPI.getAll();
         const slugify = text => (text || '').toString().toLowerCase()

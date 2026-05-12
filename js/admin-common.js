@@ -19,4 +19,12 @@
   // 3. Injeta sidebar com item ativo marcado e carrega dados
   UIComponents.renderSidebar(activePage);
 
+  // 4. Verifica Assinatura e injeta alerta se necessário
+  const store = await StoreModule.getActive();
+  if (store) {
+    const subStatus = SubscriptionModule.getStatus(store.expires_at);
+    const alert = SubscriptionModule.getAlert(subStatus);
+    SubscriptionModule.injectAlert(alert);
+  }
+
 })();
