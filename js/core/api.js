@@ -27,14 +27,14 @@ const StoreAPI = {
   },
   async create(storeData) {
     const cleanData = { ...storeData };
-    delete cleanData.slug; // Remove para evitar erro se a coluna não existir
+    delete cleanData.slug; 
     const { data, error } = await window.sb.from('stores').insert([cleanData]).select().single();
     if (error) { console.error('StoreAPI.create erro:', error); throw error; }
     return data;
   },
   async update(id, storeData) {
     const cleanData = { ...storeData };
-    delete cleanData.slug; // Remove para evitar erro se a coluna não existir
+    delete cleanData.slug;
     const { data, error } = await window.sb.from('stores').update(cleanData).eq('id', id).select().single();
     if (error) { console.error('StoreAPI.update erro:', error); throw error; }
     return data;

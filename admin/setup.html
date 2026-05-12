@@ -457,6 +457,9 @@
         expires_at:  new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 dias de trial/setup
       });
 
+      // Salva para referência rápida se necessário (opcional)
+      sessionStorage.setItem('selected_plan_value', selectedPlanValue);
+
       if (result.error || !result.id) {
         showError(result.error || 'Erro ao criar loja.');
         btn.textContent = oldText; btn.disabled = false;

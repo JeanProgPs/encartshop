@@ -241,14 +241,17 @@
     // 4. Caso contrário (pendente sem QR Code), mostra seleção
     showPlanSelection(store);
 
-    // Auto-seleciona o plano escolhido no onboarding
-    if (store.plan_value) {
-      const pVal = parseFloat(store.plan_value);
+    // Auto-seleciona o plano escolhido no onboarding (prioriza o que vem do banco, depois o do session)
+    const pValFromStore = _store.plan_value;
+    const pValFromSession = sessionStorage.getItem('selected_plan_value');
+    const finalPlanValue = pValFromStore ? parseFloat(pValFromStore) : (pValFromSession ? parseFloat(pValFromSession) : null);
+
+    if (finalPlanValue) {
       const cards = document.querySelectorAll('.plan-card');
       cards.forEach(c => {
         const priceText = c.querySelector('.price').textContent.replace('R$ ', '').replace(',', '.');
-        if (parseFloat(priceText) === pVal) {
-          selectPlan(pVal, c.querySelector('h4').textContent, c);
+        if (parseFloat(priceText) === finalPlanValue) {
+          selectPlan(finalPlanValue, c.querySelector('h4').textContent, c);
         }
       });
     }
