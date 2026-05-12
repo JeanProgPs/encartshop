@@ -144,12 +144,18 @@ serve(async (req) => {
       })
     }
 
-    return new Response(JSON.stringify({ error: 'Ação inválida' }), { status: 400, headers: corsHeaders })
-  } catch (err) {
-    console.error('ERRO:', err.message)
-    return new Response(JSON.stringify({ success: false, error: err.message }), { 
+    return new Response(JSON.stringify({ success: false, error: 'Ação inválida' }), { 
       status: 200, 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-    })
+    });
+  } catch (err) {
+    console.error('ERRO CRÍTICO:', err.message);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: err.message 
+    }), { 
+      status: 200, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
   }
-})
+});
