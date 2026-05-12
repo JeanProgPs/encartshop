@@ -202,29 +202,45 @@
 
     const subStatus = SubscriptionModule.getStatus(store.expires_at);
 
-    // Se estiver ativa e NÃO estiver vencida, vai para o dashboard
-    if (store.status === 'active' && !subStatus.expired) {
+    // 1. Se estiver ativa e ainda tiver bastante tempo (> 5 dias), vai para o dashboard
+    if (store.status === 'active' && !subStatus.expired && subStatus.daysLeft > 5) {
       window.location.replace('dashboard.html');
       return;
     }
 
-    // Se for renovação (vencida), muda o texto
-    if (subStatus.expired) {
-      document.querySelector('.payment-header h1').textContent = 'Renove sua assinatura';
-      document.querySelector('.status-badge').innerHTML = '⚠️ Assinatura vencida';
+    // 2. Se for uma loja ativa (vencida ou próxima do vencimento)
+    if (store.status === 'active') {
+      const justGenerated = sessionStorage.getItem('just_generated_pix');
+      
+      // Se ele ACABOU de gerar um PIX de renovação, mostra o QR Code
+      if (justGenerated === 'true' && store.asaas_pix_qr_code) {
+        showPixSection(store);
+        return;
+      }
+
+      // Caso contrário, mostra a seleção para ele iniciar a renovação
+      document.querySelector('.payment-header h1').textContent = 'Renovar Assinatura';
+      if (subStatus.expired) {
+        document.querySelector('.status-badge').innerHTML = '⚠️ Assinatura vencida';
+      } else {
+        document.querySelector('.status-badge').innerHTML = `🔔 Vence em ${subStatus.daysLeft} dia(s)`;
+      }
+      showPlanSelection();
+      return;
     }
 
-    // Se estiver vencida ou pendente, mas já tiver um QR Code, mostra o PIX
+    // 3. Se estiver pendente (primeiro pagamento) e já tiver um QR Code, mostra ele
     if (store.asaas_pix_qr_code) {
       showPixSection(store);
       return;
     }
 
-    // Caso contrário, mostra seleção de plano e CPF
+    // 4. Caso contrário (pendente sem QR Code), mostra seleção
     showPlanSelection();
   }
 
   function showPlanSelection() {
+    sessionStorage.removeItem('just_generated_pix');
     document.getElementById('pix-section').classList.add('hidden');
     document.getElementById('footer-actions').classList.add('hidden');
     document.getElementById('plan-selection').classList.remove('hidden');
@@ -270,6 +286,10 @@
     try {
       // Passa o valor do plano selecionado
       await EncartAPI.AsaasAPI.createPayment(storeId, cpfCnpj, selectedPlanValue);
+      
+      // Marca que acabamos de gerar para o loadPaymentInfo mostrar o QR Code
+      sessionStorage.setItem('just_generated_pix', 'true');
+      
       UIComponents.showToast('Cobrança gerada com sucesso!', 'success');
       setTimeout(() => location.reload(), 1500);
     } catch (e) {
