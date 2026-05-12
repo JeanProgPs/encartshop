@@ -59,7 +59,7 @@ const UIRender = (() => {
     const price = isPromo ? p.promo_price : p.price;
     const unit = p.unit || 'un';
     const isKg = unit.toLowerCase() === 'kg';
-    const qtyLabel = isKg ? `${cartQty.toFixed(1).replace('.',',')}kg` : `${cartQty}x`;
+    const qtyLabel = isKg ? (cartQty < 1 && cartQty > 0 ? `${cartQty * 1000}g` : `${cartQty.toFixed(1).replace('.',',')}kg`) : `${cartQty}x`;
     const defaultImg = 'https://images.placeholders.dev/?width=400&height=400&text=Sem%20Imagem&bgColor=%23f1f5f9&textColor=%2364748b';
     const img = p.image || defaultImg;
 

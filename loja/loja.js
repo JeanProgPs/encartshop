@@ -235,7 +235,7 @@ function addToCart(id) {
   
   // Incremento: 100g para Kg, 1un para outros
   const isKg = product.unit?.toLowerCase() === 'kg';
-  const step = isKg ? 0.1 : 1;
+  const step = isKg ? 0.5 : 1;
   const price = product.promo_price || product.price;
   
   const existing = cart.find(c => c.id === id);
@@ -255,11 +255,11 @@ function changeQty(id, delta) {
   if (!item) return;
 
   const isKg = item.unit?.toLowerCase() === 'kg';
-  const step = isKg ? 0.1 : 1;
+  const step = isKg ? 0.5 : 1;
   
   item.qty += (delta * step);
   // Arredonda para evitar imprecisões de float (ex: 0.300000000004)
-  if (isKg) item.qty = Math.round(item.qty * 10) / 10;
+  if (isKg) item.qty = Math.round(item.qty * 100) / 100;
 
   if (item.qty <= 0) {
     const idx = cart.indexOf(item);
@@ -322,7 +322,7 @@ function renderCartBody() {
 
   body.innerHTML = cart.map(item => {
     const isKg = item.unit?.toLowerCase() === 'kg';
-    const qtyLabel = isKg ? `${item.qty.toFixed(1).replace('.',',')} kg` : `${item.qty}x`;
+    const qtyLabel = isKg ? (item.qty < 1 ? `${item.qty * 1000}g` : `${item.qty.toFixed(1).replace('.',',')}kg`) : `${item.qty}x`;
     return `
     <div class="cart-item">
       <div class="cart-item-info">
@@ -385,7 +385,7 @@ async function checkout() {
     const feeText = feeBase === -1 ? 'A combinar' : (subtotal >= (store.delivery_free || 0) && (store.delivery_free || 0) > 0 ? 'Grátis' : UIRender.fmtPrice(feeBase));
     
     const itemsText = cart.map(i => {
-      const q = i.unit?.toLowerCase() === 'kg' ? i.qty.toFixed(1).replace('.',',') + 'kg' : i.qty + 'x';
+      const q = i.unit?.toLowerCase() === 'kg' ? (i.qty < 1 ? `${i.qty * 1000}g` : `${i.qty.toFixed(1).replace('.',',')}kg`) : i.qty + 'x';
       return `• ${q} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`;
     }).join('\n');
 
