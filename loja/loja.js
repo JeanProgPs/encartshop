@@ -40,9 +40,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>`;
         return;
       }
-    } else {
-        // Se for um slug (nome da loja), busca todas e tenta encontrar match
+    if (!store.id) {
+        // Se não encontrou por ID, busca todas e tenta encontrar pelo nome (slug)
+        console.log('[Loja] Tentando busca por nome/slug:', STORE_ID);
         const allStores = await EncartAPI.StoreAPI.getAll();
+        
         const slugify = text => (text || '').toString().toLowerCase()
           .normalize('NFD').replace(/[\u0300-\u036f]/g, "")
           .replace(/\s+/g, '-')
@@ -51,11 +53,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           .replace(/^-+/, '')
           .replace(/-+$/, '');
           
-        store = allStores.find(s => slugify(s.name) === slugify(STORE_ID)) || {};
+        const targetSlug = slugify(STORE_ID);
+        store = allStores.find(s => slugify(s.name) === targetSlug) || {};
+        
         if (store && store.id) {
-          STORE_ID = store.id; // Atualiza global para os próximos requests
+          STORE_ID = store.id; // Atualiza para o ID real para carregar produtos
+          console.log('[Loja] Loja encontrada via slug:', store.name);
         }
-      }
+    }
     }
 
     if (!STORE_ID || !store.id) {
