@@ -125,6 +125,12 @@ const AsaasAPI = {
       body: { action: 'createPayment', storeId, cpfCnpj, planValue }
     });
     if (error) { console.error('AsaasAPI.createPayment erro:', error); throw error; }
+    
+    // Se a função retornou 200 mas com erro interno (success: false)
+    if (data && data.success === false) {
+      throw new Error(data.error || 'Erro interno na geração do pagamento');
+    }
+    
     return data;
   },
 
