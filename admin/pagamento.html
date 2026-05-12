@@ -108,13 +108,23 @@
     <p>Realize o pagamento do plano via PIX para liberar o acesso total ao seu painel administrativo.</p>
   </div>
 
-  <div id="cpf-section" class="hidden" style="text-align:left; margin-bottom: 24px; background:var(--bg-elevated); padding:20px; border-radius:var(--radius-xl); border:1px solid var(--border);">
-    <label style="font-size:0.9rem; font-weight:600; display:block; margin-bottom:8px;">2. Digite seu CPF ou CNPJ:</label>
-    <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Para gerar o QR Code de ativação, o Asaas exige um documento válido.</p>
-    <input type="text" id="cpf-input" class="form-control" placeholder="000.000.000-00" style="width:100%; box-sizing:border-box;" maxlength="18">
-    <div id="cpf-validation-msg" class="validation-msg">Documento inválido</div>
-    <p style="font-size:0.7rem; color:var(--text-muted); margin-top:8px; opacity:0.8;">🛡️ Seus dados são utilizados apenas para emissão do PIX via Asaas.</p>
-    <button id="btn-generate-pix" class="btn btn-primary w-full" style="margin-top:16px;" onclick="generatePix()">Gerar Código PIX</button>
+  <div id="cpf-section" class="hidden" style="text-align:left; margin-bottom: 24px; background:var(--bg-card); padding:20px; border-radius:var(--radius-xl); border:1px solid var(--border);">
+    <label style="font-size:0.9rem; font-weight:600; display:block; margin-bottom:8px;">2. Seus dados para emissão do PIX:</label>
+
+    <!-- Mostrado apenas quando CPF ainda não foi cadastrado -->
+    <div id="cpf-input-wrapper">
+      <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Para gerar o QR Code de ativação, o Asaas exige um documento válido.</p>
+      <input type="text" id="cpf-input" class="form-input" placeholder="000.000.000-00" style="width:100%; box-sizing:border-box;" maxlength="18">
+      <div id="cpf-validation-msg" class="validation-msg">Documento inválido</div>
+      <p style="font-size:0.7rem; color:var(--text-muted); margin-top:8px; opacity:0.8;">🛡️ Seus dados são utilizados apenas para emissão do PIX via Asaas.</p>
+    </div>
+
+    <!-- Mostrado quando CPF já está cadastrado no Asaas -->
+    <div id="cpf-msg-known" style="display:none;">
+      <p style="font-size:0.85rem; color:var(--success); font-weight:600;">✅ Seus dados já estão cadastrados. Clique em gerar para criar uma nova cobrança.</p>
+    </div>
+
+    <button id="btn-generate-pix" class="btn btn-primary w-full" style="margin-top:16px;" onclick="generatePix()">⚡ Gerar Código PIX</button>
   </div>
 
   <div id="pix-section" class="hidden">
@@ -259,23 +269,27 @@
 
   function showPlanSelection(store) {
     sessionStorage.removeItem('just_generated_pix');
+
+    // Garante que só a seleção de plano + seção de CPF/botão aparecem
     document.getElementById('pix-section').classList.add('hidden');
     document.getElementById('footer-actions').classList.add('hidden');
     document.getElementById('plan-selection').classList.remove('hidden');
-    
-    // Se já tiver asaas_customer_id, não precisa pedir CPF de novo
+    document.getElementById('cpf-section').classList.remove('hidden');
+
+    const cpfWrapper   = document.getElementById('cpf-input-wrapper');
+    const cpfMsg       = document.getElementById('cpf-msg-known');
+
     if (store && store.asaas_customer_id) {
-      document.getElementById('cpf-section').classList.add('hidden');
-      // Mostra o botão de gerar PIX diretamente ou em outro lugar? 
-      // Vou colocar o botão de gerar PIX visível mesmo sem o campo de CPF
-      document.getElementById('btn-generate-pix').parentElement.classList.remove('hidden');
-      document.getElementById('cpf-input').parentElement.style.display = 'none'; 
-      document.getElementById('cpf-section').classList.remove('hidden'); // Mostra a caixa mas sem o input
+      // Cliente já cadastrado no Asaas — esconde só o campo de CPF, não o botão
+      if (cpfWrapper) cpfWrapper.style.display = 'none';
+      if (cpfMsg)     cpfMsg.style.display = 'block';
     } else {
-      document.getElementById('cpf-section').classList.remove('hidden');
-      document.getElementById('cpf-input').parentElement.style.display = 'block';
+      // Primeira vez — pede o CPF
+      if (cpfWrapper) cpfWrapper.style.display = 'block';
+      if (cpfMsg)     cpfMsg.style.display = 'none';
     }
   }
+
 
   function showPixSection(store) {
     document.getElementById('plan-selection').classList.add('hidden');
