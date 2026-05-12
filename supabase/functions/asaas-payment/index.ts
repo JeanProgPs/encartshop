@@ -117,11 +117,16 @@ serve(async (req) => {
       // Salva no banco
       await supabaseClient.from('stores').update({
         asaas_payment_id: payData.id,
+        asaas_payment_url: payData.invoiceUrl,
         asaas_pix_code: qrData.payload,
         asaas_pix_qr_code: qrData.encodedImage
       }).eq('id', storeId)
 
-      return new Response(JSON.stringify({ success: true, paymentId: payData.id }), {
+      return new Response(JSON.stringify({ 
+        success: true, 
+        paymentId: payData.id,
+        paymentUrl: payData.invoiceUrl 
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }

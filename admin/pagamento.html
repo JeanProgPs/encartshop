@@ -124,7 +124,14 @@
     <div class="pix-info">
       <div style="font-size:0.85rem; font-weight:600;">Código PIX Copia e Cola:</div>
       <div class="pix-key" id="pix-copy-paste">Aguardando geração...</div>
-      <button id="pix-copy-btn" class="btn btn-outline btn-sm w-full hidden" style="margin-top:12px;" onclick="copyPix()">📋 Copiar Código PIX</button>
+      <button id="pix-copy-btn" class="btn btn-primary w-full hidden" style="margin-top:12px;" onclick="copyPixCode()">📋 Copiar Código PIX</button>
+      
+      <a id="pix-link-btn" href="#" target="_blank" class="btn btn-outline w-full hidden" style="margin-top:12px;">🔗 Abrir link de pagamento</a>
+
+      <div style="border-top:1px solid var(--border); padding-top:20px; margin-top:20px;">
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Deseja escolher outro plano ou gerar novo código?</p>
+        <button class="btn btn-ghost btn-sm" onclick="showPlanSelection()">🔄 Gerar nova cobrança</button>
+      </div>
     </div>
   </div>
 
@@ -193,25 +200,44 @@
     const store = await EncartAPI.StoreAPI.getById(storeId);
     if (!store) return;
 
-    // Se já estiver ativa, redireciona
-    if (store.status === 'active') {
+    const subStatus = SubscriptionModule.getStatus(store.expires_at);
+
+    // Se estiver ativa e NÃO estiver vencida, vai para o dashboard
+    if (store.status === 'active' && !subStatus.expired) {
       window.location.replace('dashboard.html');
       return;
     }
 
-    // Se não tiver dados do Asaas, mostra o campo de CPF e seleção de plano
-    if (!store.asaas_pix_qr_code) {
-      document.getElementById('plan-selection').classList.remove('hidden');
-      document.getElementById('cpf-section').classList.remove('hidden');
+    // Se estiver vencida ou pendente, mas já tiver um QR Code, mostra o PIX
+    // A menos que o usuário queira gerar um novo (tratado via UI)
+    if (store.asaas_pix_qr_code) {
+      showPixSection(store);
       return;
     }
 
-    // Se já tiver dados do Asaas, mostra o PIX
-    if (store.asaas_pix_qr_code) {
-      document.getElementById('pix-section').classList.remove('hidden');
-      document.getElementById('pix-qr-img').src = `data:image/png;base64,${store.asaas_pix_qr_code}`;
-      document.getElementById('pix-copy-paste').textContent = store.asaas_pix_code || 'Chave não disponível';
-      document.getElementById('pix-copy-btn').classList.remove('hidden');
+    // Caso contrário, mostra seleção de plano e CPF
+    showPlanSelection();
+  }
+
+  function showPlanSelection() {
+    document.getElementById('pix-section').classList.add('hidden');
+    document.getElementById('plan-selection').classList.remove('hidden');
+    document.getElementById('cpf-section').classList.remove('hidden');
+  }
+
+  function showPixSection(store) {
+    document.getElementById('plan-selection').classList.add('hidden');
+    document.getElementById('cpf-section').classList.add('hidden');
+    document.getElementById('pix-section').classList.remove('hidden');
+    
+    document.getElementById('pix-qr-img').src = `data:image/png;base64,${store.asaas_pix_qr_code}`;
+    document.getElementById('pix-copy-paste').textContent = store.asaas_pix_code || 'Chave não disponível';
+    document.getElementById('pix-copy-btn').classList.remove('hidden');
+    
+    if (store.asaas_payment_url) {
+      const linkBtn = document.getElementById('pix-link-btn');
+      linkBtn.href = store.asaas_payment_url;
+      linkBtn.classList.remove('hidden');
     }
   }
 
@@ -266,7 +292,7 @@
     }
   }
 
-  function copyPix() {
+  function copyPixCode() {
     const code = document.getElementById('pix-copy-paste').textContent;
     navigator.clipboard.writeText(code);
     UIComponents.showToast('Código PIX copiado!', 'success');
