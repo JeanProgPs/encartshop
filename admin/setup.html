@@ -266,14 +266,21 @@
     </div>
   </div>
 
-  <!-- Step 5: Sucesso / Ativação -->
-  <div class="step-panel" id="step-5">
+  <!-- Step 6: Sucesso / Ativação -->
+  <div class="step-panel" id="step-6">
     <div class="success-panel">
       <div class="success-icon">🚀</div>
       <h2 id="success-title">Quase lá! 🎉</h2>
       <p id="success-sub">Sua conta foi criada. Agora só falta realizar a ativação do seu plano para liberar o painel.</p>
+      
+      <div style="margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: var(--radius); border: 1px dashed var(--border); text-align: center;">
+        <span style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">Link da sua loja:</span>
+        <a id="success-url" href="#" target="_blank" style="color: var(--brand); font-weight: 700; word-break: break-all; text-decoration: none;">carregando...</a>
+      </div>
+
       <div class="success-links">
         <a href="pagamento" class="btn btn-primary btn-lg w-full">Ir para Ativação →</a>
+        <a id="loja-link-btn" href="#" target="_blank" class="btn btn-ghost btn-sm" style="margin-top: 10px;">Visualizar Loja ↗</a>
       </div>
     </div>
   </div>
@@ -345,13 +352,18 @@
       if (err) { showToast(err, 'error'); return; }
     }
     document.getElementById(`step-${currentStep}`).classList.remove('active');
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 6; i++) {
       const dot  = document.getElementById(`dot-${i}`);
       const line = document.getElementById(`line-${i}`);
-      dot.classList.remove('active','done');
-      if (line) line.classList.remove('done');
-      if (i < n)  { dot.classList.add('done'); if (line) line.classList.add('done'); }
-      if (i === n) dot.classList.add('active');
+      if (dot) {
+        dot.classList.remove('active','done');
+        if (i < n) dot.classList.add('done');
+        if (i === n) dot.classList.add('active');
+      }
+      if (line) {
+        line.classList.remove('done');
+        if (i < n) line.classList.add('done');
+      }
     }
     currentStep = n;
     document.getElementById(`step-${n}`).classList.add('active');
@@ -386,7 +398,7 @@
 
   // ── Create Store com Supabase Auth ────────────────────────
   async function createStore() {
-    const err = validateStep(4);
+    const err = validateStep(5);
     if (err) {
       const errEl = document.getElementById('setup-error');
       errEl.textContent = err; errEl.style.display = 'block';
@@ -396,7 +408,7 @@
     const email    = document.getElementById('s4-email').value.trim();
     const password = document.getElementById('s4-pass').value;
 
-    const btn = document.querySelector('#step-4 .btn-lg');
+    const btn = document.querySelector('#step-5 .btn-lg');
     const oldText = btn.textContent;
     btn.textContent = 'Criando conta...';
     btn.disabled = true;
@@ -472,8 +484,7 @@
       }
 
       // 4. Tela de sucesso
-      document.getElementById('step-5').classList.remove('active');
-      document.getElementById('step-5').classList.add('active'); // Mantém o painel 5
+      goStep(6);
       document.getElementById('success-title').textContent = `${name} está no ar! 🎉`;
       const storeUrl = StoreModule.getStoreUrl(result);
       const urlDisplay = document.getElementById('success-url');
@@ -481,7 +492,8 @@
         urlDisplay.textContent = storeUrl;
         urlDisplay.href = storeUrl;
       }
-      document.getElementById('loja-link-btn').href = storeUrl;
+      const linkBtn = document.getElementById('loja-link-btn');
+      if (linkBtn) linkBtn.href = storeUrl;
       StoreModule.applyColor(selectedColor);
 
     } catch (e) {
