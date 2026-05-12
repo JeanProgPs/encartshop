@@ -344,9 +344,17 @@
       showPixSection(updatedStore);
     } catch (e) {
       console.error('Erro ao gerar pagamento:', e);
-      // Tenta extrair a mensagem de erro detalhada se disponível
-      const errorMsg = e.message || 'Erro ao gerar PIX. Verifique os dados.';
-      UIComponents.showToast(`Erro: ${errorMsg}`, 'error');
+      const errorMsg = e.message || '';
+      
+      // Se o erro for falta de CPF/CNPJ, mostra o campo novamente
+      if (errorMsg.includes('CPF') || errorMsg.includes('CNPJ')) {
+        document.getElementById('cpf-input-wrapper').style.display = 'block';
+        document.getElementById('cpf-msg-known').style.display = 'none';
+        UIComponents.showToast('O Asaas requer seu CPF/CNPJ para gerar o PIX. Por favor, preencha abaixo.', 'warning');
+      } else {
+        UIComponents.showToast(`Erro: ${errorMsg || 'Verifique os dados'}`, 'error');
+      }
+      
       btn.innerHTML = originalHTML;
       btn.disabled = false;
     }
