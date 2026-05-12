@@ -22,7 +22,9 @@ serve(async (req) => {
 
     if (action === 'createPayment') {
       const { storeId, cpfCnpj, planValue } = body
+      console.log('Recebido planValue:', planValue)
       const paymentValue = parseFloat(planValue) || 59.90
+      console.log('Valor final do pagamento:', paymentValue)
       const { data: store, error: storeErr } = await supabaseClient
         .from('stores').select('*').eq('id', storeId).single()
       if (storeErr || !store) throw new Error('Loja não encontrada')

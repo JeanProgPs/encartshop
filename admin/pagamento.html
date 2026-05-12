@@ -286,11 +286,14 @@
     const rawValue = document.getElementById('cpf-input').value;
     const cpfCnpj = rawValue.replace(/\D/g, '');
     
-    if (cpfCnpj.length !== 11 && cpfCnpj.length !== 14) {
-      document.getElementById('cpf-input').classList.add('invalid-input');
-      document.getElementById('cpf-validation-msg').style.display = 'block';
-      UIComponents.showToast('Por favor, informe um CPF ou CNPJ válido.', 'error');
-      return;
+    // Se não tiver customerId no Asaas, o CPF/CNPJ é obrigatório
+    if (!_store?.asaas_customer_id) {
+      if (cpfCnpj.length !== 11 && cpfCnpj.length !== 14) {
+        document.getElementById('cpf-input').classList.add('invalid-input');
+        document.getElementById('cpf-validation-msg').style.display = 'block';
+        UIComponents.showToast('Por favor, informe um CPF ou CNPJ válido.', 'error');
+        return;
+      }
     }
 
     const btn = document.getElementById('btn-generate-pix');

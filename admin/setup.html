@@ -387,7 +387,8 @@
       /*
       btn.textContent = 'Gerando cobrança...';
       try {
-        await EncartAPI.AsaasAPI.createPayment(result.id);
+        // Agora requer 3 parâmetros: storeId, cpfCnpj (null se não tiver), planValue
+        await EncartAPI.AsaasAPI.createPayment(result.id, null, 59.90);
       } catch (payErr) {
         console.warn('Erro ao gerar cobrança Asaas (o fluxo continuará):', payErr);
       }
