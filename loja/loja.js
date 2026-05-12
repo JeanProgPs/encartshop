@@ -65,8 +65,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!STORE_ID) throw new Error('Loja não encontrada.');
 
     if (store.status === 'pending') {
-      document.body.innerHTML = `<div style="text-align:center;padding:100px 20px;"><h2>Loja em Ativação 🚀</h2><a href="/admin">Ir para o Painel</a></div>`;
-      return;
+      const previewBanner = document.createElement('div');
+      previewBanner.style.cssText = "background:var(--brand); color:white; text-align:center; padding:10px; font-size:0.8rem; font-weight:bold; position:sticky; top:0; z-index:9999;";
+      previewBanner.innerHTML = "👀 MODO PREVIEW: Esta loja está em fase de ativação. Realize o pagamento para liberar as vendas.";
+      document.body.prepend(previewBanner);
     }
 
     cart = _loadCart();
