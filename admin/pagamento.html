@@ -131,7 +131,7 @@
 
       <div style="border-top:1px solid var(--border); padding-top:20px; margin-top:20px;">
         <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Deseja escolher outro plano ou gerar novo código?</p>
-        <button class="btn btn-ghost btn-sm" onclick="showPlanSelection()">🔄 Gerar nova cobrança</button>
+        <button class="btn btn-ghost btn-sm" onclick="showPlanSelection(_store)">🔄 Gerar nova cobrança</button>
       </div>
     </div>
   </div>
@@ -186,6 +186,7 @@
 
   let selectedPlanValue = 59.90;
   let selectedPlanName  = 'Start';
+  let _store = null;
 
   function selectPlan(val, name, el) {
     selectedPlanValue = val;
@@ -198,8 +199,9 @@
     const storeId = AuthService.getActiveStoreId();
     if (!storeId) { window.location.replace('index'); return; }
 
-    const store = await EncartAPI.StoreAPI.getById(storeId);
-    if (!store) return;
+    _store = await EncartAPI.StoreAPI.getById(storeId);
+    if (!_store) return;
+    const store = _store;
 
     const subStatus = SubscriptionModule.getStatus(store.expires_at);
 
@@ -226,7 +228,7 @@
       } else {
         document.querySelector('.status-badge').innerHTML = `🔔 Vence em ${subStatus.daysLeft} dia(s)`;
       }
-      showPlanSelection();
+      showPlanSelection(store);
       return;
     }
 
@@ -237,15 +239,27 @@
     }
 
     // 4. Caso contrário (pendente sem QR Code), mostra seleção
-    showPlanSelection();
+    showPlanSelection(store);
   }
 
-  function showPlanSelection() {
+  function showPlanSelection(store) {
     sessionStorage.removeItem('just_generated_pix');
     document.getElementById('pix-section').classList.add('hidden');
     document.getElementById('footer-actions').classList.add('hidden');
     document.getElementById('plan-selection').classList.remove('hidden');
-    document.getElementById('cpf-section').classList.remove('hidden');
+    
+    // Se já tiver asaas_customer_id, não precisa pedir CPF de novo
+    if (store && store.asaas_customer_id) {
+      document.getElementById('cpf-section').classList.add('hidden');
+      // Mostra o botão de gerar PIX diretamente ou em outro lugar? 
+      // Vou colocar o botão de gerar PIX visível mesmo sem o campo de CPF
+      document.getElementById('btn-generate-pix').parentElement.classList.remove('hidden');
+      document.getElementById('cpf-input').parentElement.style.display = 'none'; 
+      document.getElementById('cpf-section').classList.remove('hidden'); // Mostra a caixa mas sem o input
+    } else {
+      document.getElementById('cpf-section').classList.remove('hidden');
+      document.getElementById('cpf-input').parentElement.style.display = 'block';
+    }
   }
 
   function showPixSection(store) {
@@ -333,8 +347,13 @@
     if (!storeId) return;
     const store = await EncartAPI.StoreAPI.getById(storeId);
     if (store && store.status === 'active') {
-      UIComponents.showToast('Pagamento confirmado!', 'success');
-      setTimeout(() => window.location.replace('dashboard.html'), 1000);
+      const subStatus = SubscriptionModule.getStatus(store.expires_at);
+      // Só redireciona se a loja estiver ativa E NÃO estiver mais vencida
+      if (!subStatus.expired) {
+        sessionStorage.removeItem('just_generated_pix');
+        UIComponents.showToast('Pagamento confirmado!', 'success');
+        setTimeout(() => window.location.replace('dashboard.html'), 1000);
+      }
     }
   }, 10000);
 </script>

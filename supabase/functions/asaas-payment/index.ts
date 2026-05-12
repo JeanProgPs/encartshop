@@ -33,6 +33,7 @@ serve(async (req) => {
       // Cria ou atualiza customer no Asaas com CPF/CNPJ
       let asaasCustomerId = store.asaas_customer_id
       if (!asaasCustomerId) {
+        if (!cpfCnpj) throw new Error('CPF/CNPJ é necessário para o primeiro pagamento');
         const ownerEmail = store.owner_email && store.owner_email.includes('@')
           ? store.owner_email
           : `loja${storeId.slice(0, 8)}@encartshop.com.br`
