@@ -160,7 +160,7 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Taxa de Entrega (R$)</label>
-          <input id="s3-fee" type="number" step="0.01" min="0" class="form-input" placeholder="0 = grátis" value="5">
+          <input id="s3-fee" type="number" step="0.01" min="0" class="form-input" placeholder="Ex: 5.00" value="0">
         </div>
         <div class="form-group">
           <label class="form-label">Frete Grátis acima de (R$)</label>
@@ -275,10 +275,10 @@
       freeInput.disabled = true;
     } else {
       feeInput.disabled = false;
-      feeInput.placeholder = '0 = grátis';
-      feeInput.value = '5';
+      feeInput.placeholder = 'Ex: 5.00';
+      feeInput.value = '0';
       freeInput.disabled = false;
-      freeInput.value = '50';
+      freeInput.value = '0';
     }
   }
 

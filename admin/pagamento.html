@@ -228,10 +228,19 @@
     UIComponents.setLoading(btn, true, 'Gerando PIX...');
     
     try {
-      const res = await EncartAPI.AsaasAPI.createPayment(_store.id, cpf, selectedPlanValue);
+      const planValue = parseFloat(selectedPlanValue);
+      console.log('--- Iniciando Geração de PIX ---');
+      console.log('Loja ID:', _store.id);
+      console.log('Valor do Plano:', planValue);
+      console.log('CPF/CNPJ:', cpf ? 'Preenchido' : 'Usando existente');
+      
+      const res = await EncartAPI.AsaasAPI.createPayment(_store.id, cpf, planValue);
+      console.log('Resposta da API:', res);
+
       if (res.success) {
+        UIComponents.showToast('PIX gerado com sucesso!', 'success');
         sessionStorage.setItem('just_generated_pix', 'true');
-        location.reload();
+        setTimeout(() => location.reload(), 1000);
       }
     } catch (err) {
       UIComponents.showToast('Erro ao gerar pagamento: ' + err.message, 'error');
