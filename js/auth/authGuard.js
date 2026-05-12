@@ -22,11 +22,8 @@ const AuthGuard = (() => {
     // Evita loop se já estiver na página de pagamento
     if (!window.location.pathname.includes('pagamento.html')) {
       const store = await EncartAPI.StoreAPI.getById(activeStoreId);
-      
       if (store) {
-        // Bloqueio por status explícito ou vencimento + carência
         const subStatus = SubscriptionModule.getStatus(store.expires_at);
-        
         if (store.status === 'pending' || subStatus.blocked) {
           window.location.replace('pagamento.html');
           return false;

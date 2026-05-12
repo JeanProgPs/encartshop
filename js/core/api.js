@@ -27,14 +27,14 @@ const StoreAPI = {
   },
   async create(storeData) {
     const cleanData = { ...storeData };
-    delete cleanData.slug; 
+    delete cleanData.slug; // Remove para evitar erro se a coluna não existir
     const { data, error } = await window.sb.from('stores').insert([cleanData]).select().single();
     if (error) { console.error('StoreAPI.create erro:', error); throw error; }
     return data;
   },
   async update(id, storeData) {
     const cleanData = { ...storeData };
-    delete cleanData.slug;
+    delete cleanData.slug; // Remove para evitar erro se a coluna não existir
     const { data, error } = await window.sb.from('stores').update(cleanData).eq('id', id).select().single();
     if (error) { console.error('StoreAPI.update erro:', error); throw error; }
     return data;
@@ -90,9 +90,9 @@ const OrderAPI = {
   },
   async create(storeId, orderData) {
     const payload = { ...orderData, store_id: storeId };
-    const { error } = await window.sb.from('orders').insert([payload]);
+    const { data, error } = await window.sb.from('orders').insert([payload]).select().single();
     if (error) { console.error('OrderAPI.create erro:', error); throw error; }
-    return true;
+    return data;
   },
   async updateStatus(id, newStatus) {
     const { data, error } = await window.sb.from('orders').update({ status: newStatus }).eq('id', id).select().single();
@@ -113,31 +113,11 @@ const OrderAPI = {
 };
 
 const AsaasAPI = {
-  /**
-   * Solicita a criação de uma cobrança para a loja através da Edge Function.
-   * @param {string} storeId 
-   * @param {string} cpfCnpj
-   * @param {number} planValue
-   */
   async createPayment(storeId, cpfCnpj, planValue) {
-    if (!storeId) throw new Error('Store ID é obrigatório');
     const { data, error } = await window.sb.functions.invoke('asaas-payment', {
       body: { action: 'createPayment', storeId, cpfCnpj, planValue }
     });
-    if (error) { console.error('AsaasAPI.createPayment erro:', error); throw error; }
-    return data;
-  },
-
-  /**
-   * Consulta o status atual de uma cobrança.
-   * @param {string} paymentId 
-   */
-  async getPaymentStatus(paymentId) {
-    if (!paymentId) return null;
-    const { data, error } = await window.sb.functions.invoke('asaas-payment', {
-      body: { action: 'getPaymentStatus', paymentId }
-    });
-    if (error) { console.error('AsaasAPI.getPaymentStatus erro:', error); return null; }
+    if (error) throw error;
     return data;
   }
 };

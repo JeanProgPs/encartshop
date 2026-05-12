@@ -132,21 +132,8 @@
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Imagem do Produto</label>
-        <div style="display:flex;gap:8px;margin-bottom:8px;">
-          <button class="btn btn-ghost btn-sm" id="btn-img-link" onclick="toggleImgSource('link')" style="flex:1;">🔗 Link Externo</button>
-          <button class="btn btn-ghost btn-sm" id="btn-img-upload" onclick="toggleImgSource('upload')" style="flex:1;">📤 Subir Arquivo</button>
-        </div>
-        
-        <div id="img-source-link">
-          <input id="f-image" type="text" class="form-input" placeholder="https://..." oninput="previewImg()">
-        </div>
-        
-        <div id="img-source-upload" class="hidden">
-          <input id="f-image-file" type="file" class="form-input" accept="image/*" onchange="previewImgFile()">
-          <p style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">Tamanho máximo: 2MB. Formatos: JPG, PNG, WEBP.</p>
-        </div>
-
+        <label class="form-label">URL da Imagem</label>
+        <input id="f-image" type="text" class="form-input" placeholder="https://..." oninput="previewImg()">
         <div id="img-preview" class="img-preview" style="margin-top:8px;">
           <span>Pré-visualização da imagem</span>
         </div>
@@ -163,21 +150,20 @@
 <div id="toast-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/core/supabaseClient.js"></script>
-<script src="/js/core/api.js"></script>
-<script src="/js/auth/authService.js"></script>
-<script src="/js/modules/subscription.js"></script>
-<script src="/js/auth/authGuard.js"></script>
-<script src="/js/modules/store.js"></script>
-<script src="/js/modules/products.js"></script>
-<script src="/js/ui/components.js"></script>
-<script src="/js/ui/render.js"></script>
-<script src="/js/storage.js"></script>
-<script src="/js/admin-common.js"></script>
+<script src="../js/core/supabaseClient.js"></script>
+<script src="../js/core/api.js"></script>
+<script src="../js/auth/authService.js"></script>
+<script src="../js/auth/authGuard.js"></script>
+<script src="../js/modules/subscription.js"></script>
+<script src="../js/modules/store.js"></script>
+<script src="../js/modules/products.js"></script>
+<script src="../js/ui/components.js"></script>
+<script src="../js/ui/render.js"></script>
+<script src="../js/storage.js"></script>
+<script src="../js/admin-common.js"></script>
 <script>
-  let editingId   = null;
+  let editingId  = null;
   let allProducts = [];
-  let imgSource   = 'link'; // 'link' ou 'upload'
   const storeId   = () => AuthService.getActiveStoreId();
 
   async function initAdmin() {
@@ -233,41 +219,17 @@
       document.getElementById('f-unit').value        = p.unit || 'un';
       document.getElementById('f-active').value      = p.active ? '1' : '0';
       document.getElementById('f-image').value       = p.image || '';
-      document.getElementById('f-image-file').value  = '';
-      toggleImgSource(p.image && p.image.includes('supabase.co') ? 'upload' : 'link');
       previewImg();
     } else {
       ['f-name','f-cat','f-price','f-promo-price','f-image'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('f-image-file').value  = '';
       document.getElementById('f-unit').value   = 'un';
       document.getElementById('f-active').value = '1';
-      toggleImgSource('link');
       document.getElementById('img-preview').innerHTML = '<span>Pré-visualização da imagem</span>';
     }
     UIComponents.openModal('modal-overlay');
   }
 
   function closeModal() { UIComponents.closeModal('modal-overlay'); editingId = null; }
-
-  function toggleImgSource(src) {
-    imgSource = src;
-    const btnLink = document.getElementById('btn-img-link');
-    const btnUp   = document.getElementById('btn-img-upload');
-    const divLink = document.getElementById('img-source-link');
-    const divUp   = document.getElementById('img-source-upload');
-
-    if (src === 'link') {
-      btnLink.classList.add('btn-primary'); btnLink.classList.remove('btn-ghost');
-      btnUp.classList.add('btn-ghost'); btnUp.classList.remove('btn-primary');
-      divLink.classList.remove('hidden');
-      divUp.classList.add('hidden');
-    } else {
-      btnUp.classList.add('btn-primary'); btnUp.classList.remove('btn-ghost');
-      btnLink.classList.add('btn-ghost'); btnLink.classList.remove('btn-primary');
-      divUp.classList.remove('hidden');
-      divLink.classList.add('hidden');
-    }
-  }
 
   function previewImg() {
     const url = document.getElementById('f-image').value.trim();
@@ -277,35 +239,12 @@
       : '<span>Pré-visualização da imagem</span>';
   }
 
-  function previewImgFile() {
-    const file = document.getElementById('f-image-file').files[0];
-    const div = document.getElementById('img-preview');
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => div.innerHTML = `<img src="${e.target.result}">`;
-      reader.readAsDataURL(file);
-    } else {
-      div.innerHTML = '<span>Pré-visualização da imagem</span>';
-    }
-  }
-
   async function saveProduct() {
     const btn = document.getElementById('save-btn');
     UIComponents.setLoading(btn, true, 'Salvar Produto');
 
     try {
       const promoVal = document.getElementById('f-promo-price').value;
-      let imageUrl = document.getElementById('f-image').value.trim();
-
-      // Se for upload, processa o arquivo primeiro
-      if (imgSource === 'upload') {
-        const file = document.getElementById('f-image-file').files[0];
-        if (file) {
-          showToast('Fazendo upload da imagem...', 'info');
-          imageUrl = await StorageModule.uploadImage(file, storeId());
-        }
-      }
-
       const data = {
         name:       document.getElementById('f-name').value.trim(),
         category:   document.getElementById('f-cat').value.trim(),
@@ -313,7 +252,7 @@
         promo_price: promoVal ? parseFloat(promoVal) : null,
         unit:       document.getElementById('f-unit').value,
         active:     document.getElementById('f-active').value === '1',
-        image:      imageUrl,
+        image:      document.getElementById('f-image').value.trim(),
       };
 
       let errors = [];

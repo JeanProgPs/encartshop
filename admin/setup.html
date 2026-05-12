@@ -82,8 +82,6 @@
     <div class="step-dot" id="dot-3">3</div>
     <div class="step-line" id="line-3"></div>
     <div class="step-dot" id="dot-4">4</div>
-    <div class="step-line" id="line-4"></div>
-    <div class="step-dot" id="dot-5">5</div>
   </div>
 
   <!-- Step 1: Loja + Cor -->
@@ -185,62 +183,9 @@
     </div>
   </div>
 
-  <!-- Step 4: Escolha do Plano -->
+  <!-- Step 4: Acesso -->
   <div class="step-panel" id="step-4">
-    <div class="step-number">Passo 4 de 5</div>
-    <h2>💎 Escolha seu Plano</h2>
-    <p class="desc">Selecione o plano ideal para o seu momento atual.</p>
-    
-    <div style="display:grid; grid-template-columns:1fr; gap:12px;">
-      <div class="card plan-option selected" onclick="pickPlan(59.90, this)" style="cursor:pointer; border-width:2px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <strong style="display:block; font-size:1.1rem;">Start</strong>
-            <span style="font-size:0.8rem; color:var(--text-muted);">Até 100 produtos</span>
-          </div>
-          <div style="text-align:right;">
-            <span style="font-size:1.2rem; font-weight:800; color:var(--brand);">R$ 59,90</span>
-            <span style="display:block; font-size:0.7rem; color:var(--text-muted);">/mês</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="card plan-option" onclick="pickPlan(99.90, this)" style="cursor:pointer; border-width:2px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <strong style="display:block; font-size:1.1rem;">Pro</strong>
-            <span style="font-size:0.8rem; color:var(--text-muted);">Produtos ilimitados + Banners</span>
-          </div>
-          <div style="text-align:right;">
-            <span style="font-size:1.2rem; font-weight:800; color:var(--brand);">R$ 99.90</span>
-            <span style="display:block; font-size:0.7rem; color:var(--text-muted);">/mês</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="card plan-option" onclick="pickPlan(199.90, this)" style="cursor:pointer; border-width:2px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <strong style="display:block; font-size:1.1rem;">Business</strong>
-            <span style="font-size:0.8rem; color:var(--text-muted);">Domínio próprio + Gerente</span>
-          </div>
-          <div style="text-align:right;">
-            <span style="font-size:1.2rem; font-weight:800; color:var(--brand);">R$ 199.90</span>
-            <span style="display:block; font-size:0.7rem; color:var(--text-muted);">/mês</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="step-footer">
-      <button class="btn btn-ghost" onclick="goStep(3)">← Voltar</button>
-      <button class="btn btn-primary" onclick="goStep(5)">Próximo →</button>
-    </div>
-  </div>
-
-  <!-- Step 5: Acesso -->
-  <div class="step-panel" id="step-5">
-    <div class="step-number">Passo 5 de 5</div>
+    <div class="step-number">Passo 4 de 4</div>
     <h2>🔒 Dados de Acesso</h2>
     <p class="desc">E-mail e senha do painel administrativo desta loja.</p>
     <div class="form-stack">
@@ -261,26 +206,19 @@
       <div id="setup-error" style="color:var(--danger);font-size:0.85rem;display:none;padding:10px 14px;background:rgba(231,76,60,0.08);border-radius:var(--radius);border:1px solid rgba(231,76,60,0.2);"></div>
     </div>
     <div class="step-footer">
-      <button class="btn btn-ghost" onclick="goStep(4)">← Voltar</button>
+      <button class="btn btn-ghost" onclick="goStep(3)">← Voltar</button>
       <button class="btn btn-primary btn-lg" onclick="createStore()">🚀 Criar Loja</button>
     </div>
   </div>
 
-  <!-- Step 6: Sucesso / Ativação -->
-  <div class="step-panel" id="step-6">
+  <!-- Step 5: Sucesso / Ativação -->
+  <div class="step-panel" id="step-5">
     <div class="success-panel">
       <div class="success-icon">🚀</div>
       <h2 id="success-title">Quase lá! 🎉</h2>
       <p id="success-sub">Sua conta foi criada. Agora só falta realizar a ativação do seu plano para liberar o painel.</p>
-      
-      <div style="margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: var(--radius); border: 1px dashed var(--border); text-align: center;">
-        <span style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">Link da sua loja:</span>
-        <a id="success-url" href="#" target="_blank" style="color: var(--brand); font-weight: 700; word-break: break-all; text-decoration: none;">carregando...</a>
-      </div>
-
       <div class="success-links">
         <a href="pagamento" class="btn btn-primary btn-lg w-full">Ir para Ativação →</a>
-        <a id="loja-link-btn" href="#" target="_blank" class="btn btn-ghost btn-sm" style="margin-top: 10px;">Visualizar Loja ↗</a>
       </div>
     </div>
   </div>
@@ -288,16 +226,15 @@
 
 <div id="toast-container"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/js/core/supabaseClient.js"></script>
-<script src="/js/core/api.js"></script>
-<script src="/js/auth/authService.js"></script>
-<script src="/js/auth/authGuard.js"></script>
-<script src="/js/modules/store.js"></script>
-<script src="/js/ui/components.js"></script>
-<script src="/js/storage.js"></script>
+<script src="../js/core/supabaseClient.js"></script>
+<script src="../js/core/api.js"></script>
+<script src="../js/auth/authService.js"></script>
+<script src="../js/auth/authGuard.js"></script>
+<script src="../js/modules/store.js"></script>
+<script src="../js/ui/components.js"></script>
+<script src="../js/storage.js"></script>
 <script>
   let selectedColor = '#e94560';
-  let selectedPlanValue = 59.90;
   let currentStep = 1;
 
   // ── Color Palette ─────────────────────────────────────────
@@ -352,31 +289,16 @@
       if (err) { showToast(err, 'error'); return; }
     }
     document.getElementById(`step-${currentStep}`).classList.remove('active');
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= 4; i++) {
       const dot  = document.getElementById(`dot-${i}`);
       const line = document.getElementById(`line-${i}`);
-      if (dot) {
-        dot.classList.remove('active','done');
-        if (i < n) dot.classList.add('done');
-        if (i === n) dot.classList.add('active');
-      }
-      if (line) {
-        line.classList.remove('done');
-        if (i < n) line.classList.add('done');
-      }
+      dot.classList.remove('active','done');
+      if (line) line.classList.remove('done');
+      if (i < n)  { dot.classList.add('done'); if (line) line.classList.add('done'); }
+      if (i === n) dot.classList.add('active');
     }
     currentStep = n;
     document.getElementById(`step-${n}`).classList.add('active');
-  }
-
-  function pickPlan(val, el) {
-    selectedPlanValue = val;
-    document.querySelectorAll('.plan-option').forEach(p => {
-      p.classList.remove('selected');
-      p.style.borderColor = 'var(--border)';
-    });
-    el.classList.add('selected');
-    el.style.borderColor = 'var(--brand)';
   }
 
   function validateStep(step) {
@@ -385,7 +307,7 @@
       const wa = document.getElementById('s2-whatsapp').value.trim();
       if (!wa || wa.length < 10) return 'Informe um número de WhatsApp válido.';
     }
-    if (step === 5) {
+    if (step === 4) {
       const email = document.getElementById('s4-email').value.trim();
       const pass  = document.getElementById('s4-pass').value;
       const pass2 = document.getElementById('s4-pass2').value;
@@ -398,7 +320,7 @@
 
   // ── Create Store com Supabase Auth ────────────────────────
   async function createStore() {
-    const err = validateStep(5);
+    const err = validateStep(4);
     if (err) {
       const errEl = document.getElementById('setup-error');
       errEl.textContent = err; errEl.style.display = 'block';
@@ -408,7 +330,7 @@
     const email    = document.getElementById('s4-email').value.trim();
     const password = document.getElementById('s4-pass').value;
 
-    const btn = document.querySelector('#step-5 .btn-lg');
+    const btn = document.querySelector('#step-4 .btn-lg');
     const oldText = btn.textContent;
     btn.textContent = 'Criando conta...';
     btn.disabled = true;
@@ -453,12 +375,7 @@
         owner_email: email,
         user_id:     userId,
         status:      'pending',
-        plan_value:  selectedPlanValue,
-        expires_at:  new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 dias de trial/setup
       });
-
-      // Salva para referência rápida se necessário (opcional)
-      sessionStorage.setItem('selected_plan_value', selectedPlanValue);
 
       if (result.error || !result.id) {
         showError(result.error || 'Erro ao criar loja.');
@@ -466,18 +383,7 @@
         return;
       }
 
-      // 3. O pagamento será gerado na tela de ativação para permitir escolha de plano
-      /*
-      btn.textContent = 'Gerando cobrança...';
-      try {
-        // Agora requer 3 parâmetros: storeId, cpfCnpj (null se não tiver), planValue
-        await EncartAPI.AsaasAPI.createPayment(result.id, null, 59.90);
-      } catch (payErr) {
-        console.warn('Erro ao gerar cobrança Asaas (o fluxo continuará):', payErr);
-      }
-      */
-
-      // 4. Define loja ativa e faz login
+      // 3. Define loja ativa e faz login
       AuthService.setActiveStoreId(result.id);
       const loginResult = await AuthService.loginWithStore(result.id, email, password);
       if (!loginResult.success) {
@@ -487,7 +393,8 @@
       }
 
       // 4. Tela de sucesso
-      goStep(6);
+      document.getElementById('step-4').classList.remove('active');
+      document.getElementById('step-5').classList.add('active');
       document.getElementById('success-title').textContent = `${name} está no ar! 🎉`;
       const storeUrl = StoreModule.getStoreUrl(result);
       const urlDisplay = document.getElementById('success-url');
@@ -495,8 +402,7 @@
         urlDisplay.textContent = storeUrl;
         urlDisplay.href = storeUrl;
       }
-      const linkBtn = document.getElementById('loja-link-btn');
-      if (linkBtn) linkBtn.href = storeUrl;
+      document.getElementById('loja-link-btn').href = storeUrl;
       StoreModule.applyColor(selectedColor);
 
     } catch (e) {

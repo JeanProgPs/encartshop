@@ -16,15 +16,18 @@
   // 2. Detecta a página atual pelo atributo data-page
   const activePage = document.body.dataset.page || '';
 
-  // 3. Injeta sidebar com item ativo marcado e carrega dados
+  // 3. Injeta sidebar com item ativo marcado
   UIComponents.renderSidebar(activePage);
 
   // 4. Verifica Assinatura e injeta alerta se necessário
-  const store = await StoreModule.getActive();
-  if (store) {
-    const subStatus = SubscriptionModule.getStatus(store.expires_at);
-    const alert = SubscriptionModule.getAlert(subStatus);
-    SubscriptionModule.injectAlert(alert);
+  const storeId = AuthService.getActiveStoreId();
+  if (storeId) {
+    const store = await EncartAPI.StoreAPI.getById(storeId);
+    if (store) {
+      const subStatus = SubscriptionModule.getStatus(store.expires_at);
+      const alert = SubscriptionModule.getAlert(subStatus);
+      if (alert) SubscriptionModule.injectAlert(alert);
+    }
   }
 
 })();

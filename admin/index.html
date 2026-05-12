@@ -90,20 +90,21 @@
       </div>
     </div>
 
-    <!-- Step 2: Seleção de loja (após login) -->
+    <!-- Step 2: Seleção de loja -->
     <div id="step-select" class="hidden">
       <div class="store-selector" id="store-list"></div>
       <div id="no-stores" class="no-stores-hint hidden">
         <div class="icon">🏪</div>
-        Nenhuma loja vinculada a este e-mail.<br>Crie sua primeira loja abaixo!
+        Você ainda não possui lojas vinculadas.
       </div>
+      <button class="btn btn-ghost w-full btn-sm" onclick="backToLogin()">← Voltar para o Login</button>
     </div>
   </div>
 
   <div class="back-link">
     <a href="../index.html">← Voltar ao site</a>
     &nbsp;•&nbsp;
-    <a href="setup.html">🏪 Criar nova loja</a>
+    <a href="setup">🏪 Criar nova loja</a>
   </div>
 </div>
 
@@ -127,40 +128,49 @@
     const list     = document.getElementById('store-list');
     const noStores = document.getElementById('no-stores');
 
-    document.getElementById('card-title').textContent = 'Selecione sua loja';
-    document.getElementById('card-sub').textContent   = 'Escolha a loja que deseja gerenciar.';
-
     if (!stores.length) {
       list.innerHTML = '';
       noStores.classList.remove('hidden');
+      document.getElementById('card-title').textContent = 'Sem lojas';
+      document.getElementById('card-sub').textContent   = 'Nenhuma loja encontrada para este usuário.';
       return;
     }
 
-    // Se tiver apenas 1 loja, entra direto
+    // Se só tiver 1 loja, entra direto nela
     if (stores.length === 1) {
-      AuthService.setActiveStoreId(stores[0].id);
-      window.location.href = '/dashboard';
+      enterStore(stores[0].id);
       return;
     }
 
     noStores.classList.add('hidden');
+    document.getElementById('step-password').classList.add('hidden');
+    document.getElementById('step-select').classList.remove('hidden');
+    document.getElementById('card-title').textContent = 'Selecione a loja';
+    document.getElementById('card-sub').textContent   = 'Escolha qual loja deseja gerenciar agora.';
+
     list.innerHTML = stores.map(s => `
-      <div class="store-option" id="opt-${s.id}" onclick="selectAndGo('${s.id}')">
-        <div class="store-color-dot" style="background:${s.color || '#22c55e'};">ES</div>
+      <div class="store-option" onclick="enterStore('${s.id}')">
+        <div class="store-color-dot" style="background:${s.color || '#22c55e'};">${s.name.substring(0,2).toUpperCase()}</div>
         <div class="store-option-info">
           <h4>${s.name}</h4>
           <p>Clique para entrar</p>
         </div>
         <span class="check">✓</span>
       </div>`).join('');
-    
-    document.getElementById('step-password').classList.add('hidden');
-    document.getElementById('step-select').classList.remove('hidden');
   }
 
-  async function selectAndGo(id) {
+  async function enterStore(id) {
     AuthService.setActiveStoreId(id);
-    window.location.href = '/dashboard';
+    const store = await EncartAPI.StoreAPI.getById(id);
+    if (store?.color) StoreModule.applyColor(store.color);
+    window.location.replace('dashboard.html');
+  }
+
+  function backToLogin() {
+    document.getElementById('step-select').classList.add('hidden');
+    document.getElementById('step-password').classList.remove('hidden');
+    document.getElementById('card-title').textContent = 'Login';
+    document.getElementById('card-sub').textContent   = 'Digite suas credenciais para entrar.';
   }
 
   async function doLogin() {
@@ -176,17 +186,19 @@
     }
 
     errEl.style.display = 'none';
-    btn.textContent = 'Entrando...';
+    btn.textContent = 'Autenticando...';
     btn.disabled = true;
 
-    // Faz o login real no Supabase Auth
-    const { success, data, error } = await AuthService.login(email, password);
+    try {
+      const { data, error } = await window.sb.auth.signInWithPassword({ email, password });
+      
+      if (error) throw error;
 
-    if (success && data.user) {
-      // Login OK, agora busca as lojas desse usuário
-      await renderUserStores(data.user.id);
-    } else {
-      errEl.textContent = error || 'E-mail ou senha incorretos.';
+      if (data?.user) {
+        await renderUserStores(data.user.id);
+      }
+    } catch (err) {
+      errEl.textContent = 'E-mail ou senha incorretos.';
       errEl.style.display = 'block';
       btn.textContent = 'Entrar no Painel';
       btn.disabled = false;

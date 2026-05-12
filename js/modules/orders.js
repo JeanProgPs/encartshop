@@ -27,20 +27,14 @@ const OrderModule = (() => {
   }
 
   async function updateStatus(orderId, currentStatus, newStatus) {
-    try {
-      const allowedNext = STATUS_FLOW[currentStatus] || [];
-      
-      // Verifica se a transição é permitida
-      if (!allowedNext.includes(newStatus)) {
-        return { success: false, error: `Transição de status inválida: de ${currentStatus} para ${newStatus}` };
-      }
-      
-      const data = await EncartAPI.OrderAPI.updateStatus(orderId, newStatus);
-      return { success: true, data };
-    } catch (e) {
-      console.error("Erro ao atualizar status do pedido:", e);
-      return { success: false, error: e.message || 'Erro ao atualizar status' };
+    const allowedNext = STATUS_FLOW[currentStatus] || [];
+    
+    // Verifica se a transição é permitida
+    if (!allowedNext.includes(newStatus)) {
+      throw new Error(`Transição de status inválida: de ${currentStatus} para ${newStatus}`);
     }
+    
+    return await EncartAPI.OrderAPI.updateStatus(orderId, newStatus);
   }
 
   async function remove(orderId) {
@@ -77,34 +71,7 @@ const OrderModule = (() => {
     return classes[status] || 'badge-secondary';
   }
 
-  function filter(orders, status) {
-    if (!status || status === 'all') return orders;
-    return orders.filter(o => o.status === status);
-  }
-
-  function countByStatus(orders) {
-    const counts = { 
-      all: orders.length, 
-      novo: 0, 
-      em_preparo: 0, 
-      confirmado: 0, 
-      em_entrega: 0, 
-      entregue: 0, 
-      finalizado: 0, 
-      cancelado: 0 
-    };
-    orders.forEach(o => {
-      if (counts[o.status] !== undefined) {
-        counts[o.status]++;
-      } else {
-        // Se o status não for conhecido, pelo menos não quebramos a soma
-        // mas idealmente todos os status devem estar aqui.
-      }
-    });
-    return counts;
-  }
-
-  return { getAll, create, updateStatus, remove, clearAll, STATUS_FLOW, getStatusLabel, getStatusClass, filter, countByStatus };
+  return { getAll, create, updateStatus, remove, clearAll, STATUS_FLOW, getStatusLabel, getStatusClass };
 })();
 
 window.OrderModule = OrderModule;

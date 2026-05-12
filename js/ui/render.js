@@ -59,7 +59,7 @@ const UIRender = (() => {
     const price = isPromo ? p.promo_price : p.price;
     const unit = p.unit || 'un';
     const isKg = unit.toLowerCase() === 'kg';
-    const qtyLabel = isKg ? (cartQty < 1 && cartQty > 0 ? `${cartQty * 1000}g` : `${cartQty.toFixed(1).replace('.',',')}kg`) : `${cartQty}x`;
+    const qtyLabel = isKg ? `${cartQty.toFixed(1).replace('.',',')}kg` : `${cartQty}x`;
     const defaultImg = 'https://images.placeholders.dev/?width=400&height=400&text=Sem%20Imagem&bgColor=%23f1f5f9&textColor=%2364748b';
     const img = p.image || defaultImg;
 
@@ -67,7 +67,7 @@ const UIRender = (() => {
       <div class="product-card" id="prod-${p.id}">
         <div class="product-image-wrap">
           <img src="${img}" alt="${p.name}" loading="lazy" onerror="this.src='${defaultImg}'">
-          ${isPromo ? `<div class="promo-badge">🔥 OFERTA</div>` : ''}
+          ${isPromo ? `<div class="promo-badge">PROMO</div>` : ''}
         </div>
         <div class="product-info">
           <div class="product-name" title="${p.name}">${p.name}</div>
@@ -101,55 +101,7 @@ const UIRender = (() => {
     `;
   }
 
-  function orderAdminCard(o) {
-    const statusLabel = OrderModule.getStatusLabel(o.status);
-    const statusClass = OrderModule.getStatusClass(o.status);
-    const dateStr = fmtDateShort(o.created_at);
-    const totalStr = fmtPrice(o.total);
-    const itemsCount = Array.isArray(o.items) ? o.items.length : 0;
-    
-    // Determine next actions based on status flow
-    const nextActions = OrderModule.STATUS_FLOW[o.status] || [];
-    const actionButtons = nextActions.map(next => {
-      const label = OrderModule.getStatusLabel(next);
-      return `<button class="btn btn-outline btn-sm order-action-btn" 
-                data-order-id="${o.id}" 
-                data-current-status="${o.status}" 
-                data-new-status="${next}" 
-                onclick="handleOrderStatus(this)">${label}</button>`;
-    }).join('');
-
-    return `
-      <div class="order-card" id="order-${o.id}">
-        <div class="order-header">
-          <div>
-            <div class="order-id">#${String(o.id).slice(-5).toUpperCase()}</div>
-            <div class="order-customer">${o.customer_name || 'Cliente'}</div>
-            <div class="order-meta">${dateStr} · ${itemsCount} item(s)</div>
-          </div>
-          <span class="badge ${statusClass}">${statusLabel}</span>
-        </div>
-        <div class="order-items">
-          ${(o.items || []).map(item => `
-            <div class="order-item">
-              <span class="item-name">${item.name}</span>
-              <span class="item-qty">${item.qty || item.quantity}x</span>
-            </div>
-          `).join('')}
-        </div>
-        <div class="order-total">
-          <span class="order-total-label">Total</span>
-          <span class="order-total-value">${totalStr}</span>
-        </div>
-        <div class="order-actions">
-          ${actionButtons}
-          <button class="btn btn-ghost btn-icon" style="color:var(--danger);margin-left:auto;" onclick="handleDeleteOrder('${o.id}')" title="Excluir">🗑️</button>
-        </div>
-      </div>
-    `;
-  }
-
-  return { emptyState, fmtPrice, fmtDateShort, productAdminCard, productStoreCard, orderAdminCard };
+  return { emptyState, fmtPrice, fmtDateShort, productAdminCard, productStoreCard };
 })();
 
 window.UIRender = UIRender;
