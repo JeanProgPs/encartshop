@@ -118,15 +118,22 @@
 
     /* Features */
     .features-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px; margin-top: 60px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 60px;
+    }
+
+    @media (max-width: 768px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
     }
     .feature-item {
       background: var(--bg-card); border: 1px solid var(--border);
       border-radius: var(--radius-lg); padding: 28px;
       display: flex; flex-direction: column; gap: 12px;
       transition: var(--transition);
-      height: 100%;
     }
     .feature-item:hover { border-color: var(--brand-light); transform: translateY(-2px); box-shadow: var(--shadow); }
     .feature-emoji { font-size: 1.8rem; }
@@ -231,8 +238,8 @@
   <div class="nav-links">
     <a href="#como-funciona">Como Funciona</a>
     <a href="#setores">Setores</a>
-    <a href="#recursos">Recursos</a>
     <a href="#precos">Preços</a>
+    <a href="faq.html">FAQ</a>
   </div>
   <div class="nav-cta">
     <a href="/admin" class="btn btn-ghost btn-sm">Entrar</a>
@@ -276,48 +283,36 @@
     <h2 class="section-title">Feito para o seu negócio</h2>
     <p class="section-sub" style="margin: 0 auto;">Nossa plataforma se adapta perfeitamente a qualquer nicho do mercado.</p>
     
-    <div class="features-grid">
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 60px;">
       <div class="feature-item">
         <div class="feature-emoji">👕</div>
-        <div>
-          <h4>Moda & Acessórios</h4>
-          <p>Exiba suas coleções com fotos de alta qualidade e grades de tamanhos.</p>
-        </div>
+        <h4>Moda & Acessórios</h4>
+        <p>Exiba suas coleções com fotos de alta qualidade e grades de tamanhos.</p>
       </div>
       <div class="feature-item">
         <div class="feature-emoji">📱</div>
-        <div>
-          <h4>Eletrônicos</h4>
-          <p>Catálogo técnico detalhado para celulares, acessórios e gadgets.</p>
-        </div>
+        <h4>Eletrônicos</h4>
+        <p>Catálogo técnico detalhado para celulares, acessórios e gadgets.</p>
       </div>
       <div class="feature-item">
         <div class="feature-emoji">🐾</div>
-        <div>
-          <h4>Petshops</h4>
-          <p>Venda rações, acessórios e agende serviços com facilidade.</p>
-        </div>
+        <h4>Petshops</h4>
+        <p>Venda rações, acessórios e agende serviços com facilidade.</p>
       </div>
       <div class="feature-item">
         <div class="feature-emoji">🍎</div>
-        <div>
-          <h4>Hortifrúti & Mercado</h4>
-          <p>O tradicional encarte digital com promoções dinâmicas e kits.</p>
-        </div>
+        <h4>Hortifrúti & Mercado</h4>
+        <p>O tradicional encarte digital com promoções dinâmicas e kits.</p>
       </div>
       <div class="feature-item">
         <div class="feature-emoji">💄</div>
-        <div>
-          <h4>Beleza & Saúde</h4>
-          <p>Perfeito para perfumarias, cosméticos e suplementos.</p>
-        </div>
+        <h4>Beleza & Saúde</h4>
+        <p>Perfeito para perfumarias, cosméticos e suplementos.</p>
       </div>
       <div class="feature-item">
         <div class="feature-emoji">🛠️</div>
-        <div>
-          <h4>Materiais & Casa</h4>
-          <p>Facilite o orçamento de peças e ferramentas via WhatsApp.</p>
-        </div>
+        <h4>Materiais & Casa</h4>
+        <p>Facilite o orçamento de peças e ferramentas via WhatsApp.</p>
       </div>
     </div>
   </div>
@@ -453,13 +448,13 @@
   <div class="footer-links">
     <a href="admin/index.html">Painel Administrativo</a>
     <a href="loja/index.html">Ver Demonstração</a>
-    <a href="#">Privacidade</a>
-    <a href="#">Suporte</a>
+    <a href="faq.html">Dúvidas (FAQ)</a>
+    <a href="privacy.html">Privacidade</a>
+    <a href="support.html">Suporte</a>
   </div>
 </footer>
 
 <div id="toast-container"></div>
 </body>
-</html>
 
 
