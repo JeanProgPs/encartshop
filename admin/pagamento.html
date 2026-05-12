@@ -64,6 +64,7 @@
     .plan-card h4 { font-size: 0.8rem; margin-bottom: 4px; color: var(--text-muted); }
     .plan-card .price { font-size: 1.1rem; font-weight: 800; color: var(--brand); font-family: var(--font-display); }
     .plan-card .recurrence { font-size: 0.65rem; color: var(--text-muted); }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -135,7 +136,7 @@
     </div>
   </div>
 
-  <div class="form-stack">
+  <div id="footer-actions" class="form-stack hidden">
     <button class="btn btn-primary btn-lg w-full" onclick="checkPayment()">Confirmar pagamento</button>
     <button class="btn btn-ghost w-full" onclick="AuthService.logout().then(() => window.location.replace('index'))">Sair e pagar depois</button>
   </div>
@@ -156,22 +157,21 @@
   // Máscara e Validação de CPF/CNPJ
   const cpfInput = document.getElementById('cpf-input');
   if (cpfInput) {
-    cpfInput.addEventListener('input', (e) => {
-      let value = e.target.value.replace(/\D/g, '');
-      if (value.length <= 11) {
-        value = value.replace(/(\d{3})(\d)/, '$1.$2');
-        value = value.replace(/(\d{3})(\d)/, '$1.$2');
-        value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    cpfInput.addEventListener('input', function(e) {
+      let v = e.target.value.replace(/\D/g, '');
+      if (v.length <= 11) {
+        v = v.replace(/(\d{3})(\d)/, "$1.$2");
+        v = v.replace(/(\d{3})(\d)/, "$1.$2");
+        v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
       } else {
-        value = value.replace(/^(\d{2})(\d)/, '$1.$2');
-        value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
-        value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
-        value = value.replace(/(\d{4})(\d)/, '$1-$2');
+        v = v.replace(/^(\d{2})(\d)/, "$1.$2");
+        v = v.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+        v = v.replace(/\.(\d{3})(\d)/, ".$1/$2");
+        v = v.replace(/(\d{4})(\d)/, "$1-$2");
       }
-      e.target.value = value;
+      e.target.value = v;
       
-      // Validação visual simples em tempo real
-      const cleanValue = value.replace(/\D/g, '');
+      const cleanValue = v.replace(/\D/g, '');
       const isValid = cleanValue.length === 11 || cleanValue.length === 14;
       if (cleanValue.length > 0) {
         cpfInput.classList.toggle('invalid-input', !isValid);
@@ -208,8 +208,13 @@
       return;
     }
 
+    // Se for renovação (vencida), muda o texto
+    if (subStatus.expired) {
+      document.querySelector('.payment-header h1').textContent = 'Renove sua assinatura';
+      document.querySelector('.status-badge').innerHTML = '⚠️ Assinatura vencida';
+    }
+
     // Se estiver vencida ou pendente, mas já tiver um QR Code, mostra o PIX
-    // A menos que o usuário queira gerar um novo (tratado via UI)
     if (store.asaas_pix_qr_code) {
       showPixSection(store);
       return;
@@ -221,6 +226,7 @@
 
   function showPlanSelection() {
     document.getElementById('pix-section').classList.add('hidden');
+    document.getElementById('footer-actions').classList.add('hidden');
     document.getElementById('plan-selection').classList.remove('hidden');
     document.getElementById('cpf-section').classList.remove('hidden');
   }
@@ -229,6 +235,7 @@
     document.getElementById('plan-selection').classList.add('hidden');
     document.getElementById('cpf-section').classList.add('hidden');
     document.getElementById('pix-section').classList.remove('hidden');
+    document.getElementById('footer-actions').classList.remove('hidden');
     
     document.getElementById('pix-qr-img').src = `data:image/png;base64,${store.asaas_pix_qr_code}`;
     document.getElementById('pix-copy-paste').textContent = store.asaas_pix_code || 'Chave não disponível';
