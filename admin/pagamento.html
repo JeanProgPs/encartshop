@@ -53,11 +53,17 @@
     .benefit-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-light); }
     .benefit-item span { color: var(--success); font-weight: bold; }
     
-    .plan-highlight { 
-      background: var(--primary-light); border: 1px solid var(--border-accent); 
-      border-radius: var(--radius); padding: 12px; margin-bottom: 20px;
-      font-weight: 700; color: var(--brand); font-size: 0.9rem;
+    .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .plan-card {
+      border: 1px solid var(--border); border-radius: var(--radius); padding: 12px;
+      cursor: pointer; transition: var(--transition); text-align: center;
+      background: var(--bg-card);
     }
+    .plan-card:hover { border-color: var(--brand); transform: translateY(-2px); }
+    .plan-card.selected { border-color: var(--brand); background: var(--brand-glow); box-shadow: 0 4px 12px var(--brand-glow); }
+    .plan-card h4 { font-size: 0.8rem; margin-bottom: 4px; color: var(--text-muted); }
+    .plan-card .price { font-size: 1.1rem; font-weight: 800; color: var(--brand); font-family: var(--font-display); }
+    .plan-card .recurrence { font-size: 0.65rem; color: var(--text-muted); }
   </style>
 </head>
 <body>
@@ -70,8 +76,25 @@
     </div>
     <h1>Ative sua loja agora</h1>
     
-    <div class="plan-highlight" id="plan-info">
-      Plano Profissional — R$ 99,90/mês
+    <div id="plan-selection" class="hidden">
+      <p style="font-size:0.9rem; font-weight:600; text-align:left; margin-bottom:12px;">1. Escolha seu plano:</p>
+      <div class="plan-grid">
+        <div class="plan-card selected" onclick="selectPlan(59.90, 'Start', this)">
+          <h4>Start</h4>
+          <div class="price">R$ 59,90</div>
+          <div class="recurrence">/mês</div>
+        </div>
+        <div class="plan-card" onclick="selectPlan(99.90, 'Pro', this)">
+          <h4>Pro</h4>
+          <div class="price">R$ 99,90</div>
+          <div class="recurrence">/mês</div>
+        </div>
+        <div class="plan-card" onclick="selectPlan(199.90, 'Business', this)">
+          <h4>Business</h4>
+          <div class="price">R$ 199,90</div>
+          <div class="recurrence">/mês</div>
+        </div>
+      </div>
     </div>
 
     <div class="benefits-list">
@@ -85,7 +108,7 @@
   </div>
 
   <div id="cpf-section" class="hidden" style="text-align:left; margin-bottom: 24px; background:var(--bg-elevated); padding:20px; border-radius:var(--radius-xl); border:1px solid var(--border);">
-    <label style="font-size:0.9rem; font-weight:600; display:block; margin-bottom:8px;">Digite seu CPF ou CNPJ:</label>
+    <label style="font-size:0.9rem; font-weight:600; display:block; margin-bottom:8px;">2. Digite seu CPF ou CNPJ:</label>
     <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Para gerar o QR Code de ativação, o Asaas exige um documento válido.</p>
     <input type="text" id="cpf-input" class="form-control" placeholder="000.000.000-00" style="width:100%; box-sizing:border-box;" maxlength="18">
     <div id="cpf-validation-msg" class="validation-msg">Documento inválido</div>
@@ -153,6 +176,16 @@
     });
   }
 
+  let selectedPlanValue = 59.90;
+  let selectedPlanName  = 'Start';
+
+  function selectPlan(val, name, el) {
+    selectedPlanValue = val;
+    selectedPlanName  = name;
+    document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+    if (el) el.classList.add('selected');
+  }
+
   async function loadPaymentInfo() {
     const storeId = AuthService.getActiveStoreId();
     if (!storeId) { window.location.replace('index'); return; }
@@ -166,8 +199,9 @@
       return;
     }
 
-    // Se não tiver dados do Asaas, mostra o campo de CPF
+    // Se não tiver dados do Asaas, mostra o campo de CPF e seleção de plano
     if (!store.asaas_pix_qr_code) {
+      document.getElementById('plan-selection').classList.remove('hidden');
       document.getElementById('cpf-section').classList.remove('hidden');
       return;
     }
@@ -201,7 +235,8 @@
     btn.disabled = true;
 
     try {
-      await EncartAPI.AsaasAPI.createPayment(storeId, cpfCnpj);
+      // Passa o valor do plano selecionado
+      await EncartAPI.AsaasAPI.createPayment(storeId, cpfCnpj, selectedPlanValue);
       UIComponents.showToast('Cobrança gerada com sucesso!', 'success');
       setTimeout(() => location.reload(), 1500);
     } catch (e) {

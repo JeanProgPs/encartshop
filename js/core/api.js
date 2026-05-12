@@ -121,7 +121,7 @@ const AsaasAPI = {
   async createPayment(storeId, cpfCnpj) {
     if (!storeId) throw new Error('Store ID é obrigatório');
     const { data, error } = await window.sb.functions.invoke('asaas-payment', {
-      body: { action: 'createPayment', storeId, cpfCnpj }
+      body: { action: 'createPayment', storeId, cpfCnpj, planValue: arguments[2] }
     });
     if (error) { console.error('AsaasAPI.createPayment erro:', error); throw error; }
     return data;

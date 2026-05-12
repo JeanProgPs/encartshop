@@ -17,9 +17,12 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
-    const { action, storeId, cpfCnpj } = await req.json()
+    const body = await req.json()
+    const { action } = body
 
     if (action === 'createPayment') {
+      const { storeId, cpfCnpj, planValue } = body
+      const paymentValue = parseFloat(planValue) || 59.90
       const { data: store, error: storeErr } = await supabaseClient
         .from('stores').select('*').eq('id', storeId).single()
       if (storeErr || !store) throw new Error('Loja não encontrada')
@@ -90,7 +93,7 @@ serve(async (req) => {
         body: JSON.stringify({
           customer: asaasCustomerId,
           billingType: 'PIX',
-          value: 5.00,
+          value: paymentValue,
           dueDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
           description: `Ativação EncartShop - ${store.name}`,
           externalReference: store.id

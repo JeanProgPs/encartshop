@@ -383,14 +383,15 @@
         return;
       }
 
-      // 3. Solicita criação do pagamento no Asaas
+      // 3. O pagamento será gerado na tela de ativação para permitir escolha de plano
+      /*
       btn.textContent = 'Gerando cobrança...';
       try {
         await EncartAPI.AsaasAPI.createPayment(result.id);
       } catch (payErr) {
         console.warn('Erro ao gerar cobrança Asaas (o fluxo continuará):', payErr);
-        // Não travamos o fluxo se o Asaas falhar, o usuário pode tentar pagar depois
       }
+      */
 
       // 4. Define loja ativa e faz login
       AuthService.setActiveStoreId(result.id);
