@@ -48,7 +48,14 @@ const StoreModule = (() => {
     
     // Usa nome da loja convertido para slug
     const slug = slugify(store.name || 'loja');
-    return `${window.location.origin}/loja/index.html?s=${slug}`;
+    
+    // Se estivermos no painel admin, o link relativo é ../loja/index.html
+    const isInsideAdmin = window.location.pathname.includes('/admin/');
+    if (isInsideAdmin || window.location.pathname.endsWith('/admin')) {
+        return `../loja/index.html?s=${slug}`;
+    }
+
+    return `loja/index.html?s=${slug}`;
   }
 
   async function save(storeData) {

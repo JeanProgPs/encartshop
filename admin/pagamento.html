@@ -344,7 +344,9 @@
       showPixSection(updatedStore);
     } catch (e) {
       console.error('Erro ao gerar pagamento:', e);
-      UIComponents.showToast('Erro ao gerar PIX. Verifique os dados.', 'error');
+      // Tenta extrair a mensagem de erro detalhada se disponível
+      const errorMsg = e.message || 'Erro ao gerar PIX. Verifique os dados.';
+      UIComponents.showToast(`Erro: ${errorMsg}`, 'error');
       btn.innerHTML = originalHTML;
       btn.disabled = false;
     }

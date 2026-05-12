@@ -85,14 +85,18 @@ serve(async (req) => {
         }
 
         await supabaseClient.from('stores').update({ asaas_customer_id: asaasCustomerId }).eq('id', storeId)
-      } else {
-        // Atualiza o cliente existente com CPF (pode ter sido criado sem CPF antes)
+      } else if (cpfCnpj) {
+        // Atualiza o cliente existente com CPF apenas se um novo CPF foi enviado
         console.log('Atualizando customer existente com CPF:', asaasCustomerId)
-        await fetch(`${ASAAS_URL}/customers/${asaasCustomerId}`, {
+        const updateRes = await fetch(`${ASAAS_URL}/customers/${asaasCustomerId}`, {
           method: 'PUT',
           headers: { 'access_token': ASAAS_API_KEY, 'Content-Type': 'application/json' },
           body: JSON.stringify({ cpfCnpj: cpfCnpj })
         })
+        if (!updateRes.ok) {
+            const updateData = await updateRes.json();
+            console.warn('Aviso: Falha ao atualizar CPF (pode já estar correto):', JSON.stringify(updateData));
+        }
       }
 
       // Cria cobrança PIX
