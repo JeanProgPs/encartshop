@@ -1,6 +1,6 @@
 /**
- * EncartShop — Loja Pública v8
- * Refinamento: Incremento de 100g para Kg e melhorias no Carrinho
+ * EncartShop — Loja Pública v11
+ * Profissional, modular e com busca inteligente por Slug
  */
 
 // ── Detecta loja via URL ──────────────────────────────────────
@@ -14,38 +14,21 @@ let allProducts   = [];
 let activeCategory = 'Todos';
 let STORE_ID      = STORE_ID_PARAM;
 
-alert('DEBUG: loja.js foi carregado com sucesso!');
-console.log('[EncartShop] loja.js carregado com sucesso.');
-
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('[EncartShop] DOM carregado, iniciando lógica da loja...');
+  console.log('[EncartShop] Iniciando lógica da loja...');
   try {
     if (!window.sb) throw new Error('Conexão com o banco falhou.');
 
-    if (STORE_ID) {
-      // Verifica se é um UUID
-      const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(STORE_ID);
-      
-     // 1. Busca dados da loja
+    if (!STORE_ID) {
+        throw new Error('Link da loja inválido. Use encatshop.com/loja?s=NOME-DA-LOJA');
+    }
+
+    // 1. Busca dados da loja
     let storeData = await EncartAPI.StoreAPI.getById(STORE_ID);
     
-    // 2. Verifica se a loja existe e se não está bloqueada por vencimento
-    if (storeData) {
-      store = storeData;
-      const subStatus = SubscriptionModule.getStatus(store.expires_at);
-      if (subStatus.blocked) {
-        document.body.innerHTML = `
-          <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; font-family:sans-serif; background:#f8fafc;">
-            <div style="font-size:4rem; margin-bottom:20px;">🏪</div>
-            <h1 style="font-size:1.5rem; color:#0f172a; margin-bottom:8px;">Loja Temporariamente Indisponível</h1>
-            <p style="color:#64748b; max-width:400px; line-height:1.6;">Esta loja está passando por uma manutenção ou sua assinatura expirou. Por favor, tente novamente mais tarde.</p>
-            <a href="/" style="margin-top:24px; color:#4f46e5; text-decoration:none; font-weight:600;">← Voltar ao EncartShop</a>
-          </div>`;
-        return;
-      }
-    } else {
-        // 2. Se não encontrou por ID, busca todas e tenta encontrar pelo nome (slug)
-        console.log('[Loja] Tentando busca por nome/slug:', STORE_ID);
+    // 2. Se não encontrou por ID (UUID), tenta buscar pelo Nome/Slug
+    if (!storeData) {
+        console.log('[Loja] Tentando busca por slug:', STORE_ID);
         const allStores = await EncartAPI.StoreAPI.getAll();
         
         const slugify = text => (text || '').toString().toLowerCase()
@@ -57,30 +40,40 @@ document.addEventListener('DOMContentLoaded', async () => {
           .replace(/-+$/, '');
           
         const targetSlug = slugify(STORE_ID);
-        const found = allStores.find(s => slugify(s.name) === targetSlug);
-        
-        if (found) {
-          store = found;
-          STORE_ID = store.id; 
-          console.log('[Loja] Loja encontrada via slug:', store.name);
-        }
+        storeData = allStores.find(s => slugify(s.name) === targetSlug);
     }
 
-    if (!STORE_ID || !store.id) {
-      console.error('[Loja] Erro: Loja não encontrada para o ID/Slug:', STORE_ID);
-      throw new Error(`Loja "${STORE_ID || 'não especificada'}" não encontrada. Verifique o link.`);
+    if (!storeData) {
+      throw new Error(`Loja "${STORE_ID}" não encontrada. Verifique o link.`);
     }
 
+    store = storeData;
+    STORE_ID = store.id;
+
+    // 3. Verifica se a loja está ativa/paga
+    const subStatus = SubscriptionModule.getStatus(store.expires_at);
+    if (subStatus.blocked) {
+      document.body.innerHTML = `
+        <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; font-family:sans-serif; background:#f8fafc;">
+          <div style="font-size:4rem; margin-bottom:20px;">🏪</div>
+          <h1 style="font-size:1.5rem; color:#0f172a; margin-bottom:8px;">Loja Temporariamente Indisponível</h1>
+          <p style="color:#64748b; max-width:400px; line-height:1.6;">Esta loja está passando por uma manutenção ou sua assinatura expirou.</p>
+          <a href="/" style="margin-top:24px; color:#4f46e5; text-decoration:none; font-weight:600;">← Voltar ao EncartShop</a>
+        </div>`;
+      return;
+    }
+
+    // 4. Carrega interface e produtos
     cart = _loadCart();
     if (store.color) {
       document.documentElement.style.setProperty('--accent', store.color);
       document.documentElement.style.setProperty('--brand', store.color);
     }
     
-    console.log('[Loja] Carregando UI para:', store.name);
     loadStoreUI();
     await loadProducts();
     updateCartUI();
+
   } catch (err) {
     console.error('[Loja] Erro Crítico:', err);
     document.body.innerHTML = `
@@ -97,24 +90,8 @@ function loadStoreUI() {
   document.title = store.name + ' — EncartShop';
   const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   setEl('header-store-name', store.name);
+  setEl('store-banner',      store.banner_text || 'Confira nossas ofertas!');
   setEl('header-hours',      store.hours || '');
-  setEl('store-banner',      store.banner_text || 'Ofertas da Semana!');
-
-  const infoBar = document.getElementById('store-info-bar');
-  if (infoBar) {
-    const parts = [];
-    if (store.address) parts.push(`📍 <strong>${store.address}</strong>`);
-    
-    const fee = store.delivery_fee ?? 0;
-    if (fee === -1) {
-      parts.push('🚚 <strong>Entrega a combinar</strong>');
-    } else if (fee > 0) {
-      parts.push(`🚚 Entrega: <strong>R$ ${Number(fee).toFixed(2).replace('.',',')}</strong>`);
-    } else {
-      parts.push('🚚 <strong>Entrega Grátis</strong>');
-    }
-    infoBar.innerHTML = parts.map(p => `<div class="info-item">${p}</div>`).join('');
-  }
 }
 
 async function loadProducts() {
@@ -132,17 +109,17 @@ function renderCategoryTabs() {
   const hasPromo = allProducts.some(p => p.promo_price);
   
   if (categories.length === 0 && !hasPromo) {
-    tabsWrap.parentElement.classList.add('hidden');
+    document.getElementById('cat-tabs-area').classList.add('hidden');
     return;
   }
 
-  tabsWrap.parentElement.classList.remove('hidden');
+  document.getElementById('cat-tabs-area').classList.remove('hidden');
   
   const html = [];
   html.push(`<button class="cat-tab ${activeCategory === 'Todos' ? 'active' : ''}" onclick="setCategory('Todos')">Todos</button>`);
   
   if (hasPromo) {
-    html.push(`<button class="cat-tab ${activeCategory === 'Ofertas' ? 'active' : ''}" onclick="setCategory('Ofertas')" style="color:var(--danger); border-color:var(--danger); font-weight:700;"><span style="margin-right:4px;">🔥</span> Ofertas</button>`);
+    html.push(`<button class="cat-tab ${activeCategory === 'Ofertas' ? 'active' : ''}" onclick="setCategory('Ofertas')" style="color:#ef4444; border-color:#ef4444;">🔥 Ofertas</button>`);
   }
   
   categories.forEach(cat => {
@@ -156,18 +133,6 @@ function setCategory(cat) {
   activeCategory = cat;
   renderCategoryTabs();
   renderProducts();
-  
-  if (cat === 'Todos' || cat === 'Ofertas') {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  } else {
-    const el = document.getElementById(`cat-sec-${cat}`);
-    if (el) {
-      const top = el.offsetTop - 120; // Compensar header + tabs
-      window.scrollTo({ top, behavior: 'smooth' });
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }
 }
 
 function renderProducts() {
@@ -175,85 +140,30 @@ function renderProducts() {
   if (!area) return;
 
   if (!allProducts.length) {
-    area.innerHTML = UIRender.emptyState('📦', 'Nenhum produto', 'Volte em breve!');
+    area.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#666;">Nenhum produto encontrado.</div>';
     return;
   }
 
-  // Filtragem
   let filtered = [];
-  if (activeCategory === 'Todos') {
-    filtered = allProducts;
-  } else if (activeCategory === 'Ofertas') {
-    filtered = allProducts.filter(p => !!p.promo_price);
-    // Ordena do maior desconto percentual para o menor
-    filtered.sort((a, b) => {
-      const descA = (a.price - a.promo_price) / a.price;
-      const descB = (b.price - b.promo_price) / b.price;
-      return descB - descA;
-    });
-  } else {
-    filtered = allProducts.filter(p => p.category === activeCategory);
-  }
+  if (activeCategory === 'Todos') filtered = allProducts;
+  else if (activeCategory === 'Ofertas') filtered = allProducts.filter(p => !!p.promo_price);
+  else filtered = allProducts.filter(p => p.category === activeCategory);
 
-  if (filtered.length === 0) {
-    area.innerHTML = UIRender.emptyState('😔', 'Nenhum produto', 'Não há produtos para exibir aqui.');
-    return;
-  }
-
-  // Agrupamento (sempre agrupa se for "Todos")
-  if (activeCategory === 'Todos') {
-    const groups = {};
-    filtered.forEach(p => {
-      const cat = p.category || 'Diversos';
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(p);
-    });
-
-    area.innerHTML = Object.entries(groups).map(([cat, prods]) => `
-      <div class="category-section" id="cat-sec-${cat}">
-        <div class="section-heading">${cat}</div>
-        <div class="product-grid">
-          ${prods.map(p => UIRender.productStoreCard(p, _cartQty(p.id))).join('')}
-        </div>
-      </div>
-    `).join('');
-  } else if (activeCategory === 'Ofertas') {
-    area.innerHTML = `
-      <div class="category-section">
-        <div class="section-heading" style="color:var(--danger);">🔥 Ofertas Especiais</div>
-        <div class="product-grid">
-          ${filtered.map(p => UIRender.productStoreCard(p, _cartQty(p.id))).join('')}
-        </div>
-      </div>
-    `;
-  } else {
-    area.innerHTML = `
-      <div class="category-section">
-        <div class="section-heading">${activeCategory}</div>
-        <div class="product-grid">
-          ${filtered.map(p => UIRender.productStoreCard(p, _cartQty(p.id))).join('')}
-        </div>
-      </div>
-    `;
-  }
+  area.innerHTML = filtered.map(p => UIRender.productStoreCard(p, _cartQty(p.id))).join('');
 }
 
-// ── Carrinho Refinado ──────────────────────────────────────────
+// ── Carrinho ──────────────────────────────────────────
 function addToCart(id) {
   const product = allProducts.find(p => p.id === id);
   if (!product) return;
   
-  // Incremento: 100g para Kg, 1un para outros
   const isKg = product.unit?.toLowerCase() === 'kg';
   const step = isKg ? 0.5 : 1;
   const price = product.promo_price || product.price;
   
   const existing = cart.find(c => c.id === id);
-  if (existing) {
-    existing.qty += step;
-  } else {
-    cart.push({ id: product.id, name: product.name, price, image: product.image, unit: product.unit, qty: step });
-  }
+  if (existing) existing.qty += step;
+  else cart.push({ id: product.id, name: product.name, price, image: product.image, unit: product.unit, qty: step });
 
   _saveCart();
   updateCartUI();
@@ -266,9 +176,7 @@ function changeQty(id, delta) {
 
   const isKg = item.unit?.toLowerCase() === 'kg';
   const step = isKg ? 0.5 : 1;
-  
   item.qty += (delta * step);
-  // Arredonda para evitar imprecisões de float (ex: 0.300000000004)
   if (isKg) item.qty = Math.round(item.qty * 100) / 100;
 
   if (item.qty <= 0) {
@@ -298,16 +206,14 @@ function _cartQty(id) {
 }
 
 function updateCartUI() {
-  const countEl = document.getElementById('cart-count');
-  const hCountEl = document.getElementById('header-cart-count');
-  const totalItems = cart.length; // Conta quantos produtos diferentes tem
+  const total = cart.length;
+  const c1 = document.getElementById('cart-count');
+  const c2 = document.getElementById('header-cart-count');
+  if (c1) c1.textContent = total;
+  if (c2) c2.textContent = total;
   
-  if (countEl) countEl.textContent = totalItems;
-  if (hCountEl) hCountEl.textContent = totalItems;
-  
-  document.getElementById('cart-bubble')?.classList.toggle('hidden', totalItems === 0);
-  const hBtn = document.getElementById('header-cart-btn');
-  if (hBtn) hBtn.style.display = totalItems > 0 ? '' : 'none';
+  document.getElementById('cart-bubble')?.classList.toggle('hidden', total === 0);
+  document.getElementById('header-cart-btn')?.classList.toggle('hidden', total === 0);
 }
 
 function openCart() {
@@ -325,52 +231,31 @@ function renderCartBody() {
   if (!body) return;
 
   if (!cart.length) {
-    body.innerHTML = '<p style="text-align:center;padding:40px;color:var(--text-muted);">Seu carrinho está vazio.</p>';
+    body.innerHTML = '<p style="text-align:center;padding:40px;color:#999;">Seu carrinho está vazio.</p>';
     if (footer) footer.innerHTML = '';
     return;
   }
 
-  body.innerHTML = cart.map(item => {
-    const isKg = item.unit?.toLowerCase() === 'kg';
-    const qtyLabel = isKg ? (item.qty < 1 ? `${item.qty * 1000}g` : `${item.qty.toFixed(1).replace('.',',')}kg`) : `${item.qty}x`;
-    return `
+  body.innerHTML = cart.map(item => `
     <div class="cart-item">
-      <div class="cart-item-info">
-        <div class="cart-item-name">${item.name}</div>
-        <div class="cart-item-price">${UIRender.fmtPrice(item.price * item.qty)}</div>
+      <div>
+        <div style="font-weight:600;">${item.name}</div>
+        <div style="color:var(--accent);font-size:0.9rem;">${UIRender.fmtPrice(item.price * item.qty)}</div>
       </div>
-      <div class="qty-control">
+      <div style="display:flex;align-items:center;gap:10px;">
         <button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button>
-        <span class="qty-num" style="min-width:65px;">${qtyLabel}</span>
+        <span style="min-width:40px;text-align:center;">${item.qty}${item.unit==='kg'?'kg':'x'}</span>
         <button class="qty-btn" onclick="changeQty('${item.id}',1)">+</button>
       </div>
-    </div>`;
-  }).join('');
+    </div>
+  `).join('');
 
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const feeBase = store.delivery_fee ?? 0;
-  const freeThreshold = store.delivery_free || 0;
-  
-  let fee = 0;
-  let feeText = 'Grátis';
-  
-  if (feeBase === -1) {
-    feeText = 'A combinar';
-  } else if (feeBase > 0) {
-    if (subtotal >= freeThreshold && freeThreshold > 0) {
-      feeText = 'Grátis';
-    } else {
-      feeText = UIRender.fmtPrice(feeBase);
-      fee = feeBase;
-    }
-  }
-
   if (footer) {
     footer.innerHTML = `
-      <div class="cart-row"><span>Subtotal</span><span>${UIRender.fmtPrice(subtotal)}</span></div>
-      <div class="cart-row"><span>Entrega</span><span style="color:var(--accent);">${feeText}</span></div>
-      <div class="cart-total-row" style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
-        <span>Total</span><span>${UIRender.fmtPrice(subtotal + fee)}</span>
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span>Subtotal</span><span>${UIRender.fmtPrice(subtotal)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.1rem;margin-top:10px;border-top:1px solid #eee;padding-top:10px;">
+        <span>Total</span><span>${UIRender.fmtPrice(subtotal)}</span>
       </div>
     `;
   }
@@ -381,72 +266,13 @@ async function checkout() {
   if (!name) { alert('Informe seu nome para o pedido.'); return; }
 
   const wa = (store.whatsapp || '').replace(/\D/g, '');
-  if (!wa) {
-    alert('Esta loja ainda não configurou um número de WhatsApp para receber pedidos.');
-    return;
-  }
+  if (!wa) { alert('Loja sem WhatsApp configurado.'); return; }
 
-  const btn = document.getElementById('whatsapp-btn');
-  const originalContent = btn.innerHTML;
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const itemsText = cart.map(i => `• ${i.qty}${i.unit==='kg'?'kg':'x'} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`).join('\n');
+  const message = `🛒 *Novo Pedido - ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Total:* ${UIRender.fmtPrice(subtotal)}\n\n_Enviado via EncartShop_`;
   
-  try {
-    const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-    const feeBase = store.delivery_fee ?? 0;
-    const feeText = feeBase === -1 ? 'A combinar' : (subtotal >= (store.delivery_free || 0) && (store.delivery_free || 0) > 0 ? 'Grátis' : UIRender.fmtPrice(feeBase));
-    
-    const itemsText = cart.map(i => {
-      const q = i.unit?.toLowerCase() === 'kg' ? (i.qty < 1 ? `${i.qty * 1000}g` : `${i.qty.toFixed(1).replace('.',',')}kg`) : i.qty + 'x';
-      return `• ${q} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`;
-    }).join('\n');
-
-    const total = subtotal + (feeBase > 0 && feeText !== 'Grátis' ? feeBase : 0);
-    const message = `🛒 *Novo Pedido - ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Entrega:* ${feeText}\n*Total:* ${UIRender.fmtPrice(total)}\n\n_Enviado via EncartShop_`;
-    const waUrl = `https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(message)}`;
-
-    // 1. Prepara os dados para o banco
-    const orderData = {
-      customer_name: name,
-      address: document.getElementById('customer-address')?.value.trim() || '',
-      items: cart,
-      total: total,
-      status: 'novo',
-      created_at: new Date().toISOString()
-    };
-
-    // 2. Gerencia o salvamento e o redirecionamento
-    btn.disabled = true;
-    btn.innerHTML = '<span>🚀 Gravando pedido...</span>';
-
-    try {
-      // Usamos store.id que é o ID real da loja no banco
-      if (!store.id) throw new Error('ID da loja não encontrado. Tente recarregar a página.');
-      
-      await OrderModule.create(store.id, orderData);
-      console.log("Pedido salvo no banco com sucesso.");
-      
-      // Limpa o carrinho
-      cart = [];
-      _saveCart();
-      updateCartUI();
-      closeCart();
-
-      // Redireciona para o WhatsApp
-      window.location.href = waUrl;
-    } catch (dbErr) {
-      console.error("Erro ao salvar pedido no banco:", dbErr);
-      const msg = dbErr.message || (typeof dbErr === 'string' ? dbErr : JSON.stringify(dbErr));
-      alert('⚠️ O pedido foi enviado ao WhatsApp, mas NÃO pôde ser salvo no painel.\n\nMotivo: ' + msg);
-      
-      // Mesmo com erro no banco, tenta enviar para o WhatsApp
-      window.location.href = waUrl;
-    }
-
-  } catch (err) {
-    console.error("Erro no checkout:", err);
-    alert('Erro crítico no checkout: ' + err.message);
-    btn.disabled = false;
-    btn.innerHTML = originalContent;
-  }
+  window.location.href = `https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(message)}`;
 }
 
 function _saveCart() { localStorage.setItem(`encart_cart_${STORE_ID}`, JSON.stringify(cart)); }

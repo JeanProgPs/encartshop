@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Loja — EncartShop</title>
+  <meta name="description" content="Confira nossas ofertas e faça seu pedido pelo WhatsApp!">
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
   <link rel="stylesheet" href="/style.css">
   <style>
     body { background: var(--bg); }
     .store-header { background: var(--primary); border-bottom: 1px solid var(--border); padding: 0 20px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; }
     .store-logo-wrap { display: flex; align-items: center; gap: 10px; }
-    .store-logo-icon { width: 38px; height: 38px; background: var(--brand); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1rem; color: #fff; }
+    .store-logo-icon { width: 38px; height: 38px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1rem; color: #fff; }
     .store-name-text { font-weight: 700; font-size: 1rem; }
-    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; padding: 12px; }
-    @media (min-width: 768px) { .product-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding: 20px; } }
   </style>
 </head>
 <body>
@@ -20,144 +20,78 @@
 <header class="store-header">
   <div class="store-logo-wrap">
     <div class="store-logo-icon">🛒</div>
-    <span id="header-store-name" class="store-name-text">Carregando...</span>
+    <span id="header-store-name" class="store-name-text">...</span>
   </div>
-  <div id="header-cart-btn" style="display:none;" onclick="openCart()">
-    🛒 <span id="header-cart-count">0</span>
+  <div id="header-cart-btn" class="hidden" onclick="openCart()">
+    <div class="cart-btn-inner">
+      <span id="header-cart-count">0</span>
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    </div>
   </div>
 </header>
 
 <main id="main-content">
-  <div id="store-banner-area" style="padding: 20px; text-align: center; background: #fff; margin-bottom: 10px; border-bottom: 1px solid #eee;">
-    <h2 id="store-banner" style="font-size: 1.2rem; margin-bottom: 5px;">Bem-vindo!</h2>
-    <p id="header-hours" style="font-size: 0.8rem; color: #666;"></p>
+  <div class="store-banner-area">
+    <h2 id="store-banner">Carregando ofertas...</h2>
+    <p id="header-hours"></p>
   </div>
 
-  <div id="cat-tabs-area" class="hidden" style="position:sticky; top:64px; background:white; z-index:100; padding:10px; overflow-x:auto; white-space:nowrap; border-bottom:1px solid #eee;">
-    <div id="cat-tabs" style="display:flex; gap:8px;"></div>
+  <div id="cat-tabs-area" class="cat-tabs-container hidden">
+    <div id="cat-tabs" class="cat-tabs-scroll"></div>
   </div>
 
   <div id="products-area" class="product-grid">
-     <div style="grid-column: 1/-1; text-align:center; padding:50px;">
-        <div class="spinner"></div>
-        <p style="margin-top:15px; color:#666;">Buscando ofertas...</p>
-     </div>
+     <!-- Renderizado via JS -->
   </div>
 </main>
 
-<footer style="text-align:center; padding:40px 20px; border-top:1px solid #eee; margin-top:40px; background:#fff;">
+<div id="cart-bubble" class="cart-bubble hidden" onclick="openCart()">
+  <span id="cart-count">0</span>
+  <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+</div>
+
+<!-- Modal do Carrinho -->
+<div id="cart-modal" class="modal hidden">
+  <div class="modal-content cart-modal-content">
+    <div class="modal-header">
+      <h3>Seu Carrinho</h3>
+      <button class="btn-close" onclick="closeCart()">&times;</button>
+    </div>
+    <div id="cart-body" class="modal-body">
+      <!-- Itens do carrinho -->
+    </div>
+    <div class="cart-footer">
+      <div id="cart-subtotals" class="cart-subtotals"></div>
+      <div class="cart-form">
+        <label>Seu Nome</label>
+        <input type="text" id="customer-name" placeholder="Como te chamamos?">
+      </div>
+      <button id="whatsapp-btn" class="btn btn-primary btn-lg w-full" onclick="checkout()">
+        <span>Enviar Pedido pelo WhatsApp</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<footer style="text-align:center; padding:40px 20px; border-top:1px solid var(--border); margin-top:40px;">
   <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px;">
     <span style="font-weight:700;font-size:0.9rem;">EncartShop</span>
   </div>
-  <p style="font-size:0.75rem; color:#999;">© 2026 — Plataforma de Vendas pelo WhatsApp</p>
+  <p style="font-size:0.75rem; color:var(--text-muted);">© 2026 EncartShop — Plataforma de Vendas pelo WhatsApp</p>
 </footer>
 
-<!-- SDK Supabase -->
+<div id="toast-container"></div>
+
+<!-- Bibliotecas e Módulos (Caminhos Absolutos Blindados) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script>
-/**
- * ENCART SHOP - ENGINE INDEPENDENTE v10
- * Este script contém toda a lógica necessária para rodar a loja sem arquivos externos.
- */
-
-// 1. CONFIGURAÇÃO DO BANCO
-const SUPABASE_URL = 'https://mhlxxxzuyfllnauhewnb.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_DlDsDwmZCJxd4lIYh19Idg_7Ve-xAef';
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// 2. ESTADO GLOBAL
-const urlParams = new URLSearchParams(window.location.search);
-let STORE_ID    = urlParams.get('s') || urlParams.get('id');
-let store       = {};
-let products    = [];
-
-// 3. INICIALIZAÇÃO
-document.addEventListener('DOMContentLoaded', async () => {
-    console.log('[Engine] Iniciando busca da loja:', STORE_ID);
-    
-    try {
-        if (!STORE_ID) throw new Error("Link da loja inválido ou incompleto.");
-
-        // Busca Loja
-        let { data: storeData, error: sErr } = await sb.from('stores').select('*').or(`id.eq.${STORE_ID},name.eq.${STORE_ID}`).single();
-        
-        // Se falhou busca direta, tenta busca por slug (mais resiliente)
-        if (!storeData) {
-            console.log('[Engine] Busca direta falhou, tentando todas as lojas...');
-            const { data: all } = await sb.from('stores').select('*');
-            const slugify = t => (t||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,'-').replace(/[^\w\-]+/g,'').replace(/\-\-+/g,'-').replace(/^-+/,'').replace(/-+$/,'');
-            const target = slugify(STORE_ID);
-            storeData = all.find(s => slugify(s.name) === target);
-        }
-
-        if (!storeData) throw new Error("Loja não encontrada no sistema.");
-        store = storeData;
-        STORE_ID = store.id;
-
-        // Atualiza UI da Loja
-        document.title = store.name + " | EncartShop";
-        document.getElementById('header-store-name').textContent = store.name;
-        document.getElementById('store-banner').textContent = store.banner_text || "Confira nossas ofertas!";
-        document.getElementById('header-hours').textContent = store.hours || "";
-        if (store.color) document.documentElement.style.setProperty('--brand', store.color);
-
-        // Busca Produtos
-        console.log('[Engine] Buscando produtos da loja:', STORE_ID);
-        const { data: prods, error: pErr } = await sb.from('products').select('*').eq('store_id', STORE_ID).eq('active', true).order('category');
-        
-        if (pErr) throw new Error("Erro ao carregar produtos do banco.");
-        products = prods || [];
-
-        renderProducts();
-
-    } catch (err) {
-        console.error('[Engine] Erro Crítico:', err.message);
-        document.getElementById('products-area').innerHTML = `
-            <div style="grid-column: 1/-1; text-align:center; padding:50px; background:#fff1f2; border-radius:12px; margin:20px; border:1px solid #fecaca;">
-                <div style="font-size:3rem; margin-bottom:15px;">⚠️</div>
-                <h3 style="color:#991b1b; margin-bottom:10px;">Ops! Algo deu errado</h3>
-                <p style="color:#b91c1c; font-size:0.9rem;">${err.message}</p>
-                <a href="/" style="display:inline-block; margin-top:20px; color:#4f46e5; font-weight:600; text-decoration:none;">Voltar ao Início</a>
-            </div>
-        `;
-    }
-});
-
-// 4. RENDERIZAÇÃO
-function renderProducts() {
-    const area = document.getElementById('products-area');
-    if (!products.length) {
-        area.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#666;">Nenhum produto ativo nesta loja no momento.</div>';
-        return;
-    }
-
-    area.innerHTML = products.map(p => {
-        const price = p.promo_price || p.price;
-        const oldPrice = p.promo_price ? `<span style="text-decoration:line-through; color:#999; font-size:0.8rem; margin-right:5px;">R$ ${p.price.toFixed(2).replace('.',',')}</span>` : '';
-        const img = p.image || 'https://via.placeholder.com/400?text=Produto';
-        
-        return `
-            <div style="background:white; border-radius:12px; overflow:hidden; border:1px solid #eee; display:flex; flex-direction:column;">
-                <div style="aspect-ratio:1/1; position:relative;">
-                    <img src="${img}" style="width:100%; height:100%; object-fit:cover;">
-                    ${p.promo_price ? '<div style="position:absolute; top:8px; left:8px; background:#ef4444; color:white; font-size:0.65rem; padding:3px 8px; border-radius:20px; font-weight:bold;">OFERTA</div>' : ''}
-                </div>
-                <div style="padding:12px; flex:1; display:flex; flex-direction:column;">
-                    <div style="font-weight:600; font-size:0.9rem; margin-bottom:8px; height:2.4em; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${p.name}</div>
-                    <div style="margin-top:auto;">
-                        <div style="margin-bottom:8px;">
-                            ${oldPrice}
-                            <span style="font-weight:800; color:#10b981; font-size:1rem;">R$ ${price.toFixed(2).replace('.',',')}</span>
-                            <span style="font-size:0.7rem; color:#999;">/${p.unit || 'un'}</span>
-                        </div>
-                        <button onclick="alert('Funcionalidade de carrinho sendo restaurada...')" style="width:100%; background:var(--brand); color:white; border:none; padding:8px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.85rem;">Adicionar</button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-</script>
+<script src="/js/core/supabaseClient.js"></script>
+<script src="/js/core/api.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="/js/modules/store.js"></script>
+<script src="/js/modules/orders.js"></script>
+<script src="/js/modules/subscription.js"></script>
+<script src="/js/ui/render.js"></script>
+<script src="/js/storage.js"></script>
+<script src="/loja/loja.js"></script>
 </body>
 </html>
