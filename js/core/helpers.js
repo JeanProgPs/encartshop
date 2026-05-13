@@ -71,6 +71,20 @@ const EncartHelpers = {
   isValidArray(arr) {
     return Array.isArray(arr) && arr.length > 0;
   }
+  /**
+   * Utilitário para evitar execuções excessivas (Busca/Scroll)
+   */
+  debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
 };
 
 window.EncartHelpers = EncartHelpers;
