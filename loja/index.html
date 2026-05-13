@@ -6,11 +6,12 @@
   <title>Carregando Loja... | EncartShop</title>
   <link rel="icon" type="image/png" href="/assets/favicon.png">
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="premium.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="public-store">
 
   <!-- App Header -->
   <header class="store-header">
@@ -59,7 +60,7 @@
   </main>
 
   <!-- Sticky Cart Bar -->
-  <div id="cart-bar" class="cart-bar hidden" onclick="openCart()">
+  <div id="cart-bar" class="cart-sticky-bar hidden" onclick="openCart()">
     <div style="display: flex; align-items: center; gap: 12px;">
       <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🛒</div>
       <div>
