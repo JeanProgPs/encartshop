@@ -64,16 +64,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (!STORE_ID || !store.id) {
-      throw new Error('Loja não encontrada. Verifique o link informado.');
-    }
-
-    if (!STORE_ID) throw new Error('Loja não encontrada.');
-
-    if (store.status === 'pending') {
-      const previewBanner = document.createElement('div');
-      previewBanner.style.cssText = "background:var(--brand); color:white; text-align:center; padding:10px; font-size:0.8rem; font-weight:bold; position:sticky; top:0; z-index:9999;";
-      previewBanner.innerHTML = "👀 MODO PREVIEW: Esta loja está em fase de ativação. Realize o pagamento para liberar as vendas.";
-      document.body.prepend(previewBanner);
+      console.error('[Loja] Erro: Loja não encontrada para o ID/Slug:', STORE_ID);
+      throw new Error(`Loja "${STORE_ID || 'não especificada'}" não encontrada. Verifique o link.`);
     }
 
     cart = _loadCart();
@@ -82,11 +74,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.documentElement.style.setProperty('--brand', store.color);
     }
     
+    console.log('[Loja] Carregando UI para:', store.name);
     loadStoreUI();
     await loadProducts();
     updateCartUI();
   } catch (err) {
-    document.body.innerHTML = `<div style="text-align:center;padding:100px 20px;">⚠️ ${err.message}</div>`;
+    console.error('[Loja] Erro Crítico:', err);
+    document.body.innerHTML = `
+      <div style="text-align:center; padding:100px 24px; font-family:sans-serif;">
+        <div style="font-size:3rem; margin-bottom:20px;">⚠️</div>
+        <h1 style="font-size:1.2rem; color:#1e293b;">Não conseguimos carregar a loja</h1>
+        <p style="color:#64748b; margin-top:10px;">${err.message}</p>
+        <a href="/" style="display:inline-block; margin-top:24px; color:#4f46e5; text-decoration:none; font-weight:600;">Voltar ao Início</a>
+      </div>`;
   }
 });
 
