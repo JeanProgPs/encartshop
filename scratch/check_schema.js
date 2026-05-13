@@ -1,14 +1,16 @@
+const { createClient } = require('@supabase/supabase-js');
+const SUPABASE_URL = 'https://mhlxxxzuyfllnauhewnb.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_DlDsDwmZCJxd4lIYh19Idg_7Ve-xAef';
 
-async function testSchema() {
-  const { data, error } = await window.sb.from('stores').select('*').limit(1);
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function check() {
+  const { data, error } = await sb.from('stores').select('*').limit(1);
   if (error) {
-    console.error('Schema error:', error);
-  } else if (data && data.length > 0) {
-    console.log('Columns in stores:', Object.keys(data[0]));
+    console.error('Error:', error);
   } else {
-    console.log('No data in stores table to infer schema.');
-    // Try to insert a dummy to see what fails? No, better check if we can get column info.
-    // In PostgREST/Supabase, we can't easily get the full schema without a specialized query.
+    console.log('Columns:', Object.keys(data[0] || {}));
   }
 }
-testSchema();
+
+check();

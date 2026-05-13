@@ -15,17 +15,27 @@ let STORE_ID      = STORE_ID_PARAM;
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    if (!STORE_ID) {
+    console.log('[Loja] Iniciando busca para:', STORE_ID_PARAM);
+    
+    if (!STORE_ID_PARAM) {
         throw new Error('Link da loja inválido. Use encatshop.com/loja?s=NOME-DA-LOJA');
     }
 
-    // 1. Busca dados da loja (UUID ou Slug)
-    let storeData = await EncartAPI.StoreAPI.getById(STORE_ID);
+    let storeData = null;
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(STORE_ID_PARAM);
+
+    if (isUUID) {
+        console.log('[Loja] Buscando por ID (UUID)...');
+        storeData = await EncartAPI.StoreAPI.getById(STORE_ID_PARAM);
+    } else {
+        console.log('[Loja] Buscando por SLUG:', STORE_ID_PARAM);
+        storeData = await EncartAPI.StoreAPI.getBySlug(STORE_ID_PARAM);
+    }
     
-    if (!storeData) {
-        console.log('[Loja] Tentando busca por slug:', STORE_ID);
+    // Fallback: se não encontrou e não era UUID, tenta busca manual por nome (legado)
+    if (!storeData && !isUUID) {
+        console.log('[Loja] Fallback: buscando em todas as lojas...');
         const allStores = await EncartAPI.StoreAPI.getAll();
-        
         const slugify = text => (text || '').toString().toLowerCase()
           .normalize('NFD').replace(/[\u0300-\u036f]/g, "")
           .replace(/\s+/g, '-')
@@ -34,22 +44,31 @@ document.addEventListener('DOMContentLoaded', async () => {
           .replace(/^-+/, '')
           .replace(/-+$/, '');
           
-        const targetSlug = slugify(STORE_ID);
+        const targetSlug = slugify(STORE_ID_PARAM);
         storeData = allStores.find(s => slugify(s.name) === targetSlug);
     }
 
+    console.log('[Loja] Resultado da busca:', storeData);
+
     if (!storeData) {
-      throw new Error(`Loja "${STORE_ID}" não encontrada.`);
+      throw new Error(`Loja "${STORE_ID_PARAM}" não encontrada.`);
     }
 
     store = storeData;
     STORE_ID = store.id;
 
-    // 2. Verifica se a loja está ativa/paga
+    // 2. Verifica status (Ativa vs Pendente vs Bloqueada)
     const subStatus = SubscriptionModule.getStatus(store.expires_at);
+    
     if (subStatus.blocked) {
       renderBlockedPage();
       return;
+    }
+
+    // Se pendente, permite acesso mas mostra aviso (opcional conforme UX)
+    if (store.status === 'pending') {
+       console.warn('[Loja] Aviso: Esta loja está com pagamento pendente.');
+       _injectPendingBanner();
     }
 
     // 3. Setup UI
@@ -64,10 +83,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateCartUI();
 
   } catch (err) {
+    console.error('[Loja] Erro ao carregar:', err);
     EncartHelpers.globalErrorHandler(err, 'Falha ao carregar loja');
     renderErrorPage(err.message);
   }
 });
+
+function _injectPendingBanner() {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#fef3c7; color:#92400e; padding:10px; text-align:center; font-size:0.85rem; font-weight:600; border-bottom:1px solid #fde68a;';
+    banner.innerHTML = '⚠️ Esta loja está em modo de demonstração aguardando ativação.';
+    document.body.prepend(banner);
+}
 
 function renderBlockedPage() {
   document.body.innerHTML = `

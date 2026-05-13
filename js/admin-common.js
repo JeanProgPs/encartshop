@@ -27,7 +27,7 @@
   const store = await StoreModule.getActive();
   if (store) {
     const subStatus = SubscriptionModule.getStatus(store.expires_at);
-    const alert = SubscriptionModule.getAlert(subStatus);
+    const alert = SubscriptionModule.getAlert(subStatus, store.status);
     SubscriptionModule.injectAlert(alert);
   }
 

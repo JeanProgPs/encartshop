@@ -16,19 +16,16 @@ const StoreAPI = {
     return EncartHelpers.safeFetch(window.sb.from('stores').select('*').eq('id', id).single(), null);
   },
   async getBySlug(slug) {
-    return null;
+    if (!slug) return null;
+    return EncartHelpers.safeFetch(window.sb.from('stores').select('*').eq('slug', slug).single(), null);
   },
   async create(storeData) {
-    const cleanData = { ...storeData };
-    delete cleanData.slug; 
-    const { data, error } = await window.sb.from('stores').insert([cleanData]).select().single();
+    const { data, error } = await window.sb.from('stores').insert([storeData]).select().single();
     if (error) { EncartHelpers.globalErrorHandler(error, 'Erro ao criar loja'); throw error; }
     return data;
   },
   async update(id, storeData) {
-    const cleanData = { ...storeData };
-    delete cleanData.slug;
-    const { data, error } = await window.sb.from('stores').update(cleanData).eq('id', id).select().single();
+    const { data, error } = await window.sb.from('stores').update(storeData).eq('id', id).select().single();
     if (error) { EncartHelpers.globalErrorHandler(error, 'Erro ao atualizar loja'); throw error; }
     return data;
   },

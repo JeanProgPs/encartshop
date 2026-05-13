@@ -27,7 +27,17 @@ const SubscriptionModule = (() => {
     };
   }
 
-  function getAlert(status) {
+  function getAlert(status, storeStatus = '') {
+    if (storeStatus === 'pending') {
+      return {
+        type: 'warning',
+        title: 'Loja em Demonstração',
+        message: 'Aguardando primeiro pagamento para ativação definitiva.',
+        btnText: 'Ativar Agora',
+        btnUrl: 'pagamento.html'
+      };
+    }
+
     if (status.blocked) {
       return {
         type: 'danger',
