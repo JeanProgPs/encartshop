@@ -21,39 +21,43 @@ const StoreAPI = {
   },
   async getById(id) {
     if (!id) return null;
+    // Validação básica de UUID para evitar erro 400 ruidoso no log do Supabase
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+    if (!isUUID) return null; 
+
     try {
       const { data, error } = await window.sb.from('stores').select('*').eq('id', id).single();
-      if (error) { if (error.code !== 'PGRST116') console.error('StoreAPI.getById:', error); return null; }
+      if (error) { 
+        if (error.code !== 'PGRST116') console.error('StoreAPI.getById:', error); 
+        return null; 
+      }
       return data || null;
     } catch (e) { return null; }
   },
-  // Busca por slug: server-side, sem expor lista completa
+  // Busca por slug: usa a coluna 'slug' do banco de dados
   async getBySlug(slug) {
     if (!slug) return null;
     try {
-      const slugify = t => (t||'').toLowerCase().normalize('NFD')
-        .replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-')
-        .replace(/[^\w-]+/g,'').replace(/--+/g,'-').replace(/^-+|-+$/g,'');
-      // Busca com ilike usando wildcard para acentos/espaços
       const { data, error } = await window.sb.from('stores')
-        .select('*').ilike('name', slug.replace(/-/g, '%')).limit(5);
-      if (error || !data?.length) return null;
-      return data.find(s => slugify(s.name) === slug) || null;
+        .select('*').eq('slug', slug).single();
+      if (error) {
+        if (error.code !== 'PGRST116') console.error('StoreAPI.getBySlug:', error);
+        return null;
+      }
+      return data || null;
     } catch (e) { return null; }
   },
   async create(storeData) {
-    const d = { ...storeData }; delete d.slug;
     try {
-      const { data, error } = await window.sb.from('stores').insert([d]).select().single();
+      const { data, error } = await window.sb.from('stores').insert([storeData]).select().single();
       if (error) throw error;
       return data;
     } catch (e) { throw e; }
   },
   async update(id, storeData) {
     if (!id) throw new Error('ID obrigatório');
-    const d = { ...storeData }; delete d.slug;
     try {
-      const { data, error } = await window.sb.from('stores').update(d).eq('id', id).select().single();
+      const { data, error } = await window.sb.from('stores').update(storeData).eq('id', id).select().single();
       if (error) throw error;
       return data;
     } catch (e) { throw e; }
