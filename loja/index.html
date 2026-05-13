@@ -8,11 +8,311 @@
   <link rel="icon" type="image/png" href="/assets/favicon.png">
   <link rel="stylesheet" href="/style.css">
   <style>
+    /* ── Reset loja ──────────────────────────────────────────── */
     body { background: var(--bg); }
-    .store-header { background: var(--primary); border-bottom: 1px solid var(--border); padding: 0 20px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .store-header {
+      background: var(--primary); border-bottom: 1px solid var(--border);
+      padding: 0 20px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 200;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
     .store-logo-wrap { display: flex; align-items: center; gap: 10px; }
-    .store-logo-icon { width: 38px; height: 38px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1rem; color: #fff; }
+    .store-logo-icon {
+      width: 38px; height: 38px; background: var(--accent);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 1rem; color: #fff;
+    }
     .store-name-text { font-weight: 700; font-size: 1rem; }
+
+    /* Header cart button */
+    .header-cart-btn {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--brand); color: #fff;
+      border: none; border-radius: 10px;
+      padding: 8px 14px; cursor: pointer;
+      font-weight: 700; font-size: 0.85rem;
+      transition: all 0.2s ease;
+    }
+    .header-cart-btn:hover { opacity: 0.9; transform: scale(1.02); }
+    .header-cart-badge {
+      background: #fff; color: var(--brand);
+      width: 20px; height: 20px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 900;
+    }
+
+    /* ── Banner ──────────────────────────────────────────────── */
+    .store-banner-area {
+      background: linear-gradient(135deg, var(--brand-glow, rgba(79,70,229,0.06)) 0%, transparent 60%);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px; text-align: center;
+    }
+    .store-banner-area h2 {
+      font-size: 0.95rem; font-weight: 600; color: var(--brand);
+      letter-spacing: 0.01em;
+    }
+    .store-banner-area p { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── Tabs ────────────────────────────────────────────────── */
+    .cat-tabs-container {
+      position: sticky; top: 64px; z-index: 100;
+      background: var(--primary); border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+    }
+    .cat-tabs-scroll {
+      display: flex; gap: 4px; overflow-x: auto;
+      padding: 10px 0; scrollbar-width: none;
+    }
+    .cat-tabs-scroll::-webkit-scrollbar { display: none; }
+    .cat-tab {
+      flex-shrink: 0; padding: 7px 16px; border-radius: 999px;
+      font-size: 0.82rem; font-weight: 600; white-space: nowrap;
+      cursor: pointer; transition: all 0.2s ease;
+      border: 1.5px solid var(--border);
+      background: transparent; color: var(--text-muted);
+    }
+    .cat-tab:hover { border-color: var(--brand); color: var(--brand); }
+    .cat-tab.active {
+      background: var(--brand); border-color: var(--brand); color: #fff;
+      box-shadow: 0 4px 12px var(--brand-glow, rgba(79,70,229,0.2));
+    }
+
+    /* ── Main content ────────────────────────────────────────── */
+    #main-content { padding: 0 16px 100px; max-width: 900px; margin: 0 auto; }
+
+    /* ── Grupo de categoria ──────────────────────────────────── */
+    .category-group { margin-top: 28px; }
+    .category-group-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 14px; padding-bottom: 10px;
+      border-bottom: 2px solid var(--border);
+    }
+    .category-group-title {
+      font-size: 1rem; font-weight: 800; color: var(--text);
+      font-family: var(--font-display, 'Outfit', sans-serif);
+    }
+    .category-group-count {
+      font-size: 0.72rem; font-weight: 600; color: var(--text-muted);
+      background: var(--border); border-radius: 999px;
+      padding: 2px 8px;
+    }
+    .category-group-line {
+      flex: 1; height: 1px; background: var(--border);
+    }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    /* ── Cart Bubble ─────────────────────────────────────────── */
+    .cart-bubble {
+      position: fixed; bottom: 24px; right: 20px; left: 20px;
+      z-index: 500;
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark, #3730a3) 100%);
+      color: #fff; border-radius: 16px;
+      padding: 16px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      font-weight: 700; font-size: 0.95rem;
+      box-shadow: 0 8px 32px rgba(79,70,229,0.35);
+      cursor: pointer; transition: all 0.3s ease;
+      animation: bubbleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .cart-bubble:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(79,70,229,0.45); }
+    .cart-bubble-left { display: flex; align-items: center; gap: 10px; }
+    .cart-bubble-count {
+      background: rgba(255,255,255,0.2); border-radius: 8px;
+      padding: 4px 10px; font-size: 0.85rem; font-weight: 800;
+    }
+    .cart-bubble-price { font-size: 1rem; font-weight: 800; }
+    @keyframes bubbleUp {
+      from { opacity: 0; transform: translateY(20px) scale(0.95); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ── Cart Drawer (bottom-sheet premium) ──────────────────── */
+    #cart-modal {
+      position: fixed; inset: 0; z-index: 9000;
+      display: flex; align-items: flex-end; justify-content: center;
+      background: rgba(15,23,42,0.5);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition: opacity 0.3s ease;
+    }
+    #cart-modal.hidden { display: none; }
+
+    .cart-drawer {
+      background: var(--bg-card, #fff);
+      width: 100%; max-width: 540px;
+      border-radius: 24px 24px 0 0;
+      max-height: 92vh;
+      display: flex; flex-direction: column;
+      animation: drawerUp 0.35s cubic-bezier(0.34, 1.2, 0.64, 1);
+      box-shadow: 0 -8px 48px rgba(0,0,0,0.15);
+    }
+    @keyframes drawerUp {
+      from { transform: translateY(100%); opacity: 0.6; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    /* Handle */
+    .cart-handle {
+      width: 40px; height: 4px; background: var(--border);
+      border-radius: 2px; margin: 12px auto 0;
+      flex-shrink: 0;
+    }
+
+    /* Drawer header */
+    .cart-drawer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .cart-drawer-title {
+      font-size: 1.1rem; font-weight: 800;
+      font-family: var(--font-display, 'Outfit', sans-serif);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .cart-drawer-badge {
+      font-size: 0.72rem; font-weight: 700;
+      background: var(--brand); color: #fff;
+      padding: 2px 8px; border-radius: 999px;
+    }
+    .cart-close-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--border); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    .cart-close-btn:hover { background: var(--text-muted); color: #fff; }
+
+    /* Items list */
+    .cart-items-list {
+      flex: 1; overflow-y: auto; padding: 12px 20px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .cart-item-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px; border-radius: 12px;
+      background: var(--primary-light, #f8fafc);
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+    .cart-item-row:hover { border-color: var(--brand); }
+    .cart-item-img {
+      width: 48px; height: 48px; border-radius: 8px;
+      object-fit: cover; flex-shrink: 0;
+      background: var(--border);
+    }
+    .cart-item-info { flex: 1; min-width: 0; }
+    .cart-item-name {
+      font-size: 0.875rem; font-weight: 600; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .cart-item-price { font-size: 0.8rem; color: var(--brand); font-weight: 700; }
+    .cart-item-unit-price { font-size: 0.72rem; color: var(--text-muted); }
+
+    .cart-qty-control {
+      display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    }
+    .cart-qty-btn {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: var(--primary-mid, #f1f5f9); border: 1px solid var(--border);
+      font-size: 1rem; font-weight: 700; color: var(--text);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .cart-qty-btn:hover { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .cart-qty-btn.remove { color: var(--danger, #ef4444); }
+    .cart-qty-btn.remove:hover { background: var(--danger, #ef4444); color: #fff; border-color: var(--danger, #ef4444); }
+    .cart-qty-num {
+      min-width: 32px; text-align: center;
+      font-size: 0.875rem; font-weight: 800; color: var(--text);
+    }
+
+    /* Empty cart */
+    .cart-empty {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 48px 24px; gap: 12px;
+      color: var(--text-muted);
+    }
+    .cart-empty-icon { font-size: 3rem; opacity: 0.5; }
+    .cart-empty-text { font-size: 0.9rem; font-weight: 500; }
+
+    /* Footer */
+    .cart-drawer-footer {
+      border-top: 1px solid var(--border);
+      padding: 16px 20px; flex-shrink: 0;
+      background: var(--bg-card, #fff);
+    }
+    .cart-summary { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .cart-summary-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.85rem; color: var(--text-light, #475569);
+    }
+    .cart-summary-total {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 1.1rem; font-weight: 800; color: var(--text);
+      padding-top: 10px; border-top: 1px solid var(--border); margin-top: 4px;
+    }
+    .cart-total-value { color: var(--brand); font-family: var(--font-display, 'Outfit', sans-serif); }
+    .cart-free-ship {
+      text-align: center; font-size: 0.75rem;
+      color: var(--success, #10b981); font-weight: 600; margin-top: 6px;
+    }
+    .cart-progress-wrap { margin: 6px 0 10px; }
+    .cart-progress-bar {
+      height: 4px; background: var(--border); border-radius: 4px; overflow: hidden;
+    }
+    .cart-progress-fill {
+      height: 100%; background: linear-gradient(90deg, var(--brand), var(--success, #10b981));
+      border-radius: 4px; transition: width 0.4s ease;
+    }
+    .cart-progress-label { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; text-align: center; }
+
+    /* Name input */
+    .cart-name-wrap { margin-bottom: 12px; }
+    .cart-name-label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block; }
+    .cart-name-input {
+      width: 100%; padding: 12px 14px; border-radius: 10px;
+      border: 1.5px solid var(--border); background: var(--primary-light, #f8fafc);
+      font-size: 0.95rem; color: var(--text); font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    .cart-name-input:focus { outline: none; border-color: var(--brand); }
+
+    /* WhatsApp button */
+    .btn-whatsapp {
+      width: 100%; padding: 15px;
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      color: #fff; border: none; border-radius: 12px;
+      font-size: 1rem; font-weight: 800; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 16px rgba(34,197,94,0.3);
+      font-family: inherit;
+    }
+    .btn-whatsapp:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(34,197,94,0.4); }
+    .btn-whatsapp:active { transform: scale(0.99); }
+    .btn-whatsapp:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn-whatsapp svg { width: 20px; height: 20px; fill: currentColor; flex-shrink: 0; }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (min-width: 540px) {
+      #main-content { padding: 0 24px 120px; }
+      .cart-bubble { left: auto; width: 360px; right: 24px; }
+      .cart-drawer { border-radius: 24px 24px 0 0; }
+      .product-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; }
+    }
+    @media (max-width: 360px) {
+      .product-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    }
   </style>
 </head>
 <body>
@@ -22,12 +322,11 @@
     <div class="store-logo-icon">🛒</div>
     <span id="header-store-name" class="store-name-text">...</span>
   </div>
-  <div id="header-cart-btn" class="hidden" onclick="openCart()">
-    <div class="cart-btn-inner">
-      <span id="header-cart-count">0</span>
-      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-    </div>
-  </div>
+  <button id="header-cart-btn" class="header-cart-btn hidden" onclick="openCart()">
+    <div class="header-cart-badge" id="header-cart-count">0</div>
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    <span>Carrinho</span>
+  </button>
 </header>
 
 <main id="main-content">
@@ -40,50 +339,62 @@
     <div id="cat-tabs" class="cat-tabs-scroll"></div>
   </div>
 
-  <div id="products-area" class="product-grid">
-     <!-- Renderizado via JS -->
+  <div id="products-area">
+    <!-- Renderizado via JS -->
   </div>
 </main>
 
+<!-- Cart Bubble (bottom bar) -->
 <div id="cart-bubble" class="cart-bubble hidden" onclick="openCart()">
-  <span id="cart-count">0</span>
-  <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+  <div class="cart-bubble-left">
+    <div class="cart-bubble-count"><span id="cart-count">0</span> item(s)</div>
+    <span>Ver carrinho</span>
+  </div>
+  <div class="cart-bubble-price" id="cart-bubble-total">R$ 0,00</div>
 </div>
 
-<!-- Modal do Carrinho -->
-<div id="cart-modal" class="modal hidden">
-  <div class="modal-content cart-modal-content">
-    <div class="modal-header">
-      <h3>Seu Carrinho</h3>
-      <button class="btn-close" onclick="closeCart()">&times;</button>
-    </div>
-    <div id="cart-body" class="modal-body">
-      <!-- Itens do carrinho -->
-    </div>
-    <div class="cart-footer">
-      <div id="cart-subtotals" class="cart-subtotals"></div>
-      <div class="cart-form">
-        <label>Seu Nome</label>
-        <input type="text" id="customer-name" placeholder="Como te chamamos?">
+<!-- Cart Drawer (bottom-sheet) -->
+<div id="cart-modal" class="hidden" onclick="handleCartOverlayClick(event)">
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="cart-handle"></div>
+
+    <div class="cart-drawer-header">
+      <div class="cart-drawer-title">
+        🛒 Meu Pedido
+        <span class="cart-drawer-badge" id="cart-drawer-count">0</span>
       </div>
-      <button id="whatsapp-btn" class="btn btn-primary btn-lg w-full" onclick="checkout()">
-        <span>Enviar Pedido pelo WhatsApp</span>
+      <button class="cart-close-btn" onclick="closeCart()">✕</button>
+    </div>
+
+    <div class="cart-items-list" id="cart-body">
+      <!-- items -->
+    </div>
+
+    <div class="cart-drawer-footer">
+      <div class="cart-summary" id="cart-subtotals"></div>
+
+      <div class="cart-name-wrap">
+        <label class="cart-name-label" for="customer-name">Seu nome para o pedido</label>
+        <input type="text" id="customer-name" class="cart-name-input" placeholder="Ex: Maria Silva">
+      </div>
+
+      <button id="whatsapp-btn" class="btn-whatsapp" onclick="checkout()">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Enviar Pedido pelo WhatsApp
       </button>
     </div>
   </div>
 </div>
 
-<footer style="text-align:center; padding:40px 20px; border-top:1px solid var(--border); margin-top:40px;">
-  <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px;">
-    <span style="font-weight:700;font-size:0.9rem;">EncartShop</span>
-  </div>
-  <p style="font-size:0.75rem; color:var(--text-muted);">© 2026 EncartShop — Plataforma de Vendas pelo WhatsApp</p>
+<footer style="text-align:center;padding:40px 20px;border-top:1px solid var(--border);margin-top:20px;">
+  <p style="font-size:0.75rem;color:var(--text-muted)">© 2026 EncartShop — Plataforma de Vendas pelo WhatsApp</p>
 </footer>
 
 <div id="toast-container"></div>
 
-<!-- Bibliotecas e Módulos (Caminhos Absolutos Blindados) -->
+<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/helpers.js"></script>
 <script src="/js/core/supabaseClient.js"></script>
 <script src="/js/core/api.js"></script>
 <script src="/js/auth/authService.js"></script>
