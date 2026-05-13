@@ -80,7 +80,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/core/supabaseClient.js"></script>
-<script src="/js/core/helpers.js"></script>
 <script src="/js/core/api.js"></script>
 <script src="/js/auth/authService.js"></script>
 <script src="/js/modules/subscription.js"></script>
@@ -108,7 +107,6 @@
   }
 
   async function renderOrders() {
-    UIComponents.renderSkeleton('orders-list', 5, 'card');
     allOrders = await OrdersModule.getAll(storeId());
     updateCounts();
     renderOrderList();

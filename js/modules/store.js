@@ -13,19 +13,8 @@ const StoreModule = (() => {
   async function create(storeData) {
     if (!storeData.name) throw new Error('Nome da loja é obrigatório');
     
-    // Geração automática e validação de slug
-    let slug = storeData.slug || slugify(storeData.name);
-    let finalSlug = slug;
-    let counter = 1;
-    
-    // Verifica unicidade do slug
-    while (true) {
-      const existing = await EncartAPI.StoreAPI.getBySlug(finalSlug);
-      if (!existing) break;
-      finalSlug = `${slug}-${counter}`;
-      counter++;
-    }
-    storeData.slug = finalSlug;
+    // Slug removido (coluna inexistente no banco)
+    // if (!storeData.slug) { ... }
     
     // Pega o usuário logado para vincular a loja a ele
     const user = await AuthService.getUser();

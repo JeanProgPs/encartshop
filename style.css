@@ -1,9 +1,12 @@
-/* Cache-Bust: 2026-05-13-v3 */
+/* ============================================================
+   EncartShop — Design System Global
+   Paleta Varejo: Verde Vivo + Laranja Energia
+   ============================================================ */
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap');
 
+/* ── CSS Variables ─────────────────────────────────────────── */
 :root {
-  --sidebar-width: 260px;
-  --header-height: 72px;
   /* Tons base — Clean Light */
   --primary: #ffffff;
   --primary-light: #f8fafc;
@@ -800,7 +803,6 @@ select.form-input option {
 }
 
 /* ── Responsive ─────────────────────────────────────────────── */
-/* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
@@ -810,13 +812,9 @@ select.form-input option {
   }
   .main-content {
     margin-left: 0;
-    width: 100%;
-    overflow-x: hidden;
   }
   .page-content {
     padding: 16px;
-    width: 100%;
-    overflow-x: hidden;
   }
   .topbar {
     padding: 0 16px;
@@ -833,17 +831,6 @@ select.form-input option {
   .btn-lg {
     padding: 14px 24px;
     font-size: 0.95rem;
-  }
-
-  /* Responsive Table */
-  .data-table-wrap {
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    margin-bottom: 20px;
-  }
-  .data-table {
-    min-width: 600px; /* Garante que a tabela não esmague no mobile */
   }
 }
 
@@ -897,36 +884,7 @@ select.form-input option {
   .modal {
     width: 95%;
     padding: 24px 20px;
-    border-radius: var(--radius-lg);
   }
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ── UI Stability Utilities ─────────────────────────────────── */
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  filter: grayscale(0.5);
-  transform: none !important;
-}
-
-.loading-skeleton {
-  pointer-events: none;
-  user-select: none;
-}
-
-.skeleton-text {
-  height: 1em;
-  width: 100%;
-  border-radius: 4px;
-  margin-bottom: 0.5em;
-}
-
-.skeleton-img {
-  aspect-ratio: 1;
-  width: 100%;
 }
 
 /* ── Toggle Switch ──────────────────────────────────────────── */
@@ -940,7 +898,7 @@ select.form-input option {
 .toggle-slider {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.1);
+  background: rgba(255,255,255,0.1);
   border-radius: 12px;
   cursor: pointer;
   transition: var(--transition);
@@ -973,10 +931,3 @@ select.form-input option {
 .empty-state-icon { font-size: 3rem; margin-bottom: 16px; }
 .empty-state h3 { font-size: 1.1rem; margin-bottom: 8px; color: var(--text-light); }
 .empty-state p { font-size: 0.9rem; max-width: 320px; margin: 0 auto; }
-
-/* ── Force Visibility ───────────────────────────────────────── */
-@media (min-width: 769px) {
-  .sidebar { transform: translateX(0) !important; visibility: visible !important; opacity: 1 !important; display: flex !important; }
-  .main-content { margin-left: var(--sidebar-width) !important; width: calc(100% - var(--sidebar-width)) !important; }
-}
-

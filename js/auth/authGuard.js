@@ -27,7 +27,7 @@ const AuthGuard = (() => {
         // Bloqueio por status explícito ou vencimento + carência
         const subStatus = SubscriptionModule.getStatus(store.expires_at);
         
-        if (subStatus.blocked) {
+        if (store.status === 'pending' || subStatus.blocked) {
           window.location.replace('pagamento.html');
           return false;
         }

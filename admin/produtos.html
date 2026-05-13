@@ -164,7 +164,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/core/supabaseClient.js"></script>
-<script src="/js/core/helpers.js"></script>
 <script src="/js/core/api.js"></script>
 <script src="/js/auth/authService.js"></script>
 <script src="/js/modules/subscription.js"></script>
@@ -187,9 +186,6 @@
   }
 
   async function renderProducts() {
-    const grid = document.getElementById('products-grid');
-    UIComponents.renderSkeleton('products-grid', 8, 'product');
-
     const q      = document.getElementById('search-input').value.toLowerCase();
     const cat    = document.getElementById('filter-cat').value;
     const status = document.getElementById('filter-status').value;
@@ -199,7 +195,7 @@
 
     document.getElementById('product-count').textContent = `${filtered.length} produto(s) encontrado(s)`;
 
-
+    const grid = document.getElementById('products-grid');
     if (!filtered.length) {
       grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">` + UIRender.emptyState('📦', 'Nenhum produto encontrado', 'Tente ajustar os filtros ou adicione seu primeiro produto.') + `</div>`;
       return;

@@ -6,42 +6,28 @@
 const SubscriptionModule = (() => {
   const GRACE_PERIOD_DAYS = 5;
 
-  function getStatus(expiresAt, storeStatus = 'active') {
+  function getStatus(expiresAt) {
     if (!expiresAt) return { expired: false, blocked: false, daysLeft: 999 };
+
     const now = new Date();
     const expiry = new Date(expiresAt);
     const diffTime = expiry - now;
     const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // Lógica diferenciada:
-    // 1. Lojas em Demonstração (pending) -> Bloqueio imediato após 3 dias.
-    // 2. Lojas Ativas -> Bloqueio após 5 dias de graça (GRACE_PERIOD_DAYS).
-    
-    let blocked = now > expiry;
-    if (storeStatus === 'active') {
-      const graceExpiry = new Date(expiry.getTime() + GRACE_PERIOD_DAYS * 86400000);
-      blocked = now > graceExpiry;
-    }
+    // Bloqueio após período de graça
+    const graceExpiry = new Date(expiry);
+    graceExpiry.setDate(expiry.getDate() + GRACE_PERIOD_DAYS);
+    const blocked = now > graceExpiry;
 
     return {
       expired: now > expiry,
       blocked,
       daysLeft,
-      graceDaysLeft: Math.ceil((new Date(expiry.getTime() + GRACE_PERIOD_DAYS * 86400000) - now) / 86400000)
+      graceDaysLeft: Math.ceil((graceExpiry - now) / (1000 * 60 * 60 * 24))
     };
   }
 
-  function getAlert(status, storeStatus = '') {
-    if (storeStatus === 'pending') {
-      return {
-        type: 'warning',
-        title: 'Loja em Demonstração',
-        message: 'Aguardando primeiro pagamento para ativação definitiva.',
-        btnText: 'Ativar Agora',
-        btnUrl: 'pagamento.html'
-      };
-    }
-
+  function getAlert(status) {
     if (status.blocked) {
       return {
         type: 'danger',

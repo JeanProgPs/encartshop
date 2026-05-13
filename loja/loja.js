@@ -1,385 +1,279 @@
 /**
- * EncartShop Pro — Public Store Engine
- * Modular, Robust & Conversion Focused.
+ * EncartShop — Loja Pública v11
+ * Profissional, modular e com busca inteligente por Slug
  */
 
-const StoreApp = (() => {
-  // ── State ───────────────────────────────────────────────────
-  let state = {
-    store: null,
-    products: [],
-    cart: [],
-    activeCategory: 'Todos',
-    searchQuery: '',
-    isLoading: true,
-    storeIdParam: new URLSearchParams(window.location.search).get('s') || new URLSearchParams(window.location.search).get('id')
-  };
+// ── Detecta loja via URL ──────────────────────────────────────
+const urlParams = new URLSearchParams(window.location.search);
+const STORE_ID_PARAM = urlParams.get('s') || urlParams.get('id');
 
-  // ── Initialization ──────────────────────────────────────────
-  async function init() {
-    try {
-      console.log('[StoreApp] Booting...');
-      
-      if (!state.storeIdParam) {
+// ── Estado global ─────────────────────────────────────────────
+let cart          = [];
+let store         = {};
+let allProducts   = [];
+let activeCategory = 'Todos';
+let STORE_ID      = STORE_ID_PARAM;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('[EncartShop] Iniciando lógica da loja...');
+  try {
+    if (!window.sb) throw new Error('Conexão com o banco falhou.');
+
+    if (!STORE_ID) {
         throw new Error('Link da loja inválido. Use encatshop.com/loja?s=NOME-DA-LOJA');
-      }
-
-      await loadStoreData();
-      
-      if (state.store) {
-        setupUI();
-        await loadProducts();
-        loadCartFromStorage();
-        render();
-        attachEventListeners();
-      }
-      
-    } catch (err) {
-      console.error('[StoreApp] Boot failed:', err);
-      renderError(err.message);
-    } finally {
-      state.isLoading = false;
-    }
-  }
-
-  // ── Data Loading ────────────────────────────────────────────
-  async function loadStoreData() {
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(state.storeIdParam);
-    let data = isUUID 
-      ? await EncartAPI.StoreAPI.getById(state.storeIdParam)
-      : await EncartAPI.StoreAPI.getBySlug(state.storeIdParam);
-
-    if (!data) {
-        // Fallback Legado
-        const all = await EncartAPI.StoreAPI.getAll();
-        const slugify = text => (text || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').replace(/\-\-+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
-        const target = slugify(state.storeIdParam);
-        data = all.find(s => slugify(s.name) === target);
     }
 
-    if (!data) throw new Error('Loja não encontrada.');
+    // 1. Busca dados da loja
+    let storeData = await EncartAPI.StoreAPI.getById(STORE_ID);
     
-    // Check Status
-    const sub = SubscriptionModule.getStatus(data.expires_at, data.status);
-    if (sub.blocked) { renderBlocked(); return; }
+    // 2. Se não encontrou por ID (UUID), tenta buscar pelo Nome/Slug
+    if (!storeData) {
+        console.log('[Loja] Tentando busca por slug:', STORE_ID);
+        const allStores = await EncartAPI.StoreAPI.getAll();
+        
+        const slugify = text => (text || '').toString().toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, '-')
+          .replace(/[^\w\-]+/g, '')
+          .replace(/\-\-+/g, '-')
+          .replace(/^-+/, '')
+          .replace(/-+$/, '');
+          
+        const targetSlug = slugify(STORE_ID);
+        storeData = allStores.find(s => slugify(s.name) === targetSlug);
+    }
+
+    if (!storeData) {
+      throw new Error(`Loja "${STORE_ID}" não encontrada. Verifique o link.`);
+    }
+
+    store = storeData;
+    STORE_ID = store.id;
+
+    // 3. Verifica se a loja está ativa/paga
+    const subStatus = SubscriptionModule.getStatus(store.expires_at);
+    if (subStatus.blocked) {
+      document.body.innerHTML = `
+        <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; font-family:sans-serif; background:#f8fafc;">
+          <div style="font-size:4rem; margin-bottom:20px;">🏪</div>
+          <h1 style="font-size:1.5rem; color:#0f172a; margin-bottom:8px;">Loja Temporariamente Indisponível</h1>
+          <p style="color:#64748b; max-width:400px; line-height:1.6;">Esta loja está passando por uma manutenção ou sua assinatura expirou.</p>
+          <a href="/" style="margin-top:24px; color:#4f46e5; text-decoration:none; font-weight:600;">← Voltar ao EncartShop</a>
+        </div>`;
+      return;
+    }
+
+    // 4. Carrega interface e produtos
+    cart = _loadCart();
+    if (store.color) {
+      document.documentElement.style.setProperty('--accent', store.color);
+      document.documentElement.style.setProperty('--brand', store.color);
+    }
     
-    if (data.status === 'pending') {
-      const user = await AuthService.getUser();
-      if (!user || user.id !== data.user_id) {
-         renderPending();
-         return;
-      }
-      _injectAdminBanner();
-    }
-
-    state.store = data;
-  }
-
-  async function loadProducts() {
-    const data = await EncartAPI.ProductAPI.getActiveByStore(state.store.id);
-    state.products = data || [];
-  }
-
-  // ── UI Setup ────────────────────────────────────────────────
-  function setupUI() {
-    document.title = `${state.store.name} | EncartShop`;
-    
-    // Apply Brand Color
-    if (state.store.color) {
-      document.documentElement.style.setProperty('--brand', state.store.color);
-      document.documentElement.style.setProperty('--brand-light', `${state.store.color}15`);
-      document.documentElement.style.setProperty('--shadow-brand', `0 10px 25px -5px ${state.store.color}33`);
-    }
-
-    const headerName = document.getElementById('header-store-name');
-    if (headerName) headerName.textContent = state.store.name;
-
-    const trustCard = document.getElementById('store-trust-card');
-    if (trustCard) {
-      trustCard.classList.remove('skeleton');
-      trustCard.style.height = 'auto';
-      trustCard.innerHTML = UIRender.storeTrustCard(state.store);
-    }
-  }
-
-  function attachEventListeners() {
-    const searchInput = document.getElementById('store-search');
-    if (searchInput) {
-      searchInput.addEventListener('input', EncartHelpers.debounce((e) => {
-        state.searchQuery = e.target.value.toLowerCase();
-        renderProducts();
-      }, 300));
-    }
-  }
-
-  // ── Cart Logic ──────────────────────────────────────────────
-  function addToCart(id) {
-    const product = state.products.find(p => p.id === id);
-    if (!product) return;
-
-    const isKg = product.unit?.toLowerCase() === 'kg';
-    const step = isKg ? 0.5 : 1;
-    const price = product.promo_price || product.price;
-
-    const existing = state.cart.find(c => c.id === id);
-    if (existing) {
-      existing.qty += step;
-    } else {
-      state.cart.push({ ...product, price, qty: step });
-    }
-
-    saveCartToStorage();
+    loadStoreUI();
+    await loadProducts();
     updateCartUI();
-    _refreshProductCard(id);
-    
-    if (window.UIComponents?.showToast) {
-       UIComponents.showToast(`${product.name} adicionado!`, 'success');
-    }
+
+  } catch (err) {
+    console.error('[Loja] Erro Crítico:', err);
+    document.body.innerHTML = `
+      <div style="text-align:center; padding:100px 24px; font-family:sans-serif;">
+        <div style="font-size:3rem; margin-bottom:20px;">⚠️</div>
+        <h1 style="font-size:1.2rem; color:#1e293b;">Não conseguimos carregar a loja</h1>
+        <p style="color:#64748b; margin-top:10px;">${err.message}</p>
+        <a href="/" style="display:inline-block; margin-top:24px; color:#4f46e5; text-decoration:none; font-weight:600;">Voltar ao Início</a>
+      </div>`;
+  }
+});
+
+function loadStoreUI() {
+  document.title = store.name + ' — EncartShop';
+  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setEl('header-store-name', store.name);
+  setEl('store-banner',      store.banner_text || 'Confira nossas ofertas!');
+  setEl('header-hours',      store.hours || '');
+}
+
+async function loadProducts() {
+  const prods = await EncartAPI.ProductAPI.getActiveByStore(STORE_ID);
+  allProducts = prods;
+  renderCategoryTabs();
+  renderProducts();
+}
+
+function renderCategoryTabs() {
+  const tabsWrap = document.getElementById('cat-tabs');
+  if (!tabsWrap) return;
+
+  const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+  const hasPromo = allProducts.some(p => p.promo_price);
+  
+  if (categories.length === 0 && !hasPromo) {
+    document.getElementById('cat-tabs-area').classList.add('hidden');
+    return;
   }
 
-  function changeQty(id, delta) {
-    const item = state.cart.find(c => c.id === id);
-    if (!item) return;
+  document.getElementById('cat-tabs-area').classList.remove('hidden');
+  
+  const html = [];
+  html.push(`<button class="cat-tab ${activeCategory === 'Todos' ? 'active' : ''}" onclick="setCategory('Todos')">Todos</button>`);
+  
+  if (hasPromo) {
+    html.push(`<button class="cat-tab ${activeCategory === 'Ofertas' ? 'active' : ''}" onclick="setCategory('Ofertas')" style="color:#ef4444; border-color:#ef4444;">🔥 Ofertas</button>`);
+  }
+  
+  categories.forEach(cat => {
+    html.push(`<button class="cat-tab ${activeCategory === cat ? 'active' : ''}" onclick="setCategory('${cat}')">${cat}</button>`);
+  });
+  
+  tabsWrap.innerHTML = html.join('');
+}
 
-    const isKg = item.unit?.toLowerCase() === 'kg';
-    const step = isKg ? 0.5 : 1;
-    
-    item.qty += (delta * step);
-    if (isKg) item.qty = Math.round(item.qty * 100) / 100;
+function setCategory(cat) {
+  activeCategory = cat;
+  renderCategoryTabs();
+  renderProducts();
+}
 
-    if (item.qty <= 0) {
-      state.cart = state.cart.filter(c => c.id !== id);
-    }
+function renderProducts() {
+  const area = document.getElementById('products-area');
+  if (!area) return;
 
-    saveCartToStorage();
-    updateCartUI();
-    _refreshProductCard(id);
-    renderCartDrawer();
+  if (!allProducts.length) {
+    area.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#666;">Nenhum produto encontrado.</div>';
+    return;
   }
 
-  function updateCartUI() {
-    const totalItems = state.cart.reduce((acc, i) => acc + (i.unit?.toLowerCase() === 'kg' ? 1 : i.qty), 0);
-    const subtotal = state.cart.reduce((s, i) => s + (i.price * i.qty), 0);
-    
-    const count = Math.floor(totalItems);
-    const hasItems = state.cart.length > 0;
+  let filtered = [];
+  if (activeCategory === 'Todos') filtered = allProducts;
+  else if (activeCategory === 'Ofertas') filtered = allProducts.filter(p => !!p.promo_price);
+  else filtered = allProducts.filter(p => p.category === activeCategory);
 
-    // Header Badge
-    const badge = document.getElementById('header-cart-badge');
-    const btn = document.getElementById('header-cart-btn');
-    if (badge) badge.textContent = count;
-    if (btn) btn.classList.toggle('hidden', !hasItems);
+  area.innerHTML = filtered.map(p => UIRender.productStoreCard(p, _cartQty(p.id))).join('');
+}
 
-    // Sticky Bar
-    const cartBar = document.getElementById('cart-bar');
-    const countText = document.getElementById('cart-count-text');
-    const totalPreview = document.getElementById('cart-total-preview');
-    
-    if (cartBar) cartBar.classList.toggle('hidden', !hasItems);
-    if (countText) countText.textContent = `${count} ${count === 1 ? 'item' : 'itens'} no pedido`;
-    if (totalPreview) totalPreview.textContent = UIRender.fmtPrice(subtotal);
+// ── Carrinho ──────────────────────────────────────────
+function addToCart(id) {
+  const product = allProducts.find(p => p.id === id);
+  if (!product) return;
+  
+  const isKg = product.unit?.toLowerCase() === 'kg';
+  const step = isKg ? 0.5 : 1;
+  const price = product.promo_price || product.price;
+  
+  const existing = cart.find(c => c.id === id);
+  if (existing) existing.qty += step;
+  else cart.push({ id: product.id, name: product.name, price, image: product.image, unit: product.unit, qty: step });
+
+  _saveCart();
+  updateCartUI();
+  _refreshProductCard(id);
+}
+
+function changeQty(id, delta) {
+  const item = cart.find(c => c.id === id);
+  if (!item) return;
+
+  const isKg = item.unit?.toLowerCase() === 'kg';
+  const step = isKg ? 0.5 : 1;
+  item.qty += (delta * step);
+  if (isKg) item.qty = Math.round(item.qty * 100) / 100;
+
+  if (item.qty <= 0) {
+    const idx = cart.indexOf(item);
+    cart.splice(idx, 1);
   }
 
-  // ── Rendering ───────────────────────────────────────────────
-  function render() {
-    renderCategoryTabs();
-    renderProducts();
+  _saveCart();
+  updateCartUI();
+  _refreshProductCard(id);
+  if (!document.getElementById('cart-modal').classList.contains('hidden')) renderCartBody();
+}
+
+function _refreshProductCard(id) {
+  const p = allProducts.find(x => x.id === id);
+  const el = document.getElementById(`prod-${id}`);
+  if (p && el) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = UIRender.productStoreCard(p, _cartQty(p.id));
+    el.replaceWith(tmp.firstElementChild);
+  }
+}
+
+function _cartQty(id) {
+  const item = cart.find(c => c.id === id);
+  return item ? item.qty : 0;
+}
+
+function updateCartUI() {
+  const total = cart.length;
+  const c1 = document.getElementById('cart-count');
+  const c2 = document.getElementById('header-cart-count');
+  if (c1) c1.textContent = total;
+  if (c2) c2.textContent = total;
+  
+  document.getElementById('cart-bubble')?.classList.toggle('hidden', total === 0);
+  document.getElementById('header-cart-btn')?.classList.toggle('hidden', total === 0);
+}
+
+function openCart() {
+  document.getElementById('cart-modal')?.classList.remove('hidden');
+  renderCartBody();
+}
+
+function closeCart() {
+  document.getElementById('cart-modal')?.classList.add('hidden');
+}
+
+function renderCartBody() {
+  const body = document.getElementById('cart-body');
+  const footer = document.getElementById('cart-subtotals');
+  if (!body) return;
+
+  if (!cart.length) {
+    body.innerHTML = '<p style="text-align:center;padding:40px;color:#999;">Seu carrinho está vazio.</p>';
+    if (footer) footer.innerHTML = '';
+    return;
   }
 
-  function renderCategoryTabs() {
-    const tabsArea = document.getElementById('cat-tabs-area');
-    const tabsWrap = document.getElementById('cat-tabs');
-    if (!tabsWrap) return;
+  body.innerHTML = cart.map(item => `
+    <div class="cart-item">
+      <div>
+        <div style="font-weight:600;">${item.name}</div>
+        <div style="color:var(--accent);font-size:0.9rem;">${UIRender.fmtPrice(item.price * item.qty)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button>
+        <span style="min-width:40px;text-align:center;">${item.qty}${item.unit==='kg'?'kg':'x'}</span>
+        <button class="qty-btn" onclick="changeQty('${item.id}',1)">+</button>
+      </div>
+    </div>
+  `).join('');
 
-    const categories = [...new Set(state.products.map(p => p.category).filter(Boolean))];
-    const hasPromo = state.products.some(p => p.promo_price);
-    
-    if (categories.length === 0 && !hasPromo) {
-      tabsArea.classList.add('hidden');
-      return;
-    }
-
-    tabsArea.classList.remove('hidden');
-    let html = `<button class="cat-pill ${state.activeCategory === 'Todos' ? 'active' : ''}" onclick="StoreApp.setCategory('Todos')">Todos</button>`;
-    
-    if (hasPromo) {
-      html += `<button class="cat-pill ${state.activeCategory === 'Ofertas' ? 'active' : ''}" onclick="StoreApp.setCategory('Ofertas')">🔥 Ofertas</button>`;
-    }
-
-    categories.forEach(cat => {
-      html += `<button class="cat-pill ${state.activeCategory === cat ? 'active' : ''}" onclick="StoreApp.setCategory('${cat}')">${cat}</button>`;
-    });
-
-    tabsWrap.innerHTML = html;
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  if (footer) {
+    footer.innerHTML = `
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span>Subtotal</span><span>${UIRender.fmtPrice(subtotal)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.1rem;margin-top:10px;border-top:1px solid #eee;padding-top:10px;">
+        <span>Total</span><span>${UIRender.fmtPrice(subtotal)}</span>
+      </div>
+    `;
   }
+}
 
-  function renderProducts() {
-    const area = document.getElementById('products-area');
-    if (!area) return;
+async function checkout() {
+  const name = document.getElementById('customer-name')?.value.trim();
+  if (!name) { alert('Informe seu nome para o pedido.'); return; }
 
-    let filtered = state.products;
-    
-    // Category Filter
-    if (state.activeCategory === 'Ofertas') {
-      filtered = filtered.filter(p => !!p.promo_price);
-    } else if (state.activeCategory !== 'Todos') {
-      filtered = filtered.filter(p => p.category === state.activeCategory);
-    }
+  const wa = (store.whatsapp || '').replace(/\D/g, '');
+  if (!wa) { alert('Loja sem WhatsApp configurado.'); return; }
 
-    // Search Filter
-    if (state.searchQuery) {
-      filtered = filtered.filter(p => p.name.toLowerCase().includes(state.searchQuery));
-    }
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const itemsText = cart.map(i => `• ${i.qty}${i.unit==='kg'?'kg':'x'} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`).join('\n');
+  const message = `🛒 *Novo Pedido - ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Total:* ${UIRender.fmtPrice(subtotal)}\n\n_Enviado via EncartShop_`;
+  
+  window.location.href = `https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(message)}`;
+}
 
-    if (filtered.length === 0) {
-      area.innerHTML = UIRender.emptyState('🔍', 'Nenhum produto encontrado', 'Tente buscar por outro termo ou categoria.');
-      return;
-    }
-
-    area.innerHTML = filtered.map(p => {
-      const cartItem = state.cart.find(c => c.id === p.id);
-      return UIRender.productStoreCard(p, cartItem ? cartItem.qty : 0);
-    }).join('');
-  }
-
-  function renderCartDrawer() {
-    const list = document.getElementById('cart-items-list');
-    const subEl = document.getElementById('cart-subtotal');
-    const totEl = document.getElementById('cart-total');
-
-    if (!list) return;
-
-    if (state.cart.length === 0) {
-      list.innerHTML = UIRender.emptyState('🛒', 'Seu pedido está vazio', 'Adicione produtos para começar seu pedido.');
-      if (subEl) subEl.textContent = 'R$ 0,00';
-      if (totEl) totEl.textContent = 'R$ 0,00';
-      return;
-    }
-
-    list.innerHTML = state.cart.map(item => UIRender.cartItemRow(item)).join('');
-    
-    const subtotal = state.cart.reduce((s, i) => s + (i.price * i.qty), 0);
-    if (subEl) subEl.textContent = UIRender.fmtPrice(subtotal);
-    if (totEl) totEl.textContent = UIRender.fmtPrice(subtotal);
-  }
-
-  // ── WhatsApp ────────────────────────────────────────────────
-  function sendToWhatsApp() {
-    if (state.cart.length === 0) return;
-
-    const wa = (state.store.whatsapp || '').replace(/\D/g, '');
-    if (!wa) {
-      alert('Esta loja ainda não configurou o WhatsApp.');
-      return;
-    }
-
-    const obs = document.getElementById('order-obs')?.value.trim();
-    const subtotal = state.cart.reduce((s, i) => s + (i.price * i.qty), 0);
-    
-    const itemsText = state.cart.map(i => {
-      const qtyStr = i.unit?.toLowerCase() === 'kg' 
-        ? (i.qty < 1 ? `${i.qty * 1000}g` : `${i.qty.toFixed(1).replace('.',',')}kg`) 
-        : `${i.qty}x`;
-      return `• ${qtyStr} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`;
-    }).join('\n');
-
-    let msg = `Olá! 👋 Gostaria de fazer um pedido:\n\n`;
-    msg += `🛒 *MEU PEDIDO*\n${itemsText}\n\n`;
-    if (obs) msg += `📝 *OBS:* ${obs}\n\n`;
-    msg += `💰 *TOTAL: ${UIRender.fmtPrice(subtotal)}*\n\n`;
-    msg += `_Enviado via EncartShop_`;
-
-    const url = `https://api.whatsapp.com/send?phone=55${wa}&text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
-  }
-
-  // ── Helpers ─────────────────────────────────────────────────
-  function setCategory(cat) {
-    state.activeCategory = cat;
-    renderCategoryTabs();
-    renderProducts();
-  }
-
-  function saveCartToStorage() {
-    localStorage.setItem(`encart_cart_${state.store.id}`, JSON.stringify(state.cart));
-  }
-
-  function loadCartFromStorage() {
-    try {
-      const saved = localStorage.getItem(`encart_cart_${state.store.id}`);
-      state.cart = saved ? JSON.parse(saved) : [];
-      updateCartUI();
-    } catch(e) { state.cart = []; }
-  }
-
-  function _refreshProductCard(id) {
-    const p = state.products.find(x => x.id === id);
-    const el = document.getElementById(`prod-${id}`);
-    if (p && el) {
-      const cartItem = state.cart.find(c => c.id === id);
-      const tmp = document.createElement('div');
-      tmp.innerHTML = UIRender.productStoreCard(p, cartItem ? cartItem.qty : 0);
-      el.replaceWith(tmp.firstElementChild);
-    }
-  }
-
-  function _injectAdminBanner() {
-    const banner = document.createElement('div');
-    banner.style.cssText = 'background:#fff7ed; color:#c2410c; padding:12px; text-align:center; font-size:0.8rem; font-weight:700; border-bottom:1px solid #ffedd5; position:sticky; top:0; z-index:1001;';
-    banner.innerHTML = `⚠️ MODO PREVIEW (Apenas você pode ver) | <a href="/admin/pagamento.html" style="color:#f97316;">Ativar Loja</a>`;
-    document.body.prepend(banner);
-  }
-
-  // ── Error Pages ─────────────────────────────────────────────
-  function renderPending() {
-    document.body.innerHTML = `<div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px; background:#fff;">
-      <div style="font-size:4rem; margin-bottom:20px;">🏗️</div>
-      <h1 style="font-size:1.5rem; margin-bottom:10px;">Loja em Construção</h1>
-      <p style="color:var(--text-light); max-width:320px; line-height:1.6;">Esta loja ainda não foi ativada. Volte em breve!</p>
-      <a href="/" style="margin-top:30px; color:var(--brand); font-weight:700; text-decoration:none;">Conhecer EncartShop →</a>
-    </div>`;
-  }
-
-  function renderBlocked() {
-    document.body.innerHTML = `<div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px; background:#f8fafc;">
-      <div style="font-size:4rem; margin-bottom:20px;">🏪</div>
-      <h1 style="font-size:1.5rem; margin-bottom:10px;">Loja Indisponível</h1>
-      <p style="color:var(--text-light);">A assinatura desta loja expirou ou está suspensa.</p>
-    </div>`;
-  }
-
-  function renderError(msg) {
-    document.body.innerHTML = `<div style="text-align:center; padding:100px 30px;">
-      <div style="font-size:3rem; margin-bottom:20px;">⚠️</div>
-      <h2 style="font-size:1.2rem;">Ops! Algo deu errado</h2>
-      <p style="color:var(--text-muted); margin-top:10px;">${msg}</p>
-      <a href="/" style="display:inline-block; margin-top:30px; color:var(--brand); font-weight:700;">Voltar ao Início</a>
-    </div>`;
-  }
-
-  // Public API
-  return { 
-    init, 
-    setCategory, 
-    addToCart, 
-    changeQty, 
-    sendToWhatsApp,
-    openCart: () => {
-      document.getElementById('drawer-overlay')?.classList.add('active');
-      renderCartDrawer();
-    },
-    closeCart: () => {
-      document.getElementById('drawer-overlay')?.classList.remove('active');
-    }
-  };
-})();
-
-// Global Helpers for onclick
-window.addToCart = StoreApp.addToCart;
-window.changeQty = StoreApp.changeQty;
-window.sendToWhatsApp = StoreApp.sendToWhatsApp;
-window.openCart = StoreApp.openCart;
-window.closeCart = StoreApp.closeCart;
-
-// Start App
-document.addEventListener('DOMContentLoaded', StoreApp.init);
+function _saveCart() { localStorage.setItem(`encart_cart_${STORE_ID}`, JSON.stringify(cart)); }
+function _loadCart() { return JSON.parse(localStorage.getItem(`encart_cart_${STORE_ID}`) || '[]'); }

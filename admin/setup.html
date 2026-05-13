@@ -289,7 +289,6 @@
 <div id="toast-container"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/core/supabaseClient.js"></script>
-<script src="/js/core/helpers.js"></script>
 <script src="/js/core/api.js"></script>
 <script src="/js/auth/authService.js"></script>
 <script src="/js/auth/authGuard.js"></script>
@@ -441,7 +440,7 @@
       btn.textContent = 'Criando loja...';
 
       // 2. Cria a loja vinculada ao usuário
-      const result = await StoreModule.create({
+      const result = await EncartAPI.StoreAPI.create({
         name,
         slogan:      document.getElementById('s1-slogan').value.trim(),
         address:     document.getElementById('s1-address').value.trim(),
@@ -452,6 +451,7 @@
         delivery_free: document.getElementById('s3-combine').checked ? 0 : (parseFloat(document.getElementById('s3-free').value) || 0),
         color:       selectedColor,
         owner_email: email,
+        user_id:     userId,
         status:      'pending',
         plan_value:  selectedPlanValue,
         expires_at:  new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 dias de trial/setup
