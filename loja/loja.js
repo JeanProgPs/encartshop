@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('[Loja] Resultado da busca:', storeData);
 
     if (!storeData) {
+      console.warn('[Loja] Nenhuma loja encontrada para:', STORE_ID_PARAM);
       throw new Error(`Loja "${STORE_ID_PARAM}" não encontrada.`);
     }
 

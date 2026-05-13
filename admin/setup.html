@@ -441,7 +441,7 @@
       btn.textContent = 'Criando loja...';
 
       // 2. Cria a loja vinculada ao usuário
-      const result = await EncartAPI.StoreAPI.create({
+      const result = await StoreModule.create({
         name,
         slogan:      document.getElementById('s1-slogan').value.trim(),
         address:     document.getElementById('s1-address').value.trim(),
@@ -452,7 +452,6 @@
         delivery_free: document.getElementById('s3-combine').checked ? 0 : (parseFloat(document.getElementById('s3-free').value) || 0),
         color:       selectedColor,
         owner_email: email,
-        user_id:     userId,
         status:      'pending',
         plan_value:  selectedPlanValue,
         expires_at:  new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 dias de trial/setup

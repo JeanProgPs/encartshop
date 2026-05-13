@@ -13,11 +13,11 @@ const StoreAPI = {
   },
   async getById(id) {
     if (!id) return null;
-    return EncartHelpers.safeFetch(window.sb.from('stores').select('*').eq('id', id).single(), null);
+    return EncartHelpers.safeFetch(window.sb.from('stores').select('*').eq('id', id).maybeSingle(), null);
   },
   async getBySlug(slug) {
     if (!slug) return null;
-    return EncartHelpers.safeFetch(window.sb.from('stores').select('*').eq('slug', slug).single(), null);
+    return EncartHelpers.safeFetch(window.sb.from('stores').select('*').eq('slug', slug).maybeSingle(), null);
   },
   async create(storeData) {
     const { data, error } = await window.sb.from('stores').insert([storeData]).select().single();
