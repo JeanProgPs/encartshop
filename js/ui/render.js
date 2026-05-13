@@ -173,7 +173,7 @@ const UIRender = (() => {
     `;
   }
 
-  return { emptyState, fmtPrice, fmtDateShort, productAdminCard, productStoreCard, orderAdminCard };
+  return { emptyState, fmtPrice, fmtDateShort, productAdminCard, productStoreCard, cartItemRow, orderAdminCard };
 })();
 
 window.UIRender = UIRender;

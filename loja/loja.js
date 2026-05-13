@@ -326,7 +326,13 @@ function renderCartBody() {
     return;
   }
 
-  const itemsHtml = cart.map(item => UIRender.cartItemRow(item)).join('');
+  const itemsHtml = cart.map(item => {
+    if (typeof UIRender.cartItemRow === 'function') {
+      return UIRender.cartItemRow(item);
+    }
+    // Fallback básico se a função falhar
+    return `<div class="cart-item-row"><div>${item.name}</div><div>${UIRender.fmtPrice(item.price * item.qty)}</div></div>`;
+  }).join('');
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const total = subtotal; // Futuramente taxa de entrega aqui
 
