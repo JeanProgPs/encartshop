@@ -14,8 +14,10 @@ let allProducts   = [];
 let activeCategory = 'Todos';
 let STORE_ID      = STORE_ID_PARAM;
 
-// ── Init ──────────────────────────────────────────────────────
+console.log('[EncartShop] loja.js carregado com sucesso.');
+
 document.addEventListener('DOMContentLoaded', async () => {
+  console.log('[EncartShop] DOM carregado, iniciando lógica da loja...');
   try {
     if (!window.sb) throw new Error('Conexão com o banco falhou.');
 
