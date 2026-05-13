@@ -71,15 +71,15 @@ const UIRender = (() => {
         </div>
         <div class="product-info">
           <div class="product-name" title="${p.name}">${p.name}</div>
-          <div class="product-price-row">
+          <div class="product-unit" style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">Vendido por ${unit}</div>
+          <div class="product-price-row" style="display:flex; align-items:baseline; gap:8px;">
             ${isPromo 
-              ? `<div class="price-normal">${fmtPrice(p.price)}</div><div class="price-promo">${fmtPrice(p.promo_price)}</div>`
-              : `<div class="price-regular">${fmtPrice(p.price)}</div>`
+              ? `<div class="price-promo" style="font-size:1.15rem; font-weight:800; color:var(--accent);">${fmtPrice(p.promo_price)}</div><div class="price-normal" style="font-size:0.8rem; text-decoration:line-through; color:var(--text-muted);">${fmtPrice(p.price)}</div>`
+              : `<div class="price-regular" style="font-size:1.15rem; font-weight:800; color:var(--brand);">${fmtPrice(p.price)}</div>`
             }
-            <span class="product-unit-label">/${unit}</span>
           </div>
           
-          <div class="product-card-actions">
+          <div class="product-card-actions" style="margin-top:14px;">
             ${cartQty > 0 
               ? `
                 <div class="qty-selector-card">
@@ -95,6 +95,30 @@ const UIRender = (() => {
                 </button>
               `
             }
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function cartItemRow(item) {
+    const isKg = item.unit?.toLowerCase() === 'kg';
+    const qtyLabel = isKg ? (item.qty < 1 ? `${item.qty * 1000}g` : `${item.qty.toFixed(1).replace('.',',')}kg`) : `${item.qty}x`;
+    const defaultImg = 'https://images.placeholders.dev/?width=100&height=100&text=Sem%20Imagem&bgColor=%23f1f5f9&textColor=%2364748b';
+    const img = item.image || defaultImg;
+
+    return `
+      <div class="cart-item-row" id="cart-row-${item.id}">
+        <img src="${img}" alt="${item.name}" class="cart-item-img" onerror="this.src='${defaultImg}'">
+        <div class="cart-item-info">
+          <div class="cart-item-name">${item.name}</div>
+          <div class="cart-item-meta">
+            <div class="cart-item-price">${fmtPrice(item.price * item.qty)}</div>
+            <div class="cart-item-controls">
+              <button class="cart-control-btn" onclick="changeQty('${item.id}', -1)">−</button>
+              <span class="cart-item-qty">${qtyLabel}</span>
+              <button class="cart-control-btn" onclick="changeQty('${item.id}', 1)">+</button>
+            </div>
           </div>
         </div>
       </div>

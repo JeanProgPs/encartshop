@@ -26,7 +26,7 @@
   // 4. Verifica Assinatura e injeta alerta se necessário
   const store = await StoreModule.getActive();
   if (store) {
-    const subStatus = SubscriptionModule.getStatus(store.expires_at);
+    const subStatus = SubscriptionModule.getStatus(store.expires_at, store.status);
     const alert = SubscriptionModule.getAlert(subStatus, store.status);
     SubscriptionModule.injectAlert(alert);
   }

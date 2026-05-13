@@ -59,8 +59,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     STORE_ID = store.id;
 
     // 2. Verifica status (Ativa vs Pendente vs Bloqueada)
-    const subStatus = SubscriptionModule.getStatus(store.expires_at);
+    const subStatus = SubscriptionModule.getStatus(store.expires_at, store.status);
     
+    // Se bloqueada por vencimento (independente de ser dono ou não)
     if (subStatus.blocked) {
       renderBlockedPage();
       return;
@@ -68,8 +69,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Se pendente, permite acesso mas mostra aviso (opcional conforme UX)
     if (store.status === 'pending') {
-       console.warn('[Loja] Aviso: Esta loja está com pagamento pendente.');
-       _injectPendingBanner();
+       const user = await AuthService.getUser();
+       const isOwner = user && user.id === store.user_id;
+
+       if (isOwner) {
+          console.warn('[Loja] Preview interno para o dono.');
+          _injectPendingBanner();
+          _blockSEO();
+       } else {
+          console.log('[Loja] Acesso negado: loja não ativada.');
+          renderPendingPage();
+          return;
+       }
     }
 
     // 3. Setup UI
@@ -90,11 +101,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+function _blockSEO() {
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'noindex, nofollow';
+    document.head.appendChild(meta);
+    console.info('[SEO] Indexação bloqueada para esta loja em rascunho.');
+}
+
 function _injectPendingBanner() {
     const banner = document.createElement('div');
-    banner.style.cssText = 'background:#fef3c7; color:#92400e; padding:10px; text-align:center; font-size:0.85rem; font-weight:600; border-bottom:1px solid #fde68a;';
-    banner.innerHTML = '⚠️ Esta loja está em modo de demonstração aguardando ativação.';
+    banner.style.cssText = 'background:#fff7ed; color:#c2410c; padding:12px; text-align:center; font-size:0.9rem; font-weight:600; border-bottom:1px solid #ffedd5; display:flex; align-items:center; justify-content:center; gap:15px; position:sticky; top:0; z-index:1001;';
+    banner.innerHTML = `
+      <span>⚠️ Esta loja está em modo de rascunho (apenas você pode ver).</span>
+      <a href="/admin/pagamento.html" style="background:#f97316; color:#fff; padding:6px 12px; border-radius:6px; text-decoration:none; font-size:0.8rem;">Finalizar Pagamento</a>
+    `;
     document.body.prepend(banner);
+}
+
+function renderPendingPage() {
+  document.body.innerHTML = `
+    <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; font-family:sans-serif; background:#fff;">
+      <div style="font-size:4rem; margin-bottom:20px;">🏗️</div>
+      <h1 style="font-size:1.5rem; color:#0f172a; margin-bottom:12px;">Loja em Construção</h1>
+      <p style="color:#64748b; max-width:400px; line-height:1.6; margin-bottom:24px;">Esta loja ainda não foi ativada pelo proprietário. Volte em breve!</p>
+      <a href="/" style="color:#4f46e5; text-decoration:none; font-weight:600; border:1px solid #e2e8f0; padding:10px 20px; border-radius:8px;">Conheça o EncartShop</a>
+    </div>`;
 }
 
 function renderBlockedPage() {
@@ -256,11 +288,18 @@ function updateCartUI() {
   const totalItems = cart.reduce((acc, item) => acc + (item.unit === 'kg' ? 1 : item.qty), 0);
   const c1 = document.getElementById('cart-count');
   const c2 = document.getElementById('header-cart-count');
-  if (c1) c1.textContent = Math.floor(totalItems);
-  if (c2) c2.textContent = Math.floor(totalItems);
+  const c3 = document.getElementById('sidebar-cart-count');
+  
+  const count = Math.floor(totalItems);
+  if (c1) c1.textContent = count;
+  if (c2) c2.textContent = count;
+  if (c3) c3.textContent = count;
   
   document.getElementById('cart-bubble')?.classList.toggle('hidden', cart.length === 0);
   document.getElementById('header-cart-btn')?.classList.toggle('hidden', cart.length === 0);
+  
+  // Atualiza também o sidebar persistente
+  renderCartBody();
 }
 
 function openCart() {
@@ -273,43 +312,60 @@ function closeCart() {
 }
 
 function renderCartBody() {
-  const body = document.getElementById('cart-body');
-  const footer = document.getElementById('cart-subtotals');
-  if (!body) return;
-
+  const sidebarBody = document.getElementById('cart-sidebar-body');
+  const sidebarFooter = document.getElementById('cart-sidebar-footer');
+  const modalBody = document.getElementById('cart-body');
+  const modalFooter = document.getElementById('cart-subtotals');
+  
   if (!cart.length) {
-    body.innerHTML = '<p style="text-align:center;padding:40px;color:#999;">Seu carrinho está vazio.</p>';
-    if (footer) footer.innerHTML = '';
+    const emptyHtml = '<p style="text-align:center;padding:40px;color:#999;font-size:0.85rem;">Seu carrinho está vazio.</p>';
+    if (sidebarBody) sidebarBody.innerHTML = emptyHtml;
+    if (sidebarFooter) sidebarFooter.innerHTML = '';
+    if (modalBody) modalBody.innerHTML = emptyHtml;
+    if (modalFooter) modalFooter.innerHTML = '';
     return;
   }
 
-  body.innerHTML = cart.map(item => `
-    <div class="cart-item">
-      <div>
-        <div style="font-weight:600;">${item.name}</div>
-        <div style="color:var(--accent);font-size:0.9rem;">${UIRender.fmtPrice(item.price * item.qty)}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button>
-        <span style="min-width:40px;text-align:center;">${item.qty}${item.unit==='kg'?'kg':'x'}</span>
-        <button class="qty-btn" onclick="changeQty('${item.id}',1)">+</button>
-      </div>
-    </div>
-  `).join('');
-
+  const itemsHtml = cart.map(item => UIRender.cartItemRow(item)).join('');
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  if (footer) {
-    footer.innerHTML = `
-      <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span>Subtotal</span><span>${UIRender.fmtPrice(subtotal)}</span></div>
-      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.1rem;margin-top:10px;border-top:1px solid #eee;padding-top:10px;">
-        <span>Total</span><span>${UIRender.fmtPrice(subtotal)}</span>
-      </div>
-    `;
+  const total = subtotal; // Futuramente taxa de entrega aqui
+
+  const footerHtml = `
+    <div class="cart-form" style="margin-bottom:16px;">
+      <label class="form-label">Seu Nome</label>
+      <input type="text" class="form-input customer-name-input" placeholder="Como te chamamos?" oninput="syncNames(this.value)">
+    </div>
+    <div class="summary-row"><span>Subtotal</span><span>${UIRender.fmtPrice(subtotal)}</span></div>
+    <div class="summary-row total"><span>Total</span><span>${UIRender.fmtPrice(total)}</span></div>
+    <button class="checkout-btn" onclick="checkout()">
+      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.817 9.817 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.182 8.182 0 0 1 2.41 5.82c0 4.52-3.67 8.19-8.19 8.19-1.53 0-3.06-.43-4.39-1.24l-.31-.19-3.26.86.87-3.17-.21-.33c-.88-1.41-1.35-3.04-1.35-4.72 0-4.52 3.68-8.19 8.21-8.19m-3.11 4.64c-.17 0-.45.06-.69.32-.24.25-.92.9-.92 2.2 0 1.3.95 2.56 1.08 2.73.13.17 1.87 2.85 4.53 4 .63.27 1.13.44 1.51.56.64.2 1.22.17 1.67.1.51-.07 1.57-.64 1.79-1.26.22-.61.22-1.14.15-1.26-.07-.12-.25-.18-.53-.32-.28-.14-1.66-.82-1.92-.91-.26-.09-.45-.14-.64.14-.19.28-.73.91-.89 1.1-.16.19-.32.21-.61.07-.28-.14-1.2-.44-2.28-1.41-.84-.75-1.41-1.68-1.57-1.97-.17-.28-.02-.44.12-.58.13-.12.28-.32.42-.48.14-.16.18-.28.28-.46.1-.18.05-.33-.02-.47-.07-.14-.64-1.54-.87-2.11-.23-.55-.47-.48-.64-.49"/></svg>
+      <span>Finalizar no WhatsApp</span>
+    </button>
+  `;
+
+  if (sidebarBody) sidebarBody.innerHTML = itemsHtml;
+  if (sidebarFooter) sidebarFooter.innerHTML = footerHtml;
+  if (modalBody) modalBody.innerHTML = itemsHtml;
+  if (modalFooter) modalFooter.innerHTML = footerHtml;
+  
+  // Recupera o nome se já foi digitado
+  const savedName = localStorage.getItem('encart_customer_name');
+  if (savedName) {
+    document.querySelectorAll('.customer-name-input').forEach(i => i.value = savedName);
   }
 }
 
+function syncNames(val) {
+  localStorage.setItem('encart_customer_name', val);
+  document.querySelectorAll('.customer-name-input').forEach(i => {
+    if (i !== document.activeElement) i.value = val;
+  });
+}
+
 async function checkout() {
-  const name = document.getElementById('customer-name')?.value.trim();
+  // Pega o nome do primeiro input que encontrar (já que estão sincronizados)
+  const name = document.querySelector('.customer-name-input')?.value.trim();
+  
   if (!name) { 
     if (window.UIComponents && window.UIComponents.showToast) {
        UIComponents.showToast('Informe seu nome para o pedido.', 'error'); 
@@ -330,7 +386,12 @@ async function checkout() {
   }
 
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const itemsText = cart.map(i => `• ${i.qty}${i.unit==='kg'?'kg':'x'} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`).join('\n');
+  const itemsText = cart.map(i => {
+    const isKg = i.unit?.toLowerCase() === 'kg';
+    const qtyStr = isKg ? (i.qty < 1 ? `${i.qty * 1000}g` : `${i.qty.toFixed(1).replace('.',',')}kg`) : `${i.qty}x`;
+    return `• ${qtyStr} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`;
+  }).join('\n');
+  
   const message = `🛒 *Novo Pedido - ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Total:* ${UIRender.fmtPrice(subtotal)}\n\n_Enviado via EncartShop_`;
   
   window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(message)}`, '_blank');
