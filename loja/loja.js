@@ -1,16 +1,19 @@
 /**
- * EncartShop — Loja Pública v13
- * Produtos agrupados por categoria + carrinho premium bottom-sheet.
+ * EncartShop — Loja Pública v14
+ * Bloqueio inteligente: lojas pending bloqueadas para o público,
+ * liberadas apenas para o dono (Preview Mode).
  */
 
 const urlParams      = new URLSearchParams(window.location.search);
 const STORE_ID_PARAM = urlParams.get('s') || urlParams.get('id');
+const PREVIEW_MODE   = urlParams.get('preview') === 'true';
 
 let cart           = [];
 let store          = {};
 let allProducts    = [];
 let activeCategory = 'Todos';
 let STORE_ID       = STORE_ID_PARAM;
+let isOwner        = false;
 
 // ── Inicialização ─────────────────────────────────────────────
 
@@ -31,21 +34,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     store    = storeData;
     STORE_ID = store.id;
 
-    // 2. Verifica assinatura
-    const subStatus = SubscriptionModule.getStatus(store.expires_at);
-    if (subStatus.blocked) {
+    // 2. Verifica se o usuário logado é o dono desta loja
+    const user = await AuthService.getUser();
+    isOwner = user && user.id === store.user_id;
+
+    // 3. Bloqueio inteligente de lojas não pagas
+    const availability = SubscriptionModule.getPublicAvailability(store);
+
+    if (!availability.available && !isOwner) {
       showPageLoading(false);
-      document.body.innerHTML = `
-        <div style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:sans-serif;background:#f8fafc;">
-          <div style="font-size:4rem;margin-bottom:20px">🏪</div>
-          <h1 style="font-size:1.4rem;color:#0f172a;margin-bottom:8px">Loja Temporariamente Indisponível</h1>
-          <p style="color:#64748b;max-width:380px;line-height:1.6">Esta loja está em manutenção ou com assinatura vencida.</p>
-          <a href="/" style="margin-top:24px;color:#4f46e5;text-decoration:none;font-weight:600">← Voltar ao EncartShop</a>
-        </div>`;
+      renderBlockedScreen(availability.reason);
       return;
     }
 
-    // 3. Aplica tema da loja
+    // 4. SEO e Indexação (Bloqueia indexação se não estiver ativa)
+    handleIndexing(availability.available);
+
+    // 5. Preview Mode Header para o dono
+    if (isOwner && !availability.available) {
+      injectPreviewBanner();
+    }
+
+    // 6. Aplica tema da loja
     cart = _loadCart();
     if (store.color) {
       document.documentElement.style.setProperty('--accent',     store.color);
@@ -54,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.documentElement.style.setProperty('--brand-glow', store.color + '22');
     }
 
-    // 4. UI e produtos
+    // 7. UI e produtos
     loadStoreUI();
     await loadProducts();
     updateCartUI();
@@ -73,7 +83,67 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// ── Helpers ───────────────────────────────────────────────────
+// ── Funções de Bloqueio e SEO ───────────────────────────────
+
+function handleIndexing(isAvailable) {
+  let meta = document.querySelector('meta[name="robots"]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = 'robots';
+    document.head.appendChild(meta);
+  }
+  
+  if (!isAvailable) {
+    meta.content = 'noindex, nofollow';
+  } else {
+    meta.content = 'index, follow';
+  }
+}
+
+function renderBlockedScreen(reason) {
+  let title = "Loja Temporariamente Indisponível";
+  let desc = "Esta loja está em manutenção ou com assinatura pendente.";
+  let icon = "🏪";
+  let btn = "";
+
+  if (reason === 'pending' || reason === 'pending_expired') {
+    title = "Loja ainda não ativada";
+    desc  = "Esta vitrine está sendo preparada e ainda não foi publicada pelo lojista.";
+    icon  = "🛠️";
+  } else if (reason === 'subscription_expired') {
+    title = "Assinatura Vencida";
+    desc  = "Esta loja suspendeu as atividades temporariamente. Tente novamente mais tarde.";
+    icon  = "⌛";
+  }
+
+  document.body.innerHTML = `
+    <div style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:sans-serif;background:#f8fafc;">
+      <div style="font-size:4rem;margin-bottom:20px">${icon}</div>
+      <h1 style="font-size:1.4rem;color:#0f172a;margin-bottom:8px">${title}</h1>
+      <p style="color:#64748b;max-width:380px;line-height:1.6">${desc}</p>
+      <a href="/" style="margin-top:24px;color:#4f46e5;text-decoration:none;font-weight:600">← Voltar ao EncartShop</a>
+    </div>`;
+}
+
+function injectPreviewBanner() {
+  const banner = document.createElement('div');
+  banner.style.cssText = `
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+    background: #1e293b; color: #fff; padding: 10px 20px;
+    text-align: center; font-size: 0.8rem; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  `;
+  banner.innerHTML = `
+    <span>🕵️ MODO PREVIEW: Esta loja não está visível para clientes.</span>
+    <a href="/admin/pagamento.html" style="background:#4f46e5; color:#fff; padding:4px 12px; border-radius:6px; text-decoration:none;">Ativar Agora</a>
+  `;
+  document.body.prepend(banner);
+  // Ajusta padding do body para não cobrir o header
+  document.body.style.paddingTop = "40px";
+}
+
+// ── Outros Helpers ─────────────────────────────────────────────
 
 function showPageLoading(show) {
   let el = document.getElementById('page-loading');
@@ -94,7 +164,6 @@ function showPageLoading(show) {
   }
 }
 
-// Escurece um hex color ~20% para brand-dark
 function _darkenColor(hex) {
   try {
     const n = parseInt(hex.replace('#',''), 16);
@@ -112,8 +181,6 @@ function loadStoreUI() {
   setEl('store-banner',      store.banner_text || 'Confira nossas ofertas!');
   setEl('header-hours',      store.hours || '');
 }
-
-// ── Produtos ──────────────────────────────────────────────────
 
 async function loadProducts() {
   const area = document.getElementById('products-area');
@@ -176,7 +243,6 @@ function setCategory(cat) {
   activeCategory = cat;
   renderCategoryTabs();
   renderProducts();
-  // Scroll suave para o topo dos produtos
   document.getElementById('products-area')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -192,13 +258,11 @@ function renderProducts() {
     return;
   }
 
-  // ── Vista "Todos": agrupa por categoria ───────────────────────
   if (activeCategory === 'Todos') {
     area.innerHTML = _renderGrouped();
     return;
   }
 
-  // ── Vista "Ofertas" ───────────────────────────────────────────
   if (activeCategory === 'Ofertas') {
     const offerProds = allProducts.filter(p => !!p.promo_price);
     if (!offerProds.length) {
@@ -217,7 +281,6 @@ function renderProducts() {
     return;
   }
 
-  // ── Vista de categoria específica ─────────────────────────────
   const filtered = allProducts.filter(p => p.category === activeCategory);
   if (!filtered.length) {
     area.innerHTML = '<div style="text-align:center;padding:50px;color:var(--text-muted)">Nenhum produto nesta categoria.</div>';
@@ -234,26 +297,21 @@ function renderProducts() {
     </div>`;
 }
 
-// Renderiza todos os produtos agrupados por categoria
 function _renderGrouped() {
   const categories = _getCategories();
   const hasPromo   = allProducts.some(p => p.promo_price);
   const groups     = [];
 
-  // Grupo de Ofertas primeiro (se houver)
   if (hasPromo) {
     const promoProds = allProducts.filter(p => !!p.promo_price);
     groups.push(_renderGroup('🔥 Ofertas', promoProds, true));
   }
 
-  // Produtos sem categoria agrupados como "Outros"
   const noCat = allProducts.filter(p => !p.category);
 
   if (!categories.length && !hasPromo) {
-    // Sem categorias nem promos: lista simples
     groups.push(_renderGroup('Produtos', allProducts, false));
   } else {
-    // Um grupo por categoria
     categories.forEach(cat => {
       const catProds = allProducts.filter(p => p.category === cat);
       if (catProds.length) groups.push(_renderGroup(cat, catProds, false));
@@ -265,7 +323,6 @@ function _renderGrouped() {
 }
 
 function _renderGroup(title, products, isPromo = false) {
-  const icon = isPromo ? '' : '';
   return `
     <div class="category-group">
       <div class="category-group-header">
@@ -335,13 +392,11 @@ function updateCartUI() {
   const total     = _cartTotal();
   const fmt       = v => UIRender.fmtPrice(v);
 
-  // Header button
   const hBtn = document.getElementById('header-cart-btn');
   const hCnt = document.getElementById('header-cart-count');
   if (hBtn) hBtn.classList.toggle('hidden', itemCount === 0);
   if (hCnt) hCnt.textContent = itemCount;
 
-  // Bottom bubble
   const bubble     = document.getElementById('cart-bubble');
   const bubbleTotal = document.getElementById('cart-bubble-total');
   const cnt        = document.getElementById('cart-count');
@@ -349,7 +404,6 @@ function updateCartUI() {
   if (cnt) cnt.textContent = itemCount;
   if (bubbleTotal) bubbleTotal.textContent = fmt(total);
 
-  // Drawer badge
   const drawerBadge = document.getElementById('cart-drawer-count');
   if (drawerBadge) drawerBadge.textContent = itemCount;
 }
@@ -365,7 +419,6 @@ function closeCart() {
   document.body.style.overflow = '';
 }
 
-// Fecha ao clicar no backdrop
 function handleCartOverlayClick(e) {
   if (e.target.id === 'cart-modal') closeCart();
 }
@@ -412,7 +465,6 @@ function renderCartBody() {
       </div>`;
   }).join('');
 
-  // ── Summary ────────────────────────────────────────────────
   if (!footer) return;
 
   const subtotal     = _cartTotal();
@@ -423,7 +475,6 @@ function renderCartBody() {
   const feeCharged   = isCombine ? 0 : (hasFreeShip ? 0 : deliveryFee);
   const total        = subtotal + feeCharged;
 
-  // Barra de progresso para frete grátis
   let progressHTML = '';
   if (deliveryFree > 0 && !hasFreeShip && !isCombine) {
     const pct = Math.min(100, Math.round((subtotal / deliveryFree) * 100));
@@ -459,8 +510,6 @@ function renderCartBody() {
     </div>`;
 }
 
-// ── Checkout ──────────────────────────────────────────────────
-
 async function checkout() {
   const nameInput = document.getElementById('customer-name');
   const name      = nameInput?.value.trim() || '';
@@ -486,7 +535,6 @@ async function checkout() {
 
     const msg = `🛒 *Novo Pedido — ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Total:* ${UIRender.fmtPrice(subtotal)}\n\n_Enviado via EncartShop_`;
 
-    // Salva no banco sem bloquear o fluxo
     EncartAPI.OrderAPI.create(STORE_ID, {
       customer_name: name,
       items: cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price, unit: i.unit })),
@@ -503,8 +551,6 @@ async function checkout() {
     }
   }
 }
-
-// ── Persistência ──────────────────────────────────────────────
 
 function _saveCart() {
   try { localStorage.setItem(`encart_cart_${STORE_ID}`, JSON.stringify(cart)); } catch { }
