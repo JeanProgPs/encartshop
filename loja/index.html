@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loja — EncartShop</title>
+  <meta name="description" content="Confira nossas ofertas e faça seu pedido pelo WhatsApp!">
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body { background: var(--bg); }
+    .store-header { background: var(--primary); border-bottom: 1px solid var(--border); padding: 0 20px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; }
+    .store-logo-wrap { display: flex; align-items: center; gap: 10px; }
+    .store-logo-icon { width: 38px; height: 38px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1rem; color: #fff; }
+    .store-name-text { font-weight: 700; font-size: 1rem; }
+  </style>
+</head>
+<body>
+
+<header class="store-header">
+  <div class="store-logo-wrap">
+    <div class="store-logo-icon">🛒</div>
+    <span id="header-store-name" class="store-name-text">...</span>
+  </div>
+  <div id="header-cart-btn" class="hidden" onclick="openCart()">
+    <div class="cart-btn-inner">
+      <span id="header-cart-count">0</span>
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    </div>
+  </div>
+</header>
+
+<main id="main-content">
+  <div class="store-banner-area">
+    <h2 id="store-banner">Carregando ofertas...</h2>
+    <p id="header-hours"></p>
+  </div>
+
+  <div id="cat-tabs-area" class="cat-tabs-container hidden">
+    <div id="cat-tabs" class="cat-tabs-scroll"></div>
+  </div>
+
+  <div id="products-area" class="product-grid">
+     <!-- Renderizado via JS -->
+  </div>
+</main>
+
+<div id="cart-bubble" class="cart-bubble hidden" onclick="openCart()">
+  <span id="cart-count">0</span>
+  <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+</div>
+
+<!-- Modal do Carrinho -->
+<div id="cart-modal" class="modal hidden">
+  <div class="modal-content cart-modal-content">
+    <div class="modal-header">
+      <h3>Seu Carrinho</h3>
+      <button class="btn-close" onclick="closeCart()">&times;</button>
+    </div>
+    <div id="cart-body" class="modal-body">
+      <!-- Itens do carrinho -->
+    </div>
+    <div class="cart-footer">
+      <div id="cart-subtotals" class="cart-subtotals"></div>
+      <div class="cart-form">
+        <label>Seu Nome</label>
+        <input type="text" id="customer-name" placeholder="Como te chamamos?">
+      </div>
+      <button id="whatsapp-btn" class="btn btn-primary btn-lg w-full" onclick="checkout()">
+        <span>Enviar Pedido pelo WhatsApp</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<footer style="text-align:center; padding:40px 20px; border-top:1px solid var(--border); margin-top:40px;">
+  <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px;">
+    <span style="font-weight:700;font-size:0.9rem;">EncartShop</span>
+  </div>
+  <p style="font-size:0.75rem; color:var(--text-muted);">© 2026 EncartShop — Plataforma de Vendas pelo WhatsApp</p>
+</footer>
+
+<div id="toast-container"></div>
+
+<!-- Bibliotecas e Módulos (Caminhos Absolutos Blindados) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/supabaseClient.js"></script>
+<script src="/js/core/api.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="/js/modules/store.js"></script>
+<script src="/js/modules/orders.js"></script>
+<script src="/js/modules/subscription.js"></script>
+<script src="/js/ui/render.js"></script>
+<script src="/js/storage.js"></script>
+<script src="/loja/loja.js"></script>
+</body>
+</html>

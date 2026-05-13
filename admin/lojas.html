@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerenciar Lojas — EncartShop</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="shortcut icon" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/favicon.png">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .stores-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .store-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      transition: var(--transition);
+    }
+    .store-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+
+    .store-card-header {
+      height: 84px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      position: relative;
+    }
+    .store-card-header::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0,0,0,0.18) 0%, transparent 100%);
+    }
+    .store-card-logo {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 1.4rem; color: #fff;
+      position: relative; z-index: 1;
+    }
+    .store-card-badges {
+      display: flex; gap: 6px; flex-wrap: wrap; position: relative; z-index: 1;
+    }
+    .store-card-tag {
+      background: rgba(255,255,255,0.22);
+      backdrop-filter: blur(4px);
+      border-radius: 99px; padding: 4px 10px;
+      font-size: 0.68rem; font-weight: 700; color: #fff;
+      letter-spacing: 0.05em;
+    }
+    .store-card-tag.danger {
+      background: rgba(231,76,60,0.7);
+    }
+
+    .store-card-body { padding: 18px 20px; }
+    .store-card-name { font-size: 1.05rem; font-weight: 700; margin-bottom: 3px; }
+    .store-card-meta { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 14px; }
+
+    .store-card-stats { display: flex; gap: 20px; margin-bottom: 16px; }
+    .store-stat { text-align: center; }
+    .store-stat-num   { font-size: 1.15rem; font-weight: 800; font-family: var(--font-display); }
+    .store-stat-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+    .store-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .store-card-actions .btn { font-size: 0.83rem; }
+
+    .store-status-bar {
+      padding: 8px 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-align: center;
+    }
+    .store-status-bar.active  { background: rgba(16,185,129,0.08); color: var(--success); border-top: 1px solid rgba(16,185,129,0.15); }
+    .store-status-bar.pending { background: rgba(245,158,11,0.08); color: var(--warning); border-top: 1px solid rgba(245,158,11,0.15); }
+    .store-status-bar.expired { background: rgba(244,63,94,0.08);  color: var(--danger);  border-top: 1px solid rgba(244,63,94,0.15); }
+
+    .page-header-actions { display: flex; align-items: center; gap: 12px; }
+
+    .empty-state-wrap {
+      grid-column: 1 / -1;
+      text-align: center; padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state-wrap .icon { font-size: 4rem; margin-bottom: 16px; }
+    .empty-state-wrap h3 { font-size: 1.2rem; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .empty-state-wrap p { font-size: 0.9rem; margin-bottom: 24px; }
+
+    @media(max-width: 768px) {
+      .stores-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body data-page="lojas">
+
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <span class="topbar-title">Gerenciar Lojas</span>
+      <div class="page-header-actions">
+        <a href="/setup" class="btn btn-primary btn-sm">+ Nova Loja</a>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <div id="stores-grid" class="stores-grid">
+        <!-- Carregando... -->
+        <div style="grid-column:1/-1; text-align:center; padding:60px; color:var(--text-muted);">
+          <div style="font-size:2rem; margin-bottom:12px;">⏳</div>
+          <p>Carregando lojas...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/supabaseClient.js"></script>
+<script src="/js/core/api.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="/js/modules/subscription.js"></script>
+<script src="/js/auth/authGuard.js"></script>
+<script src="/js/modules/store.js"></script>
+<script src="/js/modules/products.js"></script>
+<script src="/js/modules/orders.js"></script>
+<script src="/js/ui/components.js"></script>
+<script src="/js/ui/render.js"></script>
+<script src="/js/storage.js"></script>
+<script src="/js/admin-common.js"></script>
+<script>
+  // ── Helpers ────────────────────────────────────────────────────
+  function slugify(text) {
+    if (!text) return '';
+    return text.toString().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '-').replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+  }
+
+  function getStoreUrl(store) {
+    const slug = slugify(store.name || 'loja');
+    return `${window.location.origin}/loja/index.html?s=${slug}`;
+  }
+
+  function copyLink(url) {
+    navigator.clipboard.writeText(url)
+      .then(() => showToast('Link copiado!', 'success'));
+  }
+
+  // ── Entrar em uma loja ─────────────────────────────────────────
+  function enterStore(id) {
+    AuthService.setActiveStoreId(id);
+    window.location.href = '/dashboard';
+  }
+
+  // ── Excluir uma loja ───────────────────────────────────────────
+  async function deleteStore(id, name) {
+    if (!confirm(`⚠️ Excluir a loja "${name}"?\n\nTodos os produtos, pedidos e configurações serão apagados permanentemente.\nEsta ação NÃO pode ser desfeita.`)) return;
+
+    try {
+      const ok = await EncartAPI.StoreAPI.delete(id);
+      if (!ok) throw new Error('Falha ao excluir');
+
+      // Se excluiu a loja ativa, faz logout
+      const activeId = AuthService.getActiveStoreId();
+      if (activeId === id) {
+        AuthService.clearActiveStoreId();
+        await window.sb.auth.signOut();
+        window.location.replace('/admin');
+        return;
+      }
+
+      showToast('Loja excluída com sucesso.', 'success');
+      await renderStores();
+    } catch (err) {
+      console.error('Erro ao excluir loja:', err);
+      showToast('Erro ao excluir loja.', 'error');
+    }
+  }
+
+  // ── Badge de status ────────────────────────────────────────────
+  function getStatusBar(store) {
+    const sub = SubscriptionModule.getStatus(store.expires_at);
+    if (store.status === 'pending') {
+      return `<div class="store-status-bar pending">⏳ Aguardando ativação do plano</div>`;
+    }
+    if (sub.blocked) {
+      return `<div class="store-status-bar expired">🔴 Bloqueada — assinatura vencida há ${Math.abs(sub.daysLeft)} dia(s)</div>`;
+    }
+    if (sub.expired) {
+      return `<div class="store-status-bar expired">⚠️ Vencida — dentro do período de carência (${sub.graceDaysLeft} dia(s))</div>`;
+    }
+    if (sub.daysLeft <= 7) {
+      return `<div class="store-status-bar pending">🔔 Vence em ${sub.daysLeft} dia(s)</div>`;
+    }
+    return `<div class="store-status-bar active">✅ Ativa — vence em ${sub.daysLeft} dia(s)</div>`;
+  }
+
+  // ── Renderizar grade de lojas ──────────────────────────────────
+  async function renderStores() {
+    const grid = document.getElementById('stores-grid');
+    const user = await AuthService.getUser();
+    if (!user) return;
+
+    const stores = await EncartAPI.StoreAPI.getByUser(user.id);
+    const activeId = AuthService.getActiveStoreId();
+
+    if (!stores || stores.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-state-wrap">
+          <div class="icon">🏪</div>
+          <h3>Nenhuma loja cadastrada</h3>
+          <p>Crie sua primeira loja e comece a vender agora mesmo.</p>
+          <a href="/setup" class="btn btn-primary">+ Criar Minha Loja</a>
+        </div>`;
+      return;
+    }
+
+    // Carrega contadores em paralelo
+    const [productsData, ordersData] = await Promise.all([
+      Promise.all(stores.map(s => EncartAPI.ProductAPI.getByStore(s.id))),
+      Promise.all(stores.map(s => EncartAPI.OrderAPI.getByStore(s.id)))
+    ]);
+
+    grid.innerHTML = stores.map((s, i) => {
+      const prods       = productsData[i] || [];
+      const orders      = ordersData[i]   || [];
+      const activeProds = prods.filter(p => p.active).length;
+      const newOrders   = orders.filter(o => o.status === 'novo').length;
+      const isActive    = s.id === activeId;
+      const lojaUrl     = getStoreUrl(s);
+      const color       = s.color || '#4f46e5';
+      const sub         = SubscriptionModule.getStatus(s.expires_at);
+
+      const badges = [];
+      if (isActive) badges.push(`<span class="store-card-tag">✓ Loja Atual</span>`);
+      if (newOrders > 0) badges.push(`<span class="store-card-tag danger">🛒 ${newOrders} novo(s)</span>`);
+
+      return `
+        <div class="store-card" id="store-card-${s.id}">
+          <div class="store-card-header" style="background: linear-gradient(135deg, ${color} 0%, ${color}cc 100%);">
+            <div class="store-card-logo">🏪</div>
+            <div class="store-card-badges">${badges.join('')}</div>
+          </div>
+
+          ${getStatusBar(s)}
+
+          <div class="store-card-body">
+            <div class="store-card-name">${s.name}</div>
+            <div class="store-card-meta">
+              ${s.address ? `📍 ${s.address}` : '<span style="opacity:0.5">Sem endereço cadastrado</span>'}<br>
+              ${s.whatsapp ? `💬 ${s.whatsapp}` : '<span style="opacity:0.5">Sem WhatsApp</span>'}
+            </div>
+
+            <div class="store-card-stats">
+              <div class="store-stat">
+                <div class="store-stat-num" style="color:${color};">${activeProds}</div>
+                <div class="store-stat-label">Produtos</div>
+              </div>
+              <div class="store-stat">
+                <div class="store-stat-num">${orders.length}</div>
+                <div class="store-stat-label">Pedidos</div>
+              </div>
+              <div class="store-stat">
+                <div class="store-stat-num" style="color:${newOrders > 0 ? 'var(--warning)' : 'inherit'};">${newOrders}</div>
+                <div class="store-stat-label">Novos</div>
+              </div>
+            </div>
+
+            <div class="store-card-actions">
+              <button class="btn btn-primary btn-sm" style="flex:1; background:${color}; border-color:${color};"
+                onclick="enterStore('${s.id}')">
+                ${isActive ? '→ Acessar Painel' : '🔑 Entrar'}
+              </button>
+              <a href="${lojaUrl}" target="_blank" class="btn btn-ghost btn-sm btn-icon" title="Ver loja pública">👁️</a>
+              <button class="btn btn-ghost btn-sm btn-icon" title="Copiar link"
+                onclick="copyLink('${lojaUrl}')">🔗</button>
+              <button class="btn btn-ghost btn-sm btn-icon" style="color:var(--danger);" title="Excluir loja"
+                onclick="deleteStore('${s.id}', '${s.name.replace(/'/g, "\\'")}')">🗑️</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  renderStores();
+</script>
+</body>
+</html>

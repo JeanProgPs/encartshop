@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQ — Dúvidas Frequentes | EncartShop</title>
+  <meta name="description" content="Tire suas dúvidas sobre o EncartShop, a plataforma definitiva para vender pelo WhatsApp.">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .faq-hero {
+      padding: 100px 24px 60px;
+      text-align: center;
+      background: radial-gradient(circle at 50% 0%, var(--brand-glow) 0%, transparent 70%);
+    }
+    .faq-hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+    .faq-hero p {
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .faq-container {
+      max-width: 800px;
+      margin: 0 auto 100px;
+      padding: 0 24px;
+    }
+
+    .faq-section {
+      margin-top: 48px;
+    }
+    .faq-section-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--brand);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .faq-section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .faq-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+    .faq-item:hover {
+      border-color: var(--brand-light);
+      box-shadow: var(--shadow);
+    }
+    .faq-question {
+      padding: 20px 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 600;
+      color: var(--text);
+      user-select: none;
+    }
+    .faq-question span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--primary-mid);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      transition: var(--transition);
+    }
+    .faq-item.active .faq-question span {
+      transform: rotate(180deg);
+      background: var(--brand);
+      color: #fff;
+    }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: rgba(0,0,0,0.01);
+    }
+    .faq-item.active .faq-answer {
+      max-height: 800px;
+    }
+    .faq-answer-content {
+      padding: 0 24px 24px;
+      color: var(--text-light);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+    .faq-answer-content ul {
+      margin-top: 12px;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .faq-answer-content li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .faq-answer-content li::before {
+      content: '•';
+      color: var(--brand);
+      font-weight: 900;
+    }
+
+    .faq-footer-cta {
+      text-align: center;
+      padding: 60px 24px;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 768px) {
+      .faq-hero { padding: 80px 24px 40px; }
+      .landing-nav { padding: 0 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="landing-nav" style="position: sticky; top:0; background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; height: 72px; padding: 0 48px; z-index: 999;">
+  <div class="nav-logo" style="display: flex; align-items: center; gap: 10px;">
+    <a href="/" style="display: flex; align-items: center; gap: 10px;">
+      <div class="logo-icon" style="width:40px;height:40px;background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);border-radius:11px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:#fff;font-family:var(--font-display);flex-shrink:0;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      </div>
+      <div class="logo-text">
+        <span class="brand" style="font-family:var(--font-display); font-weight:700; font-size:1.05rem; color:var(--text);">EncartShop</span>
+        <span class="sub" style="font-size:0.7rem; color:var(--text-muted);">FAQ</span>
+      </div>
+    </a>
+  </div>
+  <div class="nav-cta">
+    <a href="/" class="btn btn-ghost btn-sm">Voltar ao Início</a>
+    <a href="/setup" class="btn btn-primary btn-sm">Criar Loja</a>
+  </div>
+</nav>
+
+<section class="faq-hero">
+  <h1>FAQ <span>— Dúvidas Frequentes</span></h1>
+  <p>Tudo o que você precisa saber para começar a vender online e pelo WhatsApp com o EncartShop.</p>
+</section>
+
+<div class="faq-container">
+
+  <!-- Geral -->
+  <div class="faq-section">
+    <div class="faq-section-title">📦 Sobre a Plataforma</div>
+    
+    <div class="faq-item">
+      <div class="faq-question">O que é o EncartShop? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          O EncartShop é uma plataforma para criação de lojas virtuais com catálogo online e painel administrativo simples para gerenciamento da sua loja.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Preciso saber programar? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          Não. Todo o gerenciamento é feito pelo painel administrativo, de forma simples e intuitiva.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Qual a principal vantagem do EncartShop? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          A principal vantagem é vender online de forma simples, sem taxas sobre vendas e com atendimento direto pelo WhatsApp.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagamentos -->
+  <div class="faq-section">
+    <div class="faq-section-title">💰 Pagamentos & Comissões</div>
+    
+    <div class="faq-item">
+      <div class="faq-question">O EncartShop recebe pagamentos pela plataforma? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          Não. O EncartShop não intermedia pagamentos. O recebimento pode ser combinado diretamente entre vendedor e cliente, normalmente via:
+          <ul>
+            <li>WhatsApp</li>
+            <li>PIX</li>
+            <li>Dinheiro</li>
+            <li>Cartão presencial</li>
+            <li>Transferência bancária</li>
+          </ul>
+          Isso elimina taxas de intermediação da plataforma.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Então não existe taxa sobre minhas vendas? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          Não existe comissão sobre vendas dentro da plataforma. Você negocia diretamente com seu cliente.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Posso vender sem maquininha ou gateway de pagamento? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          Sim. Você pode vender utilizando apenas PIX ou pagamentos combinados diretamente com o cliente.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Funcionamento -->
+  <div class="faq-section">
+    <div class="faq-section-title">⚙️ Funcionamento & Uso</div>
+
+    <div class="faq-item">
+      <div class="faq-question">Como o cliente faz um pedido? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          O cliente escolhe os produtos na loja e entra em contato diretamente com você pelo WhatsApp para finalizar a compra e combinar o pagamento.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">O sistema possui integração com WhatsApp? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          Sim. A loja pode direcionar o cliente diretamente para o seu WhatsApp para atendimento e fechamento dos pedidos.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">O cliente precisa baixar aplicativo? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          Não. A loja funciona diretamente pelo navegador.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">O sistema funciona no celular? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          Sim. Tanto a loja quanto o painel administrativo funcionam em celulares, tablets e computadores.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Produtos e Loja -->
+  <div class="faq-section">
+    <div class="faq-section-title">🏪 Personalização & Produtos</div>
+
+    <div class="faq-item">
+      <div class="faq-question">Posso cadastrar meus próprios produtos? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          Sim. Você pode:
+          <ul>
+            <li>Adicionar produtos</li>
+            <li>Alterar preços</li>
+            <li>Inserir imagens</li>
+            <li>Organizar categorias</li>
+            <li>Atualizar promoções</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Posso alterar banners, logo e cores? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          Sim. Você pode personalizar sua loja com a identidade visual do seu negócio.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Posso usar meu próprio domínio? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          Sim. Você pode conectar um domínio personalizado à sua loja (ex: minhaempresa.com.br).
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">O EncartShop serve para quais tipos de negócio? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          O sistema é ideal para:
+          <ul>
+            <li>Mercados e Mercearias</li>
+            <li>Lojas locais e Delivery</li>
+            <li>Lojas de roupas</li>
+            <li>Catálogos online</li>
+            <li>Pequenos comércios</li>
+            <li>Vendas pelo WhatsApp</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Planos -->
+  <div class="faq-section">
+    <div class="faq-section-title">💎 Planos & Suporte</div>
+
+    <div class="faq-item">
+      <div class="faq-question">O EncartShop cobra mensalidade? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          Sim. A plataforma funciona por assinatura, conforme o plano contratado.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Existe limite de produtos? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          O limite depende do plano contratado.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Posso cancelar quando quiser? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          Sim. O cancelamento pode ser realizado a qualquer momento conforme as regras do plano.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">O sistema possui suporte? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          Sim. Os clientes possuem suporte para dúvidas e auxílio na utilização da plataforma.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Em quanto tempo minha loja é liberada? <span>▼</span></div>
+      <div class="faq-answer">
+        <div class="faq-answer-content">
+          Após a confirmação do pagamento do plano, a liberação normalmente acontece rapidamente.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="faq-footer-cta">
+  <h2 style="font-family:var(--font-display); margin-bottom:20px;">Ainda tem alguma dúvida?</h2>
+  <a href="support.html" class="btn btn-outline">Falar com Suporte</a>
+  <a href="/setup" class="btn btn-primary" style="margin-left: 12px;">Começar Agora</a>
+</div>
+
+<footer style="text-align: center; padding: 40px; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid var(--border);">
+  © 2026 EncartShop — Plataforma de Vendas pelo WhatsApp
+</footer>
+
+<script>
+  document.querySelectorAll('.faq-question').forEach(q => {
+    q.addEventListener('click', () => {
+      const item = q.parentElement;
+      const isActive = item.classList.contains('active');
+      
+      // Comportamento de sanfona (opcional: fecha outros ao abrir um)
+      // document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+      
+      if (isActive) {
+        item.classList.remove('active');
+      } else {
+        item.classList.add('active');
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

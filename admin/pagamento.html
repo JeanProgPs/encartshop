@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagamento — EncartShop</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="shortcut icon" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/favicon.png">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 24px;
+      background: radial-gradient(ellipse 70% 60% at 50% 30%, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+    }
+    .payment-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-xl); padding: 40px;
+      max-width: 480px; width: 100%; text-align: center;
+      box-shadow: var(--shadow-lg);
+    }
+    .payment-header { margin-bottom: 32px; }
+    .payment-header h1 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
+    .payment-header p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; }
+    
+    .qr-container {
+      background: #fff; padding: 20px; border-radius: var(--radius-lg);
+      margin: 0 auto 24px; width: fit-content;
+      box-shadow: 0 0 40px rgba(99, 102, 241, 0.2);
+    }
+    .qr-container img { width: 220px; height: 220px; display: block; }
+    
+    .pix-info { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 24px; }
+    .pix-key { font-family: monospace; font-size: 0.8rem; color: var(--accent); word-break: break-all; margin-top: 8px; }
+    
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(245, 158, 11, 0.1); color: #f59e0b;
+      padding: 6px 16px; border-radius: 99px; font-size: 0.8rem; font-weight: 700;
+      margin-bottom: 24px; border: 1px solid rgba(245, 158, 11, 0.2);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .invalid-input { border-color: var(--danger) !important; box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2); }
+    .validation-msg { color: var(--danger); font-size: 0.75rem; margin-top: 4px; display: none; }
+    
+    .benefits-list { text-align: left; margin: 20px 0; display: flex; flex-direction: column; gap: 8px; }
+    .benefit-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-light); }
+    .benefit-item span { color: var(--success); font-weight: bold; }
+    
+    .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .plan-card {
+      border: 1px solid var(--border); border-radius: var(--radius); padding: 12px;
+      cursor: pointer; transition: var(--transition); text-align: center;
+      background: var(--bg-card);
+    }
+    .plan-card:hover { border-color: var(--brand); transform: translateY(-2px); }
+    .plan-card.selected { border-color: var(--brand); background: var(--brand-glow); box-shadow: 0 4px 12px var(--brand-glow); }
+    .plan-card h4 { font-size: 0.8rem; margin-bottom: 4px; color: var(--text-muted); }
+    .plan-card .price { font-size: 1.1rem; font-weight: 800; color: var(--brand); font-family: var(--font-display); }
+    .plan-card .recurrence { font-size: 0.65rem; color: var(--text-muted); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="payment-card">
+  <div class="payment-header">
+    <div class="status-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Pagamento pendente
+    </div>
+    <h1>Ative sua loja agora</h1>
+    
+    <div id="plan-selection" class="hidden">
+      <p style="font-size:0.9rem; font-weight:600; text-align:left; margin-bottom:12px;">1. Escolha seu plano:</p>
+      <div class="plan-grid">
+        <div class="plan-card selected" onclick="selectPlan(59.90, 'Start', this)">
+          <h4>Start</h4>
+          <div class="price">R$ 59,90</div>
+          <div class="recurrence">/mês</div>
+        </div>
+        <div class="plan-card" onclick="selectPlan(99.90, 'Pro', this)">
+          <h4>Pro</h4>
+          <div class="price">R$ 99,90</div>
+          <div class="recurrence">/mês</div>
+        </div>
+        <div class="plan-card" onclick="selectPlan(199.90, 'Business', this)">
+          <h4>Business</h4>
+          <div class="price">R$ 199,90</div>
+          <div class="recurrence">/mês</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="benefits-list">
+      <div class="benefit-item"><span>✓</span> Loja online liberada</div>
+      <div class="benefit-item"><span>✓</span> Painel administrativo completo</div>
+      <div class="benefit-item"><span>✓</span> Suporte e atualizações</div>
+      <div class="benefit-item"><span>✓</span> Ativação automática</div>
+    </div>
+    
+    <p>Realize o pagamento do plano via PIX para liberar o acesso total ao seu painel administrativo.</p>
+  </div>
+
+  <div id="cpf-section" class="hidden" style="text-align:left; margin-bottom: 24px; background:var(--bg-card); padding:20px; border-radius:var(--radius-xl); border:1px solid var(--border);">
+    <label style="font-size:0.9rem; font-weight:600; display:block; margin-bottom:8px;">2. Seus dados para emissão do PIX:</label>
+
+    <!-- Mostrado apenas quando CPF ainda não foi cadastrado -->
+    <div id="cpf-input-wrapper">
+      <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Para gerar o QR Code de ativação, o Asaas exige um documento válido.</p>
+      <input type="text" id="cpf-input" class="form-input" placeholder="000.000.000-00" style="width:100%; box-sizing:border-box;" maxlength="18">
+      <div id="cpf-validation-msg" class="validation-msg">Documento inválido</div>
+      <p style="font-size:0.7rem; color:var(--text-muted); margin-top:8px; opacity:0.8;">🛡️ Seus dados são utilizados apenas para emissão do PIX via Asaas.</p>
+    </div>
+
+    <!-- Mostrado quando CPF já está cadastrado no Asaas -->
+    <div id="cpf-msg-known" style="display:none;">
+      <p style="font-size:0.85rem; color:var(--success); font-weight:600;">✅ Seus dados já estão cadastrados. Clique em gerar para criar uma nova cobrança.</p>
+    </div>
+
+    <button id="btn-generate-pix" class="btn btn-primary w-full" style="margin-top:16px;" onclick="generatePix()">⚡ Gerar Código PIX</button>
+  </div>
+
+  <div id="pix-section" class="hidden">
+    <div class="qr-container">
+      <img id="pix-qr-img" src="../assets/pix_qr.png" alt="QR Code PIX">
+    </div>
+
+    <div class="pix-info">
+      <div style="font-size:0.85rem; font-weight:600;">Código PIX Copia e Cola:</div>
+      <div class="pix-key" id="pix-copy-paste">Aguardando geração...</div>
+      <button id="pix-copy-btn" class="btn btn-primary w-full hidden" style="margin-top:12px;" onclick="copyPixCode()">📋 Copiar Código PIX</button>
+      
+      <a id="pix-link-btn" href="#" target="_blank" class="btn btn-outline w-full hidden" style="margin-top:12px;">🔗 Abrir link de pagamento</a>
+
+      <div style="border-top:1px solid var(--border); padding-top:20px; margin-top:20px;">
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Deseja escolher outro plano ou gerar novo código?</p>
+        <button class="btn btn-ghost btn-sm" onclick="showPlanSelection(_store)">🔄 Gerar nova cobrança</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="footer-actions" class="form-stack hidden">
+    <button class="btn btn-primary btn-lg w-full" onclick="checkPayment()">Confirmar pagamento</button>
+    <button class="btn btn-ghost w-full" onclick="AuthService.logout().then(() => window.location.replace('index.html'))">Sair e pagar depois</button>
+  </div>
+  
+  <p style="font-size:0.75rem; color:var(--text-muted); margin-top:24px; line-height:1.5;">
+    ℹ️ A ativação normalmente ocorre em menos de 5 minutos após a confirmação do PIX.
+  </p>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/core/supabaseClient.js"></script>
+<script src="../js/core/api.js"></script>
+<script src="../js/auth/authService.js"></script>
+<script src="../js/ui/components.js"></script>
+<script src="../js/modules/subscription.js"></script>
+<script>
+  // Máscara e Validação de CPF/CNPJ
+  const cpfInput = document.getElementById('cpf-input');
+  if (cpfInput) {
+    cpfInput.addEventListener('input', function(e) {
+      let v = e.target.value.replace(/\D/g, '');
+      if (v.length <= 11) {
+        v = v.replace(/(\d{3})(\d)/, "$1.$2");
+        v = v.replace(/(\d{3})(\d)/, "$1.$2");
+        v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+      } else {
+        v = v.replace(/^(\d{2})(\d)/, "$1.$2");
+        v = v.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+        v = v.replace(/\.(\d{3})(\d)/, ".$1/$2");
+        v = v.replace(/(\d{4})(\d)/, "$1-$2");
+      }
+      e.target.value = v;
+      
+      const cleanValue = v.replace(/\D/g, '');
+      const isValid = cleanValue.length === 11 || cleanValue.length === 14;
+      if (cleanValue.length > 0) {
+        cpfInput.classList.toggle('invalid-input', !isValid);
+        document.getElementById('cpf-validation-msg').style.display = isValid ? 'none' : 'block';
+      } else {
+        cpfInput.classList.remove('invalid-input');
+        document.getElementById('cpf-validation-msg').style.display = 'none';
+      }
+    });
+  }
+
+  let selectedPlanValue = 59.90;
+  let selectedPlanName  = 'Start';
+  let _store = null;
+
+  function selectPlan(val, name, el) {
+    selectedPlanValue = val;
+    selectedPlanName  = name;
+    document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+    if (el) el.classList.add('selected');
+  }
+
+  async function loadPaymentInfo() {
+    const storeId = AuthService.getActiveStoreId();
+    if (!storeId) { window.location.replace('index.html'); return; }
+
+    _store = await EncartAPI.StoreAPI.getById(storeId);
+    if (!_store) return;
+    const store = _store;
+
+    const subStatus = SubscriptionModule.getStatus(store.expires_at);
+
+    // 1. Se estiver ativa e ainda tiver bastante tempo (> 5 dias), vai para o dashboard
+    if (store.status === 'active' && !subStatus.expired && subStatus.daysLeft > 5) {
+      window.location.replace('dashboard.html');
+      return;
+    }
+
+    // 2. Se for uma loja ativa (vencida ou próxima do vencimento)
+    if (store.status === 'active') {
+      const justGenerated = sessionStorage.getItem('just_generated_pix');
+      
+      // Se ele ACABOU de gerar um PIX de renovação, mostra o QR Code
+      if (justGenerated === 'true' && store.asaas_pix_qr_code) {
+        showPixSection(store);
+        return;
+      }
+
+      // Caso contrário, mostra a seleção para ele iniciar a renovação
+      document.querySelector('.payment-header h1').textContent = 'Renovar Assinatura';
+      if (subStatus.expired) {
+        document.querySelector('.status-badge').innerHTML = '⚠️ Assinatura vencida';
+      } else {
+        document.querySelector('.status-badge').innerHTML = `🔔 Vence em ${subStatus.daysLeft} dia(s)`;
+      }
+      showPlanSelection(store);
+      return;
+    }
+
+    // 3. Se estiver pendente (primeiro pagamento) e já tiver um QR Code, mostra ele
+    if (store.asaas_pix_qr_code) {
+      showPixSection(store);
+      return;
+    }
+
+    // 4. Caso contrário (pendente sem QR Code), mostra seleção
+    showPlanSelection(store);
+
+    // Auto-seleciona o plano escolhido no onboarding (prioriza o que vem do banco, depois o do session)
+    const pValFromStore = _store.plan_value;
+    const pValFromSession = sessionStorage.getItem('selected_plan_value');
+    const finalPlanValue = pValFromStore ? parseFloat(pValFromStore) : (pValFromSession ? parseFloat(pValFromSession) : null);
+
+    if (finalPlanValue) {
+      const cards = document.querySelectorAll('.plan-card');
+      cards.forEach(c => {
+        const priceText = c.querySelector('.price').textContent.replace('R$ ', '').replace(',', '.');
+        if (parseFloat(priceText) === finalPlanValue) {
+          selectPlan(finalPlanValue, c.querySelector('h4').textContent, c);
+        }
+      });
+    }
+  }
+
+  function showPlanSelection(store) {
+    sessionStorage.removeItem('just_generated_pix');
+
+    // Garante que só a seleção de plano + seção de CPF/botão aparecem
+    document.getElementById('pix-section').classList.add('hidden');
+    document.getElementById('footer-actions').classList.add('hidden');
+    document.getElementById('plan-selection').classList.remove('hidden');
+    document.getElementById('cpf-section').classList.remove('hidden');
+
+    const cpfWrapper   = document.getElementById('cpf-input-wrapper');
+    const cpfMsg       = document.getElementById('cpf-msg-known');
+
+    if (store && store.asaas_customer_id) {
+      // Cliente já cadastrado no Asaas — esconde só o campo de CPF, não o botão
+      if (cpfWrapper) cpfWrapper.style.display = 'none';
+      if (cpfMsg)     cpfMsg.style.display = 'block';
+    } else {
+      // Primeira vez — pede o CPF
+      if (cpfWrapper) cpfWrapper.style.display = 'block';
+      if (cpfMsg)     cpfMsg.style.display = 'none';
+    }
+  }
+
+
+  function showPixSection(store) {
+    document.getElementById('plan-selection').classList.add('hidden');
+    document.getElementById('cpf-section').classList.add('hidden');
+    document.getElementById('pix-section').classList.remove('hidden');
+    document.getElementById('footer-actions').classList.remove('hidden');
+    
+    document.getElementById('pix-qr-img').src = `data:image/png;base64,${store.asaas_pix_qr_code}`;
+    document.getElementById('pix-copy-paste').textContent = store.asaas_pix_code || 'Chave não disponível';
+    document.getElementById('pix-copy-btn').classList.remove('hidden');
+    
+    if (store.asaas_payment_url) {
+      const linkBtn = document.getElementById('pix-link-btn');
+      linkBtn.href = store.asaas_payment_url;
+      linkBtn.classList.remove('hidden');
+    }
+  }
+
+  async function generatePix() {
+    const storeId = AuthService.getActiveStoreId();
+    if (!storeId) return;
+
+    const rawValue = document.getElementById('cpf-input').value;
+    const cpfCnpj = rawValue.replace(/\D/g, '');
+    
+    // Se não tiver customerId no Asaas, o CPF/CNPJ é obrigatório
+    if (!_store?.asaas_customer_id) {
+      if (cpfCnpj.length !== 11 && cpfCnpj.length !== 14) {
+        document.getElementById('cpf-input').classList.add('invalid-input');
+        document.getElementById('cpf-validation-msg').style.display = 'block';
+        UIComponents.showToast('Por favor, informe um CPF ou CNPJ válido.', 'error');
+        return;
+      }
+    }
+
+    const btn = document.getElementById('btn-generate-pix');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-sm"></span> Gerando PIX...';
+    btn.disabled = true;
+
+    try {
+      const planValue = parseFloat(selectedPlanValue);
+      console.log(`[Pagamento] Gerando PIX de R$ ${planValue.toFixed(2)} para loja ${storeId}`);
+      
+      await EncartAPI.AsaasAPI.createPayment(storeId, cpfCnpj, planValue);
+      
+      // Busca a loja atualizada para pegar os novos dados do PIX
+      const updatedStore = await EncartAPI.StoreAPI.getById(storeId);
+      _store = updatedStore;
+      
+      UIComponents.showToast('Cobrança gerada com sucesso!', 'success');
+      showPixSection(updatedStore);
+    } catch (e) {
+      console.error('Erro ao gerar pagamento:', e);
+      const errorMsg = e.message || '';
+      
+      // Se o erro for falta de CPF/CNPJ, mostra o campo novamente
+      if (errorMsg.includes('CPF') || errorMsg.includes('CNPJ')) {
+        document.getElementById('cpf-input-wrapper').style.display = 'block';
+        document.getElementById('cpf-msg-known').style.display = 'none';
+        UIComponents.showToast('O Asaas requer seu CPF/CNPJ para gerar o PIX. Por favor, preencha abaixo.', 'warning');
+      } else {
+        UIComponents.showToast(`Erro: ${errorMsg || 'Verifique os dados'}`, 'error');
+      }
+      
+      btn.innerHTML = originalHTML;
+      btn.disabled = false;
+    }
+  }
+
+  async function checkPayment() {
+    const btn = document.querySelector('.btn-primary.btn-lg');
+    const oldText = btn.textContent;
+    btn.textContent = 'Verificando...';
+    btn.disabled = true;
+
+    const storeId = AuthService.getActiveStoreId();
+    const store = await EncartAPI.StoreAPI.getById(storeId);
+    
+    if (store && store.status === 'active') {
+      UIComponents.showToast('Pagamento confirmado! Redirecionando...', 'success');
+      setTimeout(() => window.location.replace('dashboard.html'), 1500);
+    } else {
+      UIComponents.showToast('Pagamento ainda não detectado.', 'info');
+      btn.textContent = oldText;
+      btn.disabled = false;
+    }
+  }
+
+  function copyPixCode() {
+    const code = document.getElementById('pix-copy-paste').textContent;
+    navigator.clipboard.writeText(code);
+    UIComponents.showToast('Código PIX copiado!', 'success');
+  }
+
+  // Inicialização e Polling (verifica a cada 10 segundos)
+  loadPaymentInfo();
+  setInterval(async () => {
+    const storeId = AuthService.getActiveStoreId();
+    if (!storeId) return;
+    const store = await EncartAPI.StoreAPI.getById(storeId);
+    if (store && store.status === 'active') {
+      const subStatus = SubscriptionModule.getStatus(store.expires_at);
+      // Só redireciona se a loja estiver ativa E NÃO estiver mais vencida
+      if (!subStatus.expired) {
+        sessionStorage.removeItem('just_generated_pix');
+        UIComponents.showToast('Pagamento confirmado!', 'success');
+        setTimeout(() => window.location.replace('dashboard.html'), 1000);
+      }
+    }
+  }, 10000);
+</script>
+</body>
+</html>

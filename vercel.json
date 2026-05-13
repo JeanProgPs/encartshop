@@ -1,0 +1,24 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/dashboard", "destination": "/admin/dashboard" },
+    { "source": "/produtos", "destination": "/admin/produtos" },
+    { "source": "/pedidos", "destination": "/admin/pedidos" },
+    { "source": "/configuracoes", "destination": "/admin/configuracoes" },
+    { "source": "/setup", "destination": "/admin/setup" },
+    { "source": "/lojas", "destination": "/admin/lojas" },
+    { "source": "/pagamento", "destination": "/admin/pagamento" },
+    { "source": "/admin", "destination": "/admin/index" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" }
+      ]
+    }
+  ]
+}

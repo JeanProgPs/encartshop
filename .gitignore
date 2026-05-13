@@ -1,0 +1,32 @@
+# Dependências
+node_modules/
+.npm/
+
+# Ambiente
+.env
+.env.local
+.env.supabase
+
+# Vercel
+.vercel/
+
+# Supabase local
+supabase/.temp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/settings.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporários
+scratch/
