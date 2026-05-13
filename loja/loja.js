@@ -40,8 +40,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>`;
         return;
       }
-    if (!store.id) {
-        // Se não encontrou por ID, busca todas e tenta encontrar pelo nome (slug)
+    } else {
+        // 2. Se não encontrou por ID, busca todas e tenta encontrar pelo nome (slug)
         console.log('[Loja] Tentando busca por nome/slug:', STORE_ID);
         const allStores = await EncartAPI.StoreAPI.getAll();
         
@@ -54,13 +54,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           .replace(/-+$/, '');
           
         const targetSlug = slugify(STORE_ID);
-        store = allStores.find(s => slugify(s.name) === targetSlug) || {};
+        const found = allStores.find(s => slugify(s.name) === targetSlug);
         
-        if (store && store.id) {
-          STORE_ID = store.id; // Atualiza para o ID real para carregar produtos
+        if (found) {
+          store = found;
+          STORE_ID = store.id; 
           console.log('[Loja] Loja encontrada via slug:', store.name);
         }
-    }
     }
 
     if (!STORE_ID || !store.id) {
