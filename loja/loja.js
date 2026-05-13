@@ -286,20 +286,20 @@ function _cartQty(id) {
 
 function updateCartUI() {
   const totalItems = cart.reduce((acc, item) => acc + (item.unit === 'kg' ? 1 : item.qty), 0);
-  const c1 = document.getElementById('cart-count');
-  const c2 = document.getElementById('header-cart-count');
-  const c3 = document.getElementById('sidebar-cart-count');
+  const bubbleCount = document.getElementById('cart-count');
+  const headerCount = document.getElementById('header-cart-count');
   
   const count = Math.floor(totalItems);
-  if (c1) c1.textContent = count;
-  if (c2) c2.textContent = count;
-  if (c3) c3.textContent = count;
+  if (bubbleCount) bubbleCount.textContent = count;
+  if (headerCount) headerCount.textContent = count;
   
-  document.getElementById('cart-bubble')?.classList.toggle('hidden', cart.length === 0);
-  document.getElementById('header-cart-btn')?.classList.toggle('hidden', cart.length === 0);
+  const hasItems = cart.length > 0;
+  document.getElementById('cart-bubble')?.classList.toggle('hidden', !hasItems);
+  document.getElementById('header-cart-btn')?.classList.toggle('hidden', !hasItems);
   
-  // Atualiza também o sidebar persistente
-  renderCartBody();
+  if (!document.getElementById('cart-modal')?.classList.contains('hidden')) {
+    renderCartBody();
+  }
 }
 
 function openCart() {
@@ -312,15 +312,17 @@ function closeCart() {
 }
 
 function renderCartBody() {
-  const sidebarBody = document.getElementById('cart-sidebar-body');
-  const sidebarFooter = document.getElementById('cart-sidebar-footer');
   const modalBody = document.getElementById('cart-body');
   const modalFooter = document.getElementById('cart-subtotals');
   
   if (!cart.length) {
-    const emptyHtml = '<p style="text-align:center;padding:40px;color:#999;font-size:0.85rem;">Seu carrinho está vazio.</p>';
-    if (sidebarBody) sidebarBody.innerHTML = emptyHtml;
-    if (sidebarFooter) sidebarFooter.innerHTML = '';
+    const emptyHtml = `
+      <div style="text-align:center; padding:60px 20px; color:var(--text-muted);">
+        <div style="font-size:3.5rem; margin-bottom:16px; opacity:0.5;">🛒</div>
+        <h3 style="font-size:1.1rem; color:var(--text); margin-bottom:8px;">Seu pedido está vazio</h3>
+        <p style="font-size:0.9rem;">Escolha seus produtos favoritos e adicione-os aqui!</p>
+        <button class="btn btn-primary btn-sm" style="margin-top:20px;" onclick="closeCart()">Voltar às compras</button>
+      </div>`;
     if (modalBody) modalBody.innerHTML = emptyHtml;
     if (modalFooter) modalFooter.innerHTML = '';
     return;
@@ -330,31 +332,34 @@ function renderCartBody() {
     if (typeof UIRender.cartItemRow === 'function') {
       return UIRender.cartItemRow(item);
     }
-    // Fallback básico se a função falhar
     return `<div class="cart-item-row"><div>${item.name}</div><div>${UIRender.fmtPrice(item.price * item.qty)}</div></div>`;
   }).join('');
+
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const total = subtotal; // Futuramente taxa de entrega aqui
+  const total = subtotal;
 
   const footerHtml = `
-    <div class="cart-form" style="margin-bottom:16px;">
-      <label class="form-label">Seu Nome</label>
-      <input type="text" class="form-input customer-name-input" placeholder="Como te chamamos?" oninput="syncNames(this.value)">
+    <div class="cart-form" style="margin-bottom:20px;">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">Seu Nome *</label>
+        <input type="text" class="form-input customer-name-input" placeholder="Como te chamamos?" oninput="syncNames(this.value)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observação (opcional)</label>
+        <textarea class="form-input" id="order-obs" placeholder="Ex: Sem cebola, trocar por molho extra..." rows="2" style="resize:none;"></textarea>
+      </div>
     </div>
     <div class="summary-row"><span>Subtotal</span><span>${UIRender.fmtPrice(subtotal)}</span></div>
     <div class="summary-row total"><span>Total</span><span>${UIRender.fmtPrice(total)}</span></div>
     <button class="checkout-btn" onclick="checkout()">
-      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.817 9.817 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.182 8.182 0 0 1 2.41 5.82c0 4.52-3.67 8.19-8.19 8.19-1.53 0-3.06-.43-4.39-1.24l-.31-.19-3.26.86.87-3.17-.21-.33c-.88-1.41-1.35-3.04-1.35-4.72 0-4.52 3.68-8.19 8.21-8.19m-3.11 4.64c-.17 0-.45.06-.69.32-.24.25-.92.9-.92 2.2 0 1.3.95 2.56 1.08 2.73.13.17 1.87 2.85 4.53 4 .63.27 1.13.44 1.51.56.64.2 1.22.17 1.67.1.51-.07 1.57-.64 1.79-1.26.22-.61.22-1.14.15-1.26-.07-.12-.25-.18-.53-.32-.28-.14-1.66-.82-1.92-.91-.26-.09-.45-.14-.64.14-.19.28-.73.91-.89 1.1-.16.19-.32.21-.61.07-.28-.14-1.2-.44-2.28-1.41-.84-.75-1.41-1.68-1.57-1.97-.17-.28-.02-.44.12-.58.13-.12.28-.32.42-.48.14-.16.18-.28.28-.46.1-.18.05-.33-.02-.47-.07-.14-.64-1.54-.87-2.11-.23-.55-.47-.48-.64-.49"/></svg>
+      <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.817 9.817 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.182 8.182 0 0 1 2.41 5.82c0 4.52-3.67 8.19-8.19 8.19-1.53 0-3.06-.43-4.39-1.24l-.31-.19-3.26.86.87-3.17-.21-.33c-.88-1.41-1.35-3.04-1.35-4.72 0-4.52 3.68-8.19 8.21-8.19m-3.11 4.64c-.17 0-.45.06-.69.32-.24.25-.92.9-.92 2.2 0 1.3.95 2.56 1.08 2.73.13.17 1.87 2.85 4.53 4 .63.27 1.13.44 1.51.56.64.2 1.22.17 1.67.1.51-.07 1.57-.64 1.79-1.26.22-.61.22-1.14.15-1.26-.07-.12-.25-.18-.53-.32-.28-.14-1.66-.82-1.92-.91-.26-.09-.45-.14-.64.14-.19.28-.73.91-.89 1.1-.16.19-.32.21-.61.07-.28-.14-1.2-.44-2.28-1.41-.84-.75-1.41-1.68-1.57-1.97-.17-.28-.02-.44.12-.58.13-.12.28-.32.42-.48.14-.16.18-.28.28-.46.1-.18.05-.33-.02-.47-.07-.14-.64-1.54-.87-2.11-.23-.55-.47-.48-.64-.49"/></svg>
       <span>Finalizar no WhatsApp</span>
     </button>
   `;
 
-  if (sidebarBody) sidebarBody.innerHTML = itemsHtml;
-  if (sidebarFooter) sidebarFooter.innerHTML = footerHtml;
   if (modalBody) modalBody.innerHTML = itemsHtml;
   if (modalFooter) modalFooter.innerHTML = footerHtml;
   
-  // Recupera o nome se já foi digitado
   const savedName = localStorage.getItem('encart_customer_name');
   if (savedName) {
     document.querySelectorAll('.customer-name-input').forEach(i => i.value = savedName);
@@ -369,8 +374,8 @@ function syncNames(val) {
 }
 
 async function checkout() {
-  // Pega o nome do primeiro input que encontrar (já que estão sincronizados)
   const name = document.querySelector('.customer-name-input')?.value.trim();
+  const obs  = document.getElementById('order-obs')?.value.trim();
   
   if (!name) { 
     if (window.UIComponents && window.UIComponents.showToast) {
@@ -398,7 +403,12 @@ async function checkout() {
     return `• ${qtyStr} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`;
   }).join('\n');
   
-  const message = `🛒 *Novo Pedido - ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Total:* ${UIRender.fmtPrice(subtotal)}\n\n_Enviado via EncartShop_`;
+  let message = `🛒 *Novo Pedido - ${store.name}*\n\n`;
+  message += `👤 *Cliente:* ${name}\n`;
+  if (obs) message += `📝 *Obs:* ${obs}\n`;
+  message += `\n📦 *Itens:*\n${itemsText}\n\n`;
+  message += `💰 *Total:* ${UIRender.fmtPrice(subtotal)}\n\n`;
+  message += `_Enviado via EncartShop_`;
   
   window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(message)}`, '_blank');
 }
