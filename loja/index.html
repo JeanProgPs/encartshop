@@ -162,6 +162,129 @@
 <script src="/js/modules/subscription.js"></script>
 <script src="/js/ui/render.js"></script>
 <script src="/js/storage.js"></script>
-<script src="/loja/loja.js"></script>
+
+<script>
+/**
+ * EncartShop — Loja Pública (Embutida)
+ */
+const urlParams = new URLSearchParams(window.location.search);
+const STORE_ID_PARAM = urlParams.get('s') || urlParams.get('id');
+
+let cart          = [];
+let store         = {};
+let allProducts   = [];
+let activeCategory = 'Todos';
+let STORE_ID      = STORE_ID_PARAM;
+
+console.log('[EncartShop] Script embutido carregado.');
+
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('[EncartShop] Iniciando lógica da loja...');
+  try {
+    if (!window.sb) throw new Error('Conexão com o banco falhou.');
+
+    if (STORE_ID) {
+      console.log('[Loja] Buscando loja:', STORE_ID);
+      let storeData = await EncartAPI.StoreAPI.getById(STORE_ID);
+      
+      if (storeData) {
+        store = storeData;
+        const subStatus = SubscriptionModule.getStatus(store.expires_at);
+        if (subStatus.blocked) {
+          document.body.innerHTML = `
+            <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; font-family:sans-serif; background:#f8fafc;">
+              <div style="font-size:4rem; margin-bottom:20px;">🏪</div>
+              <h1 style="font-size:1.5rem; color:#0f172a; margin-bottom:8px;">Loja Temporariamente Indisponível</h1>
+              <p style="color:#64748b; max-width:400px; line-height:1.6;">Esta loja está passando por uma manutenção ou sua assinatura expirou.</p>
+              <a href="/" style="margin-top:24px; color:#4f46e5; text-decoration:none; font-weight:600;">← Voltar ao EncartShop</a>
+            </div>`;
+          return;
+        }
+      } else {
+          console.log('[Loja] Buscando via slug:', STORE_ID);
+          const allStores = await EncartAPI.StoreAPI.getAll();
+          const slugify = t => (t||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,'-').replace(/[^\w\-]+/g,'').replace(/\-\-+/g,'-').replace(/^-+/,'').replace(/-+$/,'');
+          const targetSlug = slugify(STORE_ID);
+          const found = allStores.find(s => slugify(s.name) === targetSlug);
+          if (found) {
+            store = found;
+            STORE_ID = store.id;
+          }
+      }
+    }
+
+    if (!STORE_ID || !store.id) {
+      throw new Error("Loja não encontrada. Verifique o link.");
+    }
+
+    cart = JSON.parse(localStorage.getItem('encart_cart_' + STORE_ID) || '[]');
+    if (store.color) {
+      document.documentElement.style.setProperty('--accent', store.color);
+      document.documentElement.style.setProperty('--brand', store.color);
+    }
+    
+    // Render UI
+    document.title = store.name + ' — EncartShop';
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setEl('header-store-name', store.name);
+    setEl('header-hours',      store.hours || '');
+    setEl('store-banner',      store.banner_text || 'Ofertas da Semana!');
+
+    const prods = await EncartAPI.ProductAPI.getActiveByStore(STORE_ID);
+    allProducts = prods;
+    
+    renderCategoryTabs();
+    renderProducts();
+    updateCartUI();
+
+  } catch (err) {
+    console.error('[Loja] Erro:', err);
+    document.body.innerHTML = `
+      <div style="text-align:center; padding:100px 24px; font-family:sans-serif;">
+        <div style="font-size:3rem; margin-bottom:20px;">⚠️</div>
+        <h1 style="font-size:1.2rem; color:#1e293b;">Erro ao carregar loja</h1>
+        <p style="color:#64748b; margin-top:10px;">${err.message}</p>
+        <a href="/" style="display:inline-block; margin-top:24px; color:#4f46e5; text-decoration:none; font-weight:600;">Voltar ao Início</a>
+      </div>`;
+  }
+});
+
+// Funções Auxiliares (Simplificadas para o teste)
+function renderCategoryTabs() {
+  const tabsWrap = document.getElementById('cat-tabs');
+  if (!tabsWrap) return;
+  const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+  const html = [\`<button class="cat-tab active" onclick="setCategory('Todos')">Todos</button>\`];
+  categories.forEach(cat => {
+    html.push(\`<button class="cat-tab" onclick="setCategory('\${cat}')">\${cat}</button>\`);
+  });
+  tabsWrap.innerHTML = html.join('');
+}
+
+function renderProducts() {
+  const area = document.getElementById('products-area');
+  if (!area) return;
+  if (!allProducts.length) {
+    area.innerHTML = '<p style="text-align:center;padding:40px;">Nenhum produto encontrado.</p>';
+    return;
+  }
+  area.innerHTML = \`
+    <div class="product-grid">
+      \${allProducts.map(p => UIRender.productStoreCard(p, 0)).join('')}
+    </div>\`;
+}
+
+function updateCartUI() {
+  const countEl = document.getElementById('cart-count');
+  if (countEl) countEl.textContent = cart.length;
+}
+
+function setCategory(cat) {
+  // Simples para o teste
+  const grid = document.querySelector('.product-grid');
+  const filtered = cat === 'Todos' ? allProducts : allProducts.filter(p => p.category === cat);
+  if (grid) grid.innerHTML = filtered.map(p => UIRender.productStoreCard(p, 0)).join('');
+}
+</script>
 </body>
 </html>
