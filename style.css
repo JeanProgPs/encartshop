@@ -1,12 +1,9 @@
-/* ============================================================
-   EncartShop — Design System Global
-   Paleta Varejo: Verde Vivo + Laranja Energia
-   ============================================================ */
-
+/* Cache-Bust: 2026-05-13-v3 */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap');
 
-/* ── CSS Variables ─────────────────────────────────────────── */
 :root {
+  --sidebar-width: 260px;
+  --header-height: 72px;
   /* Tons base — Clean Light */
   --primary: #ffffff;
   --primary-light: #f8fafc;
@@ -976,3 +973,10 @@ select.form-input option {
 .empty-state-icon { font-size: 3rem; margin-bottom: 16px; }
 .empty-state h3 { font-size: 1.1rem; margin-bottom: 8px; color: var(--text-light); }
 .empty-state p { font-size: 0.9rem; max-width: 320px; margin: 0 auto; }
+
+/* ── Force Visibility ───────────────────────────────────────── */
+@media (min-width: 769px) {
+  .sidebar { transform: translateX(0) !important; visibility: visible !important; opacity: 1 !important; display: flex !important; }
+  .main-content { margin-left: var(--sidebar-width) !important; width: calc(100% - var(--sidebar-width)) !important; }
+}
+
