@@ -542,7 +542,13 @@ async function checkout() {
       status: 'novo'
     }).catch(e => console.warn('[Loja] Pedido não salvo:', e));
 
-    cart = []; _saveCart(); updateCartUI(); closeCart();
+    // Limpa carrinho local e atualiza toda a UI (incluindo grid de produtos)
+    cart = []; 
+    _saveCart(); 
+    updateCartUI(); 
+    renderProducts(); // Resetar os seletores de quantidade no grid
+    closeCart();
+
     window.location.href = `https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(msg)}`;
   } finally {
     if (btn) {
