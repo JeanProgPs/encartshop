@@ -99,7 +99,9 @@ function loadStoreUI() {
 
 async function loadProducts() {
   const area = document.getElementById('products-area');
-  UIComponents.renderSkeleton('products-area', 6, 'product');
+  if (window.UIComponents && window.UIComponents.renderSkeleton) {
+    UIComponents.renderSkeleton('products-area', 6, 'product');
+  }
 
   const prods = await EncartAPI.ProductAPI.getActiveByStore(STORE_ID);
   allProducts = prods || [];
@@ -281,13 +283,21 @@ function renderCartBody() {
 async function checkout() {
   const name = document.getElementById('customer-name')?.value.trim();
   if (!name) { 
-    UIComponents.showToast('Informe seu nome para o pedido.', 'error'); 
+    if (window.UIComponents && window.UIComponents.showToast) {
+       UIComponents.showToast('Informe seu nome para o pedido.', 'error'); 
+    } else {
+       alert('Informe seu nome para o pedido.');
+    }
     return; 
   }
 
   const wa = (store.whatsapp || '').replace(/\D/g, '');
   if (!wa) { 
-    UIComponents.showToast('Loja sem WhatsApp configurado.', 'error'); 
+    if (window.UIComponents && window.UIComponents.showToast) {
+       UIComponents.showToast('Loja sem WhatsApp configurado.', 'error'); 
+    } else {
+       alert('Loja sem WhatsApp configurado.');
+    }
     return; 
   }
 

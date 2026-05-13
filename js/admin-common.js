@@ -17,7 +17,11 @@
   const activePage = document.body.dataset.page || '';
 
   // 3. Injeta sidebar com item ativo marcado e carrega dados
-  UIComponents.renderSidebar(activePage);
+  if (window.UIComponents && window.UIComponents.renderSidebar) {
+    UIComponents.renderSidebar(activePage);
+  } else {
+    console.warn('[AdminCommon] UIComponents.renderSidebar não encontrado.');
+  }
 
   // 4. Verifica Assinatura e injeta alerta se necessário
   const store = await StoreModule.getActive();

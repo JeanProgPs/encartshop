@@ -187,8 +187,15 @@ const UIComponents = (() => {
   return { showToast, renderSkeleton, renderSidebar, openModal, closeModal, handleOverlayClick, setLoading };
 })();
 
-window.UIComponents = UIComponents;
-window.showToast = UIComponents.showToast;
+// Garante que o objeto existe no escopo global imediatamente
+window.UIComponents = UIComponents || {
+  showToast: (m) => console.warn('UIComponents.showToast falhou:', m),
+  renderSkeleton: () => {},
+  renderSidebar: () => {},
+  openModal: () => {},
+  closeModal: () => {},
+  handleOverlayClick: () => {},
+  setLoading: () => {}
+};
 
-window.UIComponents = UIComponents;
-window.showToast = UIComponents.showToast;
+window.showToast = window.UIComponents.showToast;
