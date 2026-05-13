@@ -199,7 +199,7 @@
 
     document.getElementById('product-count').textContent = `${filtered.length} produto(s) encontrado(s)`;
 
-    const grid = document.getElementById('products-grid');
+
     if (!filtered.length) {
       grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">` + UIRender.emptyState('📦', 'Nenhum produto encontrado', 'Tente ajustar os filtros ou adicione seu primeiro produto.') + `</div>`;
       return;
