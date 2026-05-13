@@ -79,6 +79,7 @@
 <div id="toast-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/helpers.js"></script>
 <script src="/js/core/supabaseClient.js"></script>
 <script src="/js/core/api.js"></script>
 <script src="/js/auth/authService.js"></script>
@@ -96,7 +97,21 @@
   const storeId     = () => AuthService.getActiveStoreId();
 
   async function initAdmin() {
-    await renderOrders();
+    // Skeleton enquanto carrega
+    document.getElementById('orders-list').innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        ${Array.from({length:3}).map((_,i) => `
+          <div style="height:120px;border-radius:12px;border:1px solid var(--border);
+            background:linear-gradient(90deg,rgba(0,0,0,0.03) 25%,rgba(0,0,0,0.06) 50%,rgba(0,0,0,0.03) 75%);
+            background-size:200% 100%;animation:encart-shimmer 1.4s infinite ${i*0.15}s;"></div>`).join('')}
+      </div>`;
+    try {
+      await renderOrders();
+    } catch(err) {
+      console.error('[Pedidos] Erro ao carregar:', err);
+      document.getElementById('orders-list').innerHTML = UIRender.emptyState('⚠️', 'Erro ao carregar pedidos', 'Tente recarregar a página.');
+      showToast('Erro ao carregar pedidos.', 'error');
+    }
   }
 
   function setFilter(f, btn) {

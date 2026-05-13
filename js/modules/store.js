@@ -1,6 +1,6 @@
 /**
- * EncartShop — Store Module
- * Lógica de negócios para Lojas.
+ * EncartShop — Store Module v2
+ * Lógica de negócios para Lojas com suporte a SLUG persistente.
  */
 
 const StoreModule = (() => {
@@ -13,10 +13,9 @@ const StoreModule = (() => {
   async function create(storeData) {
     if (!storeData.name) throw new Error('Nome da loja é obrigatório');
     
-    // Slug removido (coluna inexistente no banco)
-    // if (!storeData.slug) { ... }
+    // Gera o slug inicial baseado no nome
+    storeData.slug = slugify(storeData.name);
     
-    // Pega o usuário logado para vincular a loja a ele
     const user = await AuthService.getUser();
     if (user) {
       storeData.user_id = user.id;
@@ -28,8 +27,18 @@ const StoreModule = (() => {
   function applyColor(hexColor) {
     if (!hexColor) return;
     document.documentElement.style.setProperty('--brand', hexColor);
-    document.documentElement.style.setProperty('--brand-dark', hexColor); // Simplificado ou calculado
-    document.documentElement.style.setProperty('--brand-glow', `${hexColor}1a`); // 10% opacidade
+    document.documentElement.style.setProperty('--brand-dark', _darkenColor(hexColor));
+    document.documentElement.style.setProperty('--brand-glow', `${hexColor}1a`);
+  }
+
+  function _darkenColor(hex) {
+    try {
+      const n = parseInt(hex.replace('#',''), 16);
+      const r = Math.max(0, (n >> 16 & 255) - 40);
+      const g = Math.max(0, (n >>  8 & 255) - 40);
+      const b = Math.max(0, (n       & 255) - 40);
+      return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+    } catch { return hex; }
   }
 
   function slugify(text) {
@@ -46,10 +55,9 @@ const StoreModule = (() => {
   function getStoreUrl(store) {
     if (!store) return '';
     
-    // Usa nome da loja convertido para slug
-    const slug = slugify(store.name || 'loja');
+    // Prioriza o slug do banco, se não houver gera na hora (fallback)
+    const slug = store.slug || slugify(store.name || 'loja');
     
-    // Se estivermos no painel admin, o link relativo é ../loja/index.html
     const isInsideAdmin = window.location.pathname.includes('/admin/');
     if (isInsideAdmin || window.location.pathname.endsWith('/admin')) {
         return `../loja/index.html?s=${slug}`;
@@ -62,8 +70,10 @@ const StoreModule = (() => {
     const id = AuthService.getActiveStoreId();
     if (!id) throw new Error('Loja não identificada');
     
-    // Slug removido
-    // if (storeData.name) { ... }
+    // Se o nome mudou, gera um novo slug (opcional, mas mantém consistência)
+    if (storeData.name) {
+      storeData.slug = slugify(storeData.name);
+    }
 
     try {
       await EncartAPI.StoreAPI.update(id, storeData);
@@ -84,7 +94,7 @@ const StoreModule = (() => {
     { name: 'Orange',     hex: '#f97316' }
   ];
 
-  return { getActive, create, save, applyColor, getStoreUrl, COLOR_PALETTE };
+  return { getActive, create, save, applyColor, getStoreUrl, slugify, COLOR_PALETTE };
 })();
 
 window.StoreModule = StoreModule;

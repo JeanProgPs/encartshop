@@ -143,8 +143,14 @@
         </div>
         
         <div id="img-source-upload" class="hidden">
-          <input id="f-image-file" type="file" class="form-input" accept="image/*" onchange="previewImgFile()">
-          <p style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">Tamanho máximo: 2MB. Formatos: JPG, PNG, WEBP.</p>
+          <input id="f-image-file" type="file" class="form-input" accept="image/jpeg,image/jpg,image/png,image/webp" onchange="previewImgFile()">
+          <p style="font-size:0.7rem;color:var(--text-muted);margin-top:4px">Máximo 2MB. Formatos: JPG, PNG, WEBP.</p>
+          <div id="upload-progress" style="display:none;margin-top:8px">
+            <div style="height:4px;background:rgba(0,0,0,0.08);border-radius:4px;overflow:hidden">
+              <div id="upload-bar" style="height:100%;background:var(--brand);border-radius:4px;width:0%;transition:width 0.3s ease"></div>
+            </div>
+            <span id="upload-label" style="font-size:0.72rem;color:var(--text-muted)">0%</span>
+          </div>
         </div>
 
         <div id="img-preview" class="img-preview" style="margin-top:8px;">
@@ -163,6 +169,7 @@
 <div id="toast-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/helpers.js"></script>
 <script src="/js/core/supabaseClient.js"></script>
 <script src="/js/core/api.js"></script>
 <script src="/js/auth/authService.js"></script>
@@ -279,14 +286,21 @@
 
   function previewImgFile() {
     const file = document.getElementById('f-image-file').files[0];
-    const div = document.getElementById('img-preview');
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => div.innerHTML = `<img src="${e.target.result}">`;
-      reader.readAsDataURL(file);
-    } else {
-      div.innerHTML = '<span>Pré-visualização da imagem</span>';
+    const div  = document.getElementById('img-preview');
+    if (!file) { div.innerHTML = '<span>Pré-visualização da imagem</span>'; return; }
+
+    // Valida antes de mostrar preview
+    const err = StorageModule.validateFile(file);
+    if (err) {
+      div.innerHTML = `<span style="color:var(--danger)">${err}</span>`;
+      document.getElementById('f-image-file').value = '';
+      showToast(err, 'error');
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = (e) => div.innerHTML = `<img src="${e.target.result}" alt="preview">`;
+    reader.readAsDataURL(file);
   }
 
   async function saveProduct() {
@@ -297,12 +311,32 @@
       const promoVal = document.getElementById('f-promo-price').value;
       let imageUrl = document.getElementById('f-image').value.trim();
 
-      // Se for upload, processa o arquivo primeiro
+      // Se for upload, processa com validação e progresso
       if (imgSource === 'upload') {
         const file = document.getElementById('f-image-file').files[0];
         if (file) {
-          showToast('Fazendo upload da imagem...', 'info');
-          imageUrl = await StorageModule.uploadImage(file, storeId());
+          // Valida antecipadamente
+          const fileErr = StorageModule.validateFile(file);
+          if (fileErr) {
+            showToast(fileErr, 'error');
+            UIComponents.setLoading(btn, false, 'Salvar Produto');
+            return;
+          }
+
+          // Mostra barra de progresso
+          const progressWrap = document.getElementById('upload-progress');
+          const progressBar  = document.getElementById('upload-bar');
+          const progressLbl  = document.getElementById('upload-label');
+          if (progressWrap) progressWrap.style.display = 'block';
+
+          showToast('Comprimindo e enviando imagem...', 'info');
+          imageUrl = await StorageModule.uploadImage(file, storeId(), (pct) => {
+            if (progressBar) progressBar.style.width = pct + '%';
+            if (progressLbl) progressLbl.textContent = pct + '%';
+          });
+
+          if (progressWrap) progressWrap.style.display = 'none';
+          showToast('Imagem enviada!', 'success');
         }
       }
 

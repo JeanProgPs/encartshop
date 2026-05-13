@@ -1,10 +1,6 @@
 /**
- * EncartShop — Admin Common v2
+ * EncartShop — Admin Common v3
  * Inicialização compartilhada de todas as páginas admin.
- * Inclua APÓS todos os módulos JS, no final do <body>.
- *
- * Uso: <script src="../js/admin-common.js"></script>
- * Requer atributo data-page no <body>: <body data-page="dashboard">
  */
 
 (async function initAdminPage() {
@@ -20,11 +16,19 @@
   UIComponents.renderSidebar(activePage);
 
   // 4. Verifica Assinatura e injeta alerta se necessário
-  const store = await StoreModule.getActive();
-  if (store) {
-    const subStatus = SubscriptionModule.getStatus(store.expires_at);
-    const alert = SubscriptionModule.getAlert(subStatus);
-    SubscriptionModule.injectAlert(alert);
+  try {
+    const store = await StoreModule.getActive();
+    if (store) {
+      // Regra: se status for 'pending', mostra o banner de ativação
+      // Se for 'active', verifica se expirou
+      const subStatus = SubscriptionModule.getStatus(store.expires_at);
+      const isPending = store.status === 'pending';
+      
+      const alert = SubscriptionModule.getAlert(subStatus, isPending);
+      SubscriptionModule.injectAlert(alert);
+    }
+  } catch (e) {
+    console.warn('[AdminCommon] Falha ao injetar alerta de assinatura:', e);
   }
 
 })();

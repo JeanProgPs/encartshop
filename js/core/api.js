@@ -1,156 +1,191 @@
 /**
- * EncartShop — API Centralizada
- * Todas as requisições de dados para o Supabase (exceto Auth).
+ * EncartShop — API Centralizada v2
+ * Versão robusta com try/catch e segurança reforçada.
  */
 
 const StoreAPI = {
   async getAll() {
-    const { data, error } = await window.sb.from('stores').select('*');
-    if (error) { console.error('StoreAPI.getAll erro:', error); return []; }
-    return data || [];
+    try {
+      const { data, error } = await window.sb.from('stores').select('*');
+      if (error) { console.error('StoreAPI.getAll:', error); return []; }
+      return data || [];
+    } catch (e) { console.error('StoreAPI.getAll:', e); return []; }
   },
   async getByUser(userId) {
     if (!userId) return [];
-    const { data, error } = await window.sb.from('stores').select('*').eq('user_id', userId);
-    if (error) { console.error('StoreAPI.getByUser erro:', error); return []; }
-    return data || [];
+    try {
+      const { data, error } = await window.sb.from('stores').select('*').eq('user_id', userId);
+      if (error) { console.error('StoreAPI.getByUser:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
   },
   async getById(id) {
     if (!id) return null;
-    const { data, error } = await window.sb.from('stores').select('*').eq('id', id).single();
-    if (error) { console.error('StoreAPI.getById erro:', error); return null; }
-    return data;
+    // Validação básica de UUID para evitar erro 400 ruidoso no log do Supabase
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+    if (!isUUID) return null; 
+
+    try {
+      const { data, error } = await window.sb.from('stores').select('*').eq('id', id).single();
+      if (error) { 
+        if (error.code !== 'PGRST116') console.error('StoreAPI.getById:', error); 
+        return null; 
+      }
+      return data || null;
+    } catch (e) { return null; }
   },
+  // Busca por slug: usa a coluna 'slug' do banco de dados
   async getBySlug(slug) {
-    // Desativado temporariamente pois a coluna slug não existe no banco
-    return null;
+    if (!slug) return null;
+    try {
+      const { data, error } = await window.sb.from('stores')
+        .select('*').eq('slug', slug).single();
+      if (error) {
+        if (error.code !== 'PGRST116') console.error('StoreAPI.getBySlug:', error);
+        return null;
+      }
+      return data || null;
+    } catch (e) { return null; }
   },
   async create(storeData) {
-    const cleanData = { ...storeData };
-    delete cleanData.slug; 
-    const { data, error } = await window.sb.from('stores').insert([cleanData]).select().single();
-    if (error) { console.error('StoreAPI.create erro:', error); throw error; }
-    return data;
+    try {
+      const { data, error } = await window.sb.from('stores').insert([storeData]).select().single();
+      if (error) throw error;
+      return data;
+    } catch (e) { throw e; }
   },
   async update(id, storeData) {
-    const cleanData = { ...storeData };
-    delete cleanData.slug;
-    const { data, error } = await window.sb.from('stores').update(cleanData).eq('id', id).select().single();
-    if (error) { console.error('StoreAPI.update erro:', error); throw error; }
-    return data;
+    if (!id) throw new Error('ID obrigatório');
+    try {
+      const { data, error } = await window.sb.from('stores').update(storeData).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    } catch (e) { throw e; }
   },
   async delete(id) {
-    const { error } = await window.sb.from('stores').delete().eq('id', id);
-    if (error) { console.error('StoreAPI.delete erro:', error); return false; }
-    return true;
+    if (!id) return false;
+    try {
+      const { error } = await window.sb.from('stores').delete().eq('id', id);
+      if (error) { console.error('StoreAPI.delete:', error); return false; }
+      return true;
+    } catch (e) { return false; }
   }
 };
 
 const ProductAPI = {
   async getByStore(storeId) {
     if (!storeId) return [];
-    const { data, error } = await window.sb.from('products').select('*').eq('store_id', storeId).order('name', { ascending: true });
-    if (error) { console.error('ProductAPI.getByStore erro:', error); return []; }
-    return data || [];
+    try {
+      const { data, error } = await window.sb.from('products')
+        .select('*').eq('store_id', storeId).order('name', { ascending: true });
+      if (error) { console.error('ProductAPI.getByStore:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
   },
   async getActiveByStore(storeId) {
     if (!storeId) return [];
-    const { data, error } = await window.sb.from('products')
-      .select('*')
-      .eq('store_id', storeId)
-      .eq('active', true)
-      .order('name', { ascending: true });
-    if (error) { console.error('ProductAPI.getActiveByStore erro:', error); return []; }
-    return data || [];
+    try {
+      const { data, error } = await window.sb.from('products')
+        .select('*').eq('store_id', storeId).eq('active', true).order('name', { ascending: true });
+      if (error) { console.error('ProductAPI.getActiveByStore:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
   },
   async add(storeId, productData) {
-    const payload = { ...productData, store_id: storeId };
-    const { data, error } = await window.sb.from('products').insert([payload]).select().single();
-    if (error) { console.error('ProductAPI.add erro:', error); throw error; }
-    return { data };
+    if (!storeId) throw new Error('store_id obrigatório');
+    try {
+      const { data, error } = await window.sb.from('products')
+        .insert([{ ...productData, store_id: storeId }]).select().single();
+      if (error) throw error;
+      return { data };
+    } catch (e) { throw e; }
   },
   async update(id, productData) {
-    const { data, error } = await window.sb.from('products').update(productData).eq('id', id).select().single();
-    if (error) { console.error('ProductAPI.update erro:', error); throw error; }
-    return data;
+    if (!id) throw new Error('ID obrigatório');
+    try {
+      const { data, error } = await window.sb.from('products')
+        .update(productData).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    } catch (e) { throw e; }
   },
   async delete(id) {
-    const { error } = await window.sb.from('products').delete().eq('id', id);
-    if (error) { console.error('ProductAPI.delete erro:', error); return false; }
-    return true;
+    if (!id) return false;
+    try {
+      const { error } = await window.sb.from('products').delete().eq('id', id);
+      if (error) { console.error('ProductAPI.delete:', error); return false; }
+      return true;
+    } catch (e) { return false; }
   }
 };
 
 const OrderAPI = {
   async getByStore(storeId) {
     if (!storeId) return [];
-    const { data, error } = await window.sb.from('orders').select('*').eq('store_id', storeId).order('created_at', { ascending: false });
-    if (error) { console.error('OrderAPI.getByStore erro:', error); return []; }
-    return data || [];
+    try {
+      const { data, error } = await window.sb.from('orders')
+        .select('*').eq('store_id', storeId).order('created_at', { ascending: false });
+      if (error) { console.error('OrderAPI.getByStore:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
   },
   async create(storeId, orderData) {
-    const payload = { ...orderData, store_id: storeId };
-    const { error } = await window.sb.from('orders').insert([payload]);
-    if (error) { console.error('OrderAPI.create erro:', error); throw error; }
-    return true;
+    if (!storeId) throw new Error('store_id obrigatório');
+    try {
+      const { error } = await window.sb.from('orders').insert([{ ...orderData, store_id: storeId }]);
+      if (error) throw error;
+      return true;
+    } catch (e) { throw e; }
   },
   async updateStatus(id, newStatus) {
-    const { data, error } = await window.sb.from('orders').update({ status: newStatus }).eq('id', id).select().single();
-    if (error) { console.error('OrderAPI.updateStatus erro:', error); throw error; }
-    return data;
+    if (!id || !newStatus) throw new Error('ID e status obrigatórios');
+    try {
+      const { data, error } = await window.sb.from('orders')
+        .update({ status: newStatus }).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    } catch (e) { throw e; }
   },
   async delete(id) {
-    const { error } = await window.sb.from('orders').delete().eq('id', id);
-    if (error) { console.error('OrderAPI.delete erro:', error); return false; }
-    return true;
+    if (!id) return false;
+    try {
+      const { error } = await window.sb.from('orders').delete().eq('id', id);
+      if (error) { console.error('OrderAPI.delete:', error); return false; }
+      return true;
+    } catch (e) { return false; }
   },
   async clearByStore(storeId) {
     if (!storeId) return false;
-    const { error } = await window.sb.from('orders').delete().eq('store_id', storeId);
-    if (error) { console.error('OrderAPI.clearByStore erro:', error); return false; }
-    return true;
+    try {
+      const { error } = await window.sb.from('orders').delete().eq('store_id', storeId);
+      if (error) { console.error('OrderAPI.clearByStore:', error); return false; }
+      return true;
+    } catch (e) { return false; }
   }
 };
 
 const AsaasAPI = {
-  /**
-   * Solicita a criação de uma cobrança para a loja através da Edge Function.
-   * @param {string} storeId 
-   * @param {string} cpfCnpj
-   * @param {number} planValue
-   */
   async createPayment(storeId, cpfCnpj, planValue) {
     if (!storeId) throw new Error('Store ID é obrigatório');
-    const { data, error } = await window.sb.functions.invoke('asaas-payment', {
-      body: { action: 'createPayment', storeId, cpfCnpj, planValue }
-    });
-    if (error) { console.error('AsaasAPI.createPayment erro:', error); throw error; }
-    
-    // Se a função retornou 200 mas com erro interno (success: false)
-    if (data && data.success === false) {
-      throw new Error(data.error || 'Erro interno na geração do pagamento');
-    }
-    
-    return data;
+    try {
+      const { data, error } = await window.sb.functions.invoke('asaas-payment', {
+        body: { action: 'createPayment', storeId, cpfCnpj, planValue }
+      });
+      if (error) throw error;
+      if (data?.success === false) throw new Error(data.error || 'Erro interno');
+      return data;
+    } catch (e) { throw e; }
   },
-
-  /**
-   * Consulta o status atual de uma cobrança.
-   * @param {string} paymentId 
-   */
   async getPaymentStatus(paymentId) {
     if (!paymentId) return null;
-    const { data, error } = await window.sb.functions.invoke('asaas-payment', {
-      body: { action: 'getPaymentStatus', paymentId }
-    });
-    if (error) { console.error('AsaasAPI.getPaymentStatus erro:', error); return null; }
-    return data;
+    try {
+      const { data, error } = await window.sb.functions.invoke('asaas-payment', {
+        body: { action: 'getPaymentStatus', paymentId }
+      });
+      if (error) { console.error('AsaasAPI.getPaymentStatus:', error); return null; }
+      return data;
+    } catch (e) { return null; }
   }
 };
 
-window.EncartAPI = {
-  StoreAPI,
-  ProductAPI,
-  OrderAPI,
-  AsaasAPI
-};
+window.EncartAPI = { StoreAPI, ProductAPI, OrderAPI, AsaasAPI };
