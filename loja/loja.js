@@ -14,6 +14,7 @@ let allProducts   = [];
 let activeCategory = 'Todos';
 let STORE_ID      = STORE_ID_PARAM;
 
+alert('DEBUG: loja.js foi carregado com sucesso!');
 console.log('[EncartShop] loja.js carregado com sucesso.');
 
 document.addEventListener('DOMContentLoaded', async () => {
