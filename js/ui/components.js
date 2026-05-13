@@ -1,49 +1,76 @@
-/**
- * EncartShop — UI Components Compartilhados
- */
-
 const UIComponents = (() => {
 
+  /**
+   * Sistema de Toasts melhorado
+   */
   function showToast(message, type = 'success') {
     let container = document.getElementById('toast-container');
     if (!container) {
       container = document.createElement('div');
       container.id = 'toast-container';
-      container.style.position = 'fixed';
-      container.style.bottom = '20px';
-      container.style.right = '20px';
-      container.style.zIndex = '9999';
-      container.style.display = 'flex';
-      container.style.flexDirection = 'column';
-      container.style.gap = '10px';
       document.body.appendChild(container);
     }
 
     const toast = document.createElement('div');
     const isError = type === 'error';
-    toast.className = `toast ${isError ? 'toast-error' : 'toast-success'}`;
-    toast.style.padding = '12px 20px';
-    toast.style.borderRadius = '8px';
-    toast.style.color = '#fff';
-    toast.style.background = isError ? '#e74c3c' : '#2ecc71';
-    toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-    toast.style.animation = 'slideInRight 0.3s ease forwards';
-    toast.style.fontFamily = 'Inter, sans-serif';
-    toast.style.fontWeight = '500';
-    toast.textContent = message;
+    const isInfo = type === 'info';
+    
+    toast.className = `toast ${type}`;
+    
+    // Adiciona ícones simples
+    const icon = isError ? '❌' : (isInfo ? 'ℹ️' : '✅');
+    
+    toast.innerHTML = `
+      <span class="toast-icon">${icon}</span>
+      <span class="toast-message">${message}</span>
+    `;
 
     container.appendChild(toast);
 
+    // Auto remove
     setTimeout(() => {
-      toast.style.animation = 'fadeOut 0.3s ease forwards';
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(20px)';
+      toast.style.transition = 'all 0.3s ease';
       setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    }, 4000);
+  }
+
+  /**
+   * Renderiza Skeletons para Loading States
+   */
+  function renderSkeleton(containerId, count = 3, type = 'card') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    let html = '';
+    for (let i = 0; i < count; i++) {
+      if (type === 'card') {
+        html += `
+          <div class="card skeleton" style="height: 120px; margin-bottom: 16px;">
+            <div class="skeleton-text" style="width: 60%; margin-top: 10px;"></div>
+            <div class="skeleton-text" style="width: 40%;"></div>
+          </div>`;
+      } else if (type === 'list') {
+        html += `
+          <div class="skeleton" style="height: 60px; margin-bottom: 12px; border-radius: 8px;"></div>`;
+      } else if (type === 'product') {
+        html += `
+          <div class="product-card skeleton" style="height: 280px;">
+            <div class="skeleton-img" style="height: 160px; background: rgba(0,0,0,0.05);"></div>
+            <div style="padding: 14px;">
+              <div class="skeleton-text" style="width: 80%;"></div>
+              <div class="skeleton-text" style="width: 50%;"></div>
+            </div>
+          </div>`;
+      }
+    }
+    container.innerHTML = html;
   }
 
   function renderSidebar(activeItem) {
     let sidebar = document.getElementById('sidebar');
     if (!sidebar) {
-      // Fallback in case there is no sidebar element, although all admin pages have one.
       sidebar = document.createElement('aside');
       sidebar.className = 'sidebar';
       sidebar.id = 'sidebar';
@@ -52,12 +79,12 @@ const UIComponents = (() => {
     
     sidebar.innerHTML = `
       <div class="sidebar-logo">
-        <div class="logo-icon" style="width:42px; height:42px; background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%); border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:900; color:#fff; margin-bottom:10px; box-shadow:var(--shadow-brand);">
+        <div class="logo-icon">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
         </div>
         <div class="logo-text">
           <span class="brand">EncartShop</span>
-          <span class="sub" style="font-size:0.7rem; color:var(--text-muted);">Painel do Lojista</span>
+          <span class="sub">Painel do Lojista</span>
         </div>
       </div>
       <nav class="sidebar-nav">
@@ -79,8 +106,8 @@ const UIComponents = (() => {
           <span>Configurações</span>
         </a>
       </nav>
-      <div class="sidebar-footer" style="padding:16px 12px;">
-        <a href="#" id="view-store-btn" target="_blank" class="btn btn-primary" style="width:100%; justify-content:center; margin-bottom:16px; font-size:0.85rem;">👁️ Ver Loja</a>
+      <div class="sidebar-footer">
+        <a href="#" id="view-store-btn" target="_blank" class="btn btn-primary" style="width:100%; justify-content:center; margin-bottom:16px;">👁️ Ver Loja</a>
         <div style="display:flex;align-items:center;gap:10px;">
           <div style="width:36px;height:36px;background:rgba(255,255,255,0.05);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">👤</div>
           <div style="flex:1;overflow:hidden;">
@@ -92,38 +119,15 @@ const UIComponents = (() => {
       </div>
     `;
 
-    // Mobile toggle support
-    const mobileClose = sidebar.querySelector('#mobile-close');
-    if (mobileClose) {
-      mobileClose.addEventListener('click', () => {
-        sidebar.classList.remove('active');
-      });
-    }
-
-    // Toggle button in header
+    // Mobile toggle
     let mainContent = document.querySelector('.main-content');
     if (mainContent) {
       let header = mainContent.querySelector('header');
       if (header && !header.querySelector('.mobile-toggle')) {
          let mobileBtn = document.createElement('button');
          mobileBtn.className = 'mobile-toggle';
-         mobileBtn.innerHTML = `
-           <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-             <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-           </svg>`;
-         mobileBtn.style.marginRight = '12px';
-         mobileBtn.style.background = 'none';
-         mobileBtn.style.border = 'none';
-         mobileBtn.style.color = 'var(--text)';
-         mobileBtn.style.display = 'flex';
-         mobileBtn.style.alignItems = 'center';
-         mobileBtn.style.cursor = 'pointer';
-         mobileBtn.style.padding = '0';
-         
-         mobileBtn.addEventListener('click', () => {
-            sidebar.classList.add('active');
-         });
-         
+         mobileBtn.innerHTML = `<svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`;
+         mobileBtn.addEventListener('click', () => sidebar.classList.add('active'));
          header.prepend(mobileBtn);
       }
     }
@@ -138,17 +142,13 @@ const UIComponents = (() => {
       });
     }
     
-    // Atualiza nome da loja
+    // Auto Update Name
     StoreModule.getActive().then(store => {
        if (store) {
            const nameEl = sidebar.querySelector('#sidebar-store-name');
            if(nameEl) nameEl.textContent = store.name;
-           
            const viewBtn = sidebar.querySelector('#view-store-btn');
-           if(viewBtn) {
-              const url = StoreModule.getStoreUrl(store);
-              viewBtn.href = url;
-           }
+           if(viewBtn) viewBtn.href = StoreModule.getStoreUrl(store);
        }
     });
   }
@@ -170,24 +170,25 @@ const UIComponents = (() => {
   }
 
   function handleOverlayClick(event, id) {
-    if (event.target.id === id) {
-      closeModal(id);
-    }
+    if (event.target.id === id) closeModal(id);
   }
 
   function setLoading(btn, isLoading, originalText = '') {
     if (!btn) return;
     if (isLoading) {
       btn.disabled = true;
-      btn.innerHTML = `<svg class="spinner" viewBox="0 0 50 50" style="width:20px;height:20px;animation:spin 1s linear infinite;"><circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5" stroke-dasharray="100" stroke-dashoffset="50"></circle></svg> Aguarde...`;
+      btn.innerHTML = `<svg class="spinner" viewBox="0 0 50 50" style="width:18px;height:18px;animation:spin 1s linear infinite;"><circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5" stroke-dasharray="100" stroke-dashoffset="50"></circle></svg> Aguarde...`;
     } else {
       btn.disabled = false;
-      btn.textContent = originalText;
+      btn.innerHTML = originalText || btn.dataset.originalText || 'Salvar';
     }
   }
 
-  return { showToast, renderSidebar, openModal, closeModal, handleOverlayClick, setLoading };
+  return { showToast, renderSkeleton, renderSidebar, openModal, closeModal, handleOverlayClick, setLoading };
 })();
+
+window.UIComponents = UIComponents;
+window.showToast = UIComponents.showToast;
 
 window.UIComponents = UIComponents;
 window.showToast = UIComponents.showToast;

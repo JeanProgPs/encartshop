@@ -1,6 +1,5 @@
 /**
- * EncartShop — Loja Pública v11
- * Profissional, modular e com busca inteligente por Slug
+ * EncartShop — Loja Pública
  */
 
 // ── Detecta loja via URL ──────────────────────────────────────
@@ -15,18 +14,14 @@ let activeCategory = 'Todos';
 let STORE_ID      = STORE_ID_PARAM;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('[EncartShop] Iniciando lógica da loja...');
   try {
-    if (!window.sb) throw new Error('Conexão com o banco falhou.');
-
     if (!STORE_ID) {
         throw new Error('Link da loja inválido. Use encatshop.com/loja?s=NOME-DA-LOJA');
     }
 
-    // 1. Busca dados da loja
+    // 1. Busca dados da loja (UUID ou Slug)
     let storeData = await EncartAPI.StoreAPI.getById(STORE_ID);
     
-    // 2. Se não encontrou por ID (UUID), tenta buscar pelo Nome/Slug
     if (!storeData) {
         console.log('[Loja] Tentando busca por slug:', STORE_ID);
         const allStores = await EncartAPI.StoreAPI.getAll();
@@ -44,26 +39,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (!storeData) {
-      throw new Error(`Loja "${STORE_ID}" não encontrada. Verifique o link.`);
+      throw new Error(`Loja "${STORE_ID}" não encontrada.`);
     }
 
     store = storeData;
     STORE_ID = store.id;
 
-    // 3. Verifica se a loja está ativa/paga
+    // 2. Verifica se a loja está ativa/paga
     const subStatus = SubscriptionModule.getStatus(store.expires_at);
     if (subStatus.blocked) {
-      document.body.innerHTML = `
-        <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; font-family:sans-serif; background:#f8fafc;">
-          <div style="font-size:4rem; margin-bottom:20px;">🏪</div>
-          <h1 style="font-size:1.5rem; color:#0f172a; margin-bottom:8px;">Loja Temporariamente Indisponível</h1>
-          <p style="color:#64748b; max-width:400px; line-height:1.6;">Esta loja está passando por uma manutenção ou sua assinatura expirou.</p>
-          <a href="/" style="margin-top:24px; color:#4f46e5; text-decoration:none; font-weight:600;">← Voltar ao EncartShop</a>
-        </div>`;
+      renderBlockedPage();
       return;
     }
 
-    // 4. Carrega interface e produtos
+    // 3. Setup UI
     cart = _loadCart();
     if (store.color) {
       document.documentElement.style.setProperty('--accent', store.color);
@@ -75,16 +64,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateCartUI();
 
   } catch (err) {
-    console.error('[Loja] Erro Crítico:', err);
-    document.body.innerHTML = `
-      <div style="text-align:center; padding:100px 24px; font-family:sans-serif;">
-        <div style="font-size:3rem; margin-bottom:20px;">⚠️</div>
-        <h1 style="font-size:1.2rem; color:#1e293b;">Não conseguimos carregar a loja</h1>
-        <p style="color:#64748b; margin-top:10px;">${err.message}</p>
-        <a href="/" style="display:inline-block; margin-top:24px; color:#4f46e5; text-decoration:none; font-weight:600;">Voltar ao Início</a>
-      </div>`;
+    EncartHelpers.globalErrorHandler(err, 'Falha ao carregar loja');
+    renderErrorPage(err.message);
   }
 });
+
+function renderBlockedPage() {
+  document.body.innerHTML = `
+    <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px; font-family:sans-serif; background:#f8fafc;">
+      <div style="font-size:4rem; margin-bottom:20px;">🏪</div>
+      <h1 style="font-size:1.5rem; color:#0f172a; margin-bottom:8px;">Loja Temporariamente Indisponível</h1>
+      <p style="color:#64748b; max-width:400px; line-height:1.6;">Esta loja está suspensa ou sua assinatura expirou.</p>
+      <a href="/" style="margin-top:24px; color:#4f46e5; text-decoration:none; font-weight:600;">← Voltar ao EncartShop</a>
+    </div>`;
+}
+
+function renderErrorPage(msg) {
+  document.body.innerHTML = `
+    <div style="text-align:center; padding:100px 24px; font-family:sans-serif;">
+      <div style="font-size:3rem; margin-bottom:20px;">⚠️</div>
+      <h1 style="font-size:1.2rem; color:#1e293b;">Não conseguimos carregar a loja</h1>
+      <p style="color:#64748b; margin-top:10px;">${msg}</p>
+      <a href="/" style="display:inline-block; margin-top:24px; color:#4f46e5; text-decoration:none; font-weight:600;">Voltar ao Início</a>
+    </div>`;
+}
 
 function loadStoreUI() {
   document.title = store.name + ' — EncartShop';
@@ -95,8 +98,12 @@ function loadStoreUI() {
 }
 
 async function loadProducts() {
+  const area = document.getElementById('products-area');
+  UIComponents.renderSkeleton('products-area', 6, 'product');
+
   const prods = await EncartAPI.ProductAPI.getActiveByStore(STORE_ID);
-  allProducts = prods;
+  allProducts = prods || [];
+  
   renderCategoryTabs();
   renderProducts();
 }
@@ -162,8 +169,18 @@ function addToCart(id) {
   const price = product.promo_price || product.price;
   
   const existing = cart.find(c => c.id === id);
-  if (existing) existing.qty += step;
-  else cart.push({ id: product.id, name: product.name, price, image: product.image, unit: product.unit, qty: step });
+  if (existing) {
+    existing.qty += step;
+  } else {
+    cart.push({ 
+      id: product.id, 
+      name: product.name, 
+      price, 
+      image: product.image, 
+      unit: product.unit, 
+      qty: step 
+    });
+  }
 
   _saveCart();
   updateCartUI();
@@ -206,14 +223,14 @@ function _cartQty(id) {
 }
 
 function updateCartUI() {
-  const total = cart.length;
+  const totalItems = cart.reduce((acc, item) => acc + (item.unit === 'kg' ? 1 : item.qty), 0);
   const c1 = document.getElementById('cart-count');
   const c2 = document.getElementById('header-cart-count');
-  if (c1) c1.textContent = total;
-  if (c2) c2.textContent = total;
+  if (c1) c1.textContent = Math.floor(totalItems);
+  if (c2) c2.textContent = Math.floor(totalItems);
   
-  document.getElementById('cart-bubble')?.classList.toggle('hidden', total === 0);
-  document.getElementById('header-cart-btn')?.classList.toggle('hidden', total === 0);
+  document.getElementById('cart-bubble')?.classList.toggle('hidden', cart.length === 0);
+  document.getElementById('header-cart-btn')?.classList.toggle('hidden', cart.length === 0);
 }
 
 function openCart() {
@@ -263,17 +280,32 @@ function renderCartBody() {
 
 async function checkout() {
   const name = document.getElementById('customer-name')?.value.trim();
-  if (!name) { alert('Informe seu nome para o pedido.'); return; }
+  if (!name) { 
+    UIComponents.showToast('Informe seu nome para o pedido.', 'error'); 
+    return; 
+  }
 
   const wa = (store.whatsapp || '').replace(/\D/g, '');
-  if (!wa) { alert('Loja sem WhatsApp configurado.'); return; }
+  if (!wa) { 
+    UIComponents.showToast('Loja sem WhatsApp configurado.', 'error'); 
+    return; 
+  }
 
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const itemsText = cart.map(i => `• ${i.qty}${i.unit==='kg'?'kg':'x'} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`).join('\n');
   const message = `🛒 *Novo Pedido - ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Total:* ${UIRender.fmtPrice(subtotal)}\n\n_Enviado via EncartShop_`;
   
-  window.location.href = `https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(message)}`;
+  window.open(`https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(message)}`, '_blank');
 }
 
-function _saveCart() { localStorage.setItem(`encart_cart_${STORE_ID}`, JSON.stringify(cart)); }
-function _loadCart() { return JSON.parse(localStorage.getItem(`encart_cart_${STORE_ID}`) || '[]'); }
+function _saveCart() { 
+  localStorage.setItem(`encart_cart_${STORE_ID}`, JSON.stringify(cart)); 
+}
+
+function _loadCart() { 
+  try {
+    return JSON.parse(localStorage.getItem(`encart_cart_${STORE_ID}`) || '[]'); 
+  } catch(e) {
+    return [];
+  }
+}

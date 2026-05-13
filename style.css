@@ -803,6 +803,7 @@ select.form-input option {
 }
 
 /* ── Responsive ─────────────────────────────────────────────── */
+/* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
@@ -812,9 +813,13 @@ select.form-input option {
   }
   .main-content {
     margin-left: 0;
+    width: 100%;
+    overflow-x: hidden;
   }
   .page-content {
     padding: 16px;
+    width: 100%;
+    overflow-x: hidden;
   }
   .topbar {
     padding: 0 16px;
@@ -831,6 +836,17 @@ select.form-input option {
   .btn-lg {
     padding: 14px 24px;
     font-size: 0.95rem;
+  }
+
+  /* Responsive Table */
+  .data-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 20px;
+  }
+  .data-table {
+    min-width: 600px; /* Garante que a tabela não esmague no mobile */
   }
 }
 
@@ -884,7 +900,36 @@ select.form-input option {
   .modal {
     width: 95%;
     padding: 24px 20px;
+    border-radius: var(--radius-lg);
   }
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── UI Stability Utilities ─────────────────────────────────── */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+  transform: none !important;
+}
+
+.loading-skeleton {
+  pointer-events: none;
+  user-select: none;
+}
+
+.skeleton-text {
+  height: 1em;
+  width: 100%;
+  border-radius: 4px;
+  margin-bottom: 0.5em;
+}
+
+.skeleton-img {
+  aspect-ratio: 1;
+  width: 100%;
 }
 
 /* ── Toggle Switch ──────────────────────────────────────────── */
@@ -898,7 +943,7 @@ select.form-input option {
 .toggle-slider {
   position: absolute;
   inset: 0;
-  background: rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.1);
   border-radius: 12px;
   cursor: pointer;
   transition: var(--transition);
