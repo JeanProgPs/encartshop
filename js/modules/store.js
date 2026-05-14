@@ -55,15 +55,16 @@ const StoreModule = (() => {
   function getStoreUrl(store) {
     if (!store) return '';
     
-    // Prioriza o slug do banco, se não houver gera na hora (fallback)
-    const slug = store.slug || slugify(store.name || 'loja');
+    // Se a loja não tem slug salvo no banco, usamos o ID. 
+    // Isso evita gerar um slug fictício que o banco rejeitaria com erro 406.
+    const param = store.slug ? store.slug : store.id;
     
     const isInsideAdmin = window.location.pathname.includes('/admin/');
     if (isInsideAdmin || window.location.pathname.endsWith('/admin')) {
-        return `../loja/index.html?s=${slug}`;
+        return `../loja/index.html?s=${param}`;
     }
 
-    return `loja/index.html?s=${slug}`;
+    return `loja/index.html?s=${param}`;
   }
 
   async function save(storeData) {
