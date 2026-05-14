@@ -41,7 +41,9 @@ window.ProductCatalog = (() => {
 
     // Escuta troca de categoria para refiltrar
     EventBus.on(EventBus.EVENTS.CATEGORY_CHANGED, ({ category }) => {
+      EventBus.log('Category', 'Categoria alterada', { from: activeCategory, to: category });
       activeCategory = category;
+      EventBus.log('Filter', 'Aplicando filtro no catálogo', { category });
       renderProducts();
       document.getElementById('products-area')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });

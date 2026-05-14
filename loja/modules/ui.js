@@ -74,7 +74,9 @@ window.StoreUI = (() => {
       tabs.push(`<button class="cat-tab ${activeCategory==='Ofertas'?'active':''}" data-cat="Ofertas" onclick="window.setCategory('Ofertas')" style="${activeCategory!=='Ofertas'?'color:#ef4444;border-color:#ef4444':''}">🔥 Ofertas</button>`);
     }
     categories.forEach(cat => {
-      tabs.push(`<button class="cat-tab ${activeCategory===cat?'active':''}" data-cat="${cat}" onclick="window.setCategory(${JSON.stringify(cat)})">${cat}</button>`);
+      // Usa aspas simples no atributo para não conflitar com as aspas duplas do JSON.stringify
+      const escapedCat = JSON.stringify(cat).replace(/'/g, "&#39;");
+      tabs.push(`<button class="cat-tab ${activeCategory===cat?'active':''}" data-cat="${cat}" onclick='window.setCategory(${escapedCat})'>${cat}</button>`);
     });
 
     tabsWrap.innerHTML = tabs.join('');
