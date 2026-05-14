@@ -72,6 +72,7 @@ window.StoreBootstrap = (() => {
       // 2. Inicia módulos paralelos (falhas são toleradas/isoladas)
       const modules = [
         { name: 'StoreUI', ref: window.StoreUI },
+        { name: 'SmartBanner', ref: window.SmartBanner },
         { name: 'ProductCatalog', ref: window.ProductCatalog },
         { name: 'CartManager', ref: window.CartManager },
         { name: 'Promotions', ref: window.Promotions }
