@@ -68,18 +68,29 @@ window.StoreUI = (() => {
     if (tabsArea) tabsArea.classList.remove('hidden');
 
     const tabs = [
-      `<button class="cat-tab ${activeCategory==='Todos'?'active':''}" data-cat="Todos" onclick="window.setCategory('Todos')">Todos</button>`
+      `<button class="cat-tab ${activeCategory==='Todos'?'active':''}" data-cat="Todos">Todos</button>`
     ];
     if (hasPromo) {
-      tabs.push(`<button class="cat-tab ${activeCategory==='Ofertas'?'active':''}" data-cat="Ofertas" onclick="window.setCategory('Ofertas')" style="${activeCategory!=='Ofertas'?'color:#ef4444;border-color:#ef4444':''}">🔥 Ofertas</button>`);
+      tabs.push(`<button class="cat-tab ${activeCategory==='Ofertas'?'active':''}" data-cat="Ofertas" style="${activeCategory!=='Ofertas'?'color:#ef4444;border-color:#ef4444':''}">🔥 Ofertas</button>`);
     }
     categories.forEach(cat => {
-      // Usa aspas simples no atributo para não conflitar com as aspas duplas do JSON.stringify
-      const escapedCat = JSON.stringify(cat).replace(/'/g, "&#39;");
-      tabs.push(`<button class="cat-tab ${activeCategory===cat?'active':''}" data-cat="${cat}" onclick='window.setCategory(${escapedCat})'>${cat}</button>`);
+      tabs.push(`<button class="cat-tab ${activeCategory===cat?'active':''}" data-cat="${cat}">${cat}</button>`);
     });
 
     tabsWrap.innerHTML = tabs.join('');
+
+    // Previne múltiplos listeners adicionados se a função rodar várias vezes
+    if (!tabsWrap.dataset.listener) {
+      tabsWrap.addEventListener('click', (e) => {
+        const btn = e.target.closest('.cat-tab');
+        if (!btn) return;
+        const cat = btn.dataset.cat;
+        if (cat) {
+          window.setCategory(cat);
+        }
+      });
+      tabsWrap.dataset.listener = "true";
+    }
   }
 
   function _updateCartIndicators(cart) {
