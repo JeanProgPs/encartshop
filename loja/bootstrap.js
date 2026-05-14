@@ -69,6 +69,7 @@ window.StoreBootstrap = (() => {
       const modules = [
         { name: 'StoreUI', ref: window.StoreUI },
         { name: 'SmartBanner', ref: window.SmartBanner },
+        { name: 'DeliveryModule', ref: window.DeliveryModule },
         { name: 'ProductCatalog', ref: window.ProductCatalog },
         { name: 'CartManager', ref: window.CartManager },
         { name: 'Promotions', ref: window.Promotions }

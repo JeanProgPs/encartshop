@@ -81,21 +81,52 @@ window.CartManager = (() => {
       return; 
     }
 
+    // ── DeliveryModule PRO Integration ──
+    let deliveryMsg = '';
+    let finalTotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    const subtotal = finalTotal;
+
+    if (window.DeliveryModule) {
+      const state = window.DeliveryModule.getState();
+      if (state && state.active) {
+        if (!state.canCheckout) {
+          if (state.reason === 'region_missing') {
+            if (window.showToast) window.showToast('Selecione uma região de entrega.', 'warning');
+            return;
+          }
+          if (state.reason === 'minimum_not_met') {
+            if (window.showToast) window.showToast(`O pedido mínimo para esta região é ${UIRender.fmtPrice(state.minimum_order)}.`, 'warning');
+            return;
+          }
+        }
+        finalTotal = state.total;
+        deliveryMsg = `\n*Entrega:* ${state.selectedZone.region_name}\n*Taxa:* ${state.fee > 0 ? UIRender.fmtPrice(state.fee) : 'Grátis'}\n${state.selectedZone.estimated_time ? `*Prazo:* ${state.selectedZone.estimated_time}\n` : ''}`;
+      } else {
+        // Lógica de fallback para Lojas Básicas (taxa fixa do store)
+        const dFee = Number(store.delivery_fee) || 0;
+        const dFree = Number(store.delivery_free) || 0;
+        const isCombine = dFee === -1;
+        const hasFreeShip = dFree > 0 && subtotal >= dFree;
+        const feeCharged = isCombine ? 0 : (hasFreeShip ? 0 : dFee);
+        if (!isCombine) finalTotal += feeCharged;
+        deliveryMsg = isCombine ? '\n*Entrega:* A combinar\n' : (feeCharged > 0 ? `\n*Taxa de Entrega:* ${UIRender.fmtPrice(feeCharged)}\n` : (hasFreeShip ? '\n*Entrega:* Grátis\n' : '\n'));
+      }
+    }
+
     const btn = document.getElementById('whatsapp-btn');
     if (btn) { btn.disabled = true; btn.textContent = 'Preparando pedido...'; }
 
     try {
-      const subtotal  = cart.reduce((s, i) => s + i.price * i.qty, 0);
       const itemsText = cart.map(i =>
         `• ${i.qty}${i.unit === 'kg' ? 'kg' : 'x'} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`
       ).join('\n');
 
-      const msg = `🛒 *Novo Pedido — ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Total:* ${UIRender.fmtPrice(subtotal)}\n\n_Enviado via EncartShop_`;
+      const msg = `🛒 *Novo Pedido — ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n${deliveryMsg}\n*Subtotal:* ${UIRender.fmtPrice(subtotal)}\n*Total:* ${UIRender.fmtPrice(finalTotal)}\n\n_Enviado via EncartShop_`;
 
       EncartAPI.OrderAPI.create(store.id, {
         customer_name: name,
         items: cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price, unit: i.unit })),
-        total: subtotal,
+        total: finalTotal,
         status: 'novo'
       }).catch(e => EventBus.log('CartManager', 'Pedido não salvo na base', e.message, true));
 

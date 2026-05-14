@@ -155,6 +155,12 @@ window.StoreUI = (() => {
 
     if (!footer) return;
 
+    // Se o DeliveryModule PRO estiver ativo, não desenhamos a tabela padrão do carrinho
+    if (window.DeliveryModule && window.DeliveryModule.getState()?.active) {
+      footer.innerHTML = '';
+      return;
+    }
+
     const subtotal     = cart.reduce((s, i) => s + i.price * i.qty, 0);
     const deliveryFee  = Number(store.delivery_fee)  || 0;
     const deliveryFree = Number(store.delivery_free) || 0;

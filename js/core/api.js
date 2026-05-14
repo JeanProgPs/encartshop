@@ -188,4 +188,19 @@ const AsaasAPI = {
   }
 };
 
-window.EncartAPI = { StoreAPI, ProductAPI, OrderAPI, AsaasAPI };
+const DeliveryAPI = {
+  async getActiveByStore(storeId) {
+    if (!storeId) return [];
+    try {
+      const { data, error } = await window.sb.from('delivery_zones')
+        .select('*')
+        .eq('store_id', storeId)
+        .eq('active', true)
+        .order('region_name', { ascending: true });
+      if (error) { console.error('DeliveryAPI.getActiveByStore:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  }
+};
+
+window.EncartAPI = { StoreAPI, ProductAPI, OrderAPI, AsaasAPI, DeliveryAPI };
