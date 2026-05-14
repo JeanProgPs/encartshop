@@ -62,6 +62,7 @@ window.ProductCatalog = (() => {
     if (!area) return;
 
     if (!allProducts.length) {
+      EventBus.log('RenderMode', 'Catálogo vazio');
       area.innerHTML = `
         <div style="text-align:center;padding:60px 24px;color:var(--text-muted)">
           <div style="font-size:3rem;margin-bottom:12px">🛍️</div>
@@ -70,12 +71,18 @@ window.ProductCatalog = (() => {
       return;
     }
 
-    if (activeCategory === 'Todos') {
+    // Normalização para evitar problemas com aspas ou espaços vindos do UI
+    const targetCat = (activeCategory || '').trim();
+    EventBus.log('Render', `Iniciando renderização para: [${targetCat}]`);
+
+    if (targetCat === 'Todos') {
+      EventBus.log('RenderMode', 'Renderizando todos os grupos (Agrupado)');
       area.innerHTML = _renderGrouped();
       return;
     }
 
-    if (activeCategory === 'Ofertas') {
+    if (targetCat === 'Ofertas') {
+      EventBus.log('RenderMode', 'Renderizando aba de Ofertas');
       const offerProds = allProducts.filter(p => !!p.promo_price);
       if (!offerProds.length) {
         area.innerHTML = '<div style="text-align:center;padding:50px;color:var(--text-muted)">Nenhuma oferta no momento.</div>';
@@ -85,12 +92,15 @@ window.ProductCatalog = (() => {
       return;
     }
 
-    const filtered = allProducts.filter(p => p.category === activeCategory);
+    // Filtro estrito: compara categoria normalizada
+    const filtered = allProducts.filter(p => (p.category || '').trim() === targetCat);
+    EventBus.log('RenderMode', `Renderizando Categoria Simples: ${targetCat}`, { count: filtered.length });
+    
     if (!filtered.length) {
       area.innerHTML = '<div style="text-align:center;padding:50px;color:var(--text-muted)">Nenhum produto nesta categoria.</div>';
       return;
     }
-    area.innerHTML = _renderGroup(activeCategory, filtered, false);
+    area.innerHTML = _renderGroup(targetCat, filtered, false);
   }
 
   function _renderGrouped() {
