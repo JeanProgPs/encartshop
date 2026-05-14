@@ -65,11 +65,7 @@ window.StoreBootstrap = (() => {
     try {
       await checkDependencies();
 
-      // 1. Inicia StoreContext (dependência central bloqueante)
-      if (!window.StoreContext) throw new Error('Módulo StoreContext não encontrado.');
-      await withTimeout(window.StoreContext.init(), 'StoreContext');
-
-      // 2. Inicia módulos paralelos (falhas são toleradas/isoladas)
+      // 1. Instancia módulos paralelos primeiro para registrar os listeners
       const modules = [
         { name: 'StoreUI', ref: window.StoreUI },
         { name: 'SmartBanner', ref: window.SmartBanner },
@@ -80,14 +76,16 @@ window.StoreBootstrap = (() => {
 
       const promises = modules
         .filter(m => m.ref && typeof m.ref.init === 'function')
-        .map(m => withTimeout(m.ref.init(), m.name)
-          .catch(err => {
+        .map(m => m.ref.init().catch(err => {
             window.EventBus.log('Bootstrap', `Falha isolada no módulo ${m.name}`, err.message, true);
-            // Retorna null para Promise.allSettled não quebrar a stack
-            return null; 
-          })
-        );
+            return null;
+        }));
 
+      // 2. Inicia StoreContext (dependência central bloqueante). Ele fará os fetchs e emitirá STORE_LOADED
+      if (!window.StoreContext) throw new Error('Módulo StoreContext não encontrado.');
+      await withTimeout(window.StoreContext.init(), 'StoreContext');
+
+      // 3. Aguarda resolução de qualquer promise residual de listener (já foram trigados pelos emits)
       await Promise.allSettled(promises);
 
       // Finaliza carregamento
