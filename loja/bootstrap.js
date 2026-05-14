@@ -1,130 +1,113 @@
 /**
- * EncartShop — Loja Public Bootstrap v1
- * Responsável por garantir o carregamento seguro, validar dependências,
- * exibir a tela de loading global e fornecer fallbacks de erro graciosos.
+ * EncartShop — Loja Pública / Bootstrap Modular
+ * Orquestra a inicialização dos módulos isolados da loja com timeout e retry.
  */
 
-const StoreBootstrap = (() => {
-  const REQUIRED_DEPS = ['sb', 'EncartAPI', 'AuthService', 'StoreModule', 'OrderModule', 'SubscriptionModule', 'UIRender', 'EncartHelpers'];
-  const MAX_RETRIES = 3;
-  const RETRY_DELAY = 1000;
-
-  // Trata erros globais que escaparam das funções normais
-  function setupGlobalErrorHandling() {
-    window.addEventListener('error', (event) => {
-      console.error('[Bootstrap] Erro global capturado:', event.error || event.message);
-      // Apenas exibe o fallback se a loja ainda não carregou ou foi um erro muito crítico
-      if (!window.LojaApp || !window.LojaApp.isInitialized) {
-        showCriticalError(event.error?.message || event.message || 'Erro inesperado no carregamento.');
-      }
-    });
-
-    window.addEventListener('unhandledrejection', (event) => {
-      console.error('[Bootstrap] Promise não tratada:', event.reason);
-      if (!window.LojaApp || !window.LojaApp.isInitialized) {
-        showCriticalError(event.reason?.message || 'Falha na comunicação com o servidor.');
-      }
-    });
-  }
-
-  function renderLoadingScreen() {
-    if (document.getElementById('bootstrap-loading')) return;
-
-    const el = document.createElement('div');
-    el.id = 'bootstrap-loading';
-    el.style.cssText = `
-      position: fixed; inset: 0; background: var(--bg, #f8fafc);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 99999; gap: 16px; transition: opacity 0.4s ease;
+window.StoreBootstrap = (() => {
+  const MODULE_TIMEOUT_MS = 8000;
+  
+  function createLoadingScreen() {
+    if (document.getElementById('encart-boot-screen')) return;
+    const div = document.createElement('div');
+    div.id = 'encart-boot-screen';
+    div.style.cssText = `
+      position:fixed;inset:0;background:#ffffff;z-index:99999;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      transition:opacity 0.5s ease;font-family:sans-serif;
     `;
-    el.innerHTML = `
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--brand, #4f46e5)" stroke-width="2" class="bootstrap-spin">
-        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-      </svg>
-      <div style="color: var(--text-muted, #64748b); font-size: 0.9rem; font-family: sans-serif; font-weight: 500;">
-        Preparando a loja...
-      </div>
-      <style>@keyframes bootstrap-spin { 100% { transform: rotate(360deg); } } .bootstrap-spin { animation: bootstrap-spin 1.5s linear infinite; }</style>
+    div.innerHTML = `
+      <div style="width:40px;height:40px;border:4px solid #f1f5f9;border-top-color:#4f46e5;border-radius:50%;animation:encart-spin 1s linear infinite;margin-bottom:20px;"></div>
+      <h2 style="color:#0f172a;font-size:1.2rem;margin:0 0 8px 0;">Preparando a loja...</h2>
+      <style>@keyframes encart-spin { to { transform: rotate(360deg); } }</style>
     `;
-    document.body.prepend(el);
+    document.body.appendChild(div);
   }
 
   function removeLoadingScreen() {
-    const el = document.getElementById('bootstrap-loading');
-    if (el) {
-      el.style.opacity = '0';
-      setTimeout(() => el.remove(), 400);
+    const screen = document.getElementById('encart-boot-screen');
+    if (screen) {
+      screen.style.opacity = '0';
+      setTimeout(() => screen.remove(), 500);
     }
   }
 
-  function showCriticalError(message) {
-    removeLoadingScreen();
-    // Previne que o erro substitua um DOM já útil. Só sobrepõe se a loja estiver vazia
-    const mainContent = document.getElementById('main-content');
-    if (mainContent && mainContent.innerHTML.trim().length > 200 && window.LojaApp?.isInitialized) {
-      if (window.showToast) window.showToast('Erro: ' + message, 'error');
-      return;
-    }
-
-    document.body.innerHTML = `
-      <div style="text-align:center; padding:80px 24px; font-family:var(--font-body, sans-serif); background:var(--bg, #f8fafc); min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-        <div style="font-size:3.5rem; margin-bottom:20px;">⚠️</div>
-        <h1 style="font-size:1.3rem; color:var(--text, #1e293b); margin-bottom:12px; font-weight:800;">Oops! Algo deu errado.</h1>
-        <p style="color:var(--text-muted, #64748b); margin-top:0; max-width:400px; line-height:1.6; font-size:0.95rem;">
-          Não conseguimos carregar a loja corretamente.<br>
-          <span style="font-size:0.8rem; opacity:0.8;">Detalhe: ${message}</span>
-        </p>
-        <button onclick="window.location.reload()" style="margin-top:28px; background:var(--brand, #4f46e5); color:#fff; border:none; padding:12px 24px; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.95rem; box-shadow:0 4px 12px rgba(79,70,229,0.3);">
-          🔄 Tentar Novamente
-        </button>
-      </div>`;
-  }
-
-  function validateDependencies() {
-    const missing = REQUIRED_DEPS.filter(dep => typeof window[dep] === 'undefined');
-    if (missing.length > 0) {
-      throw new Error(`Dependências ausentes: ${missing.join(', ')}`);
+  function showErrorScreen(message) {
+    const screen = document.getElementById('encart-boot-screen');
+    if (screen) {
+      screen.innerHTML = `
+        <div style="font-size:3rem;margin-bottom:16px;">⚠️</div>
+        <h2 style="color:#ef4444;font-size:1.4rem;margin:0 0 8px 0;text-align:center;">Erro ao carregar loja</h2>
+        <p style="color:#64748b;max-width:300px;text-align:center;line-height:1.5;">${message}</p>
+        <button onclick="window.location.reload()" style="margin-top:24px;padding:10px 20px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Tentar Novamente</button>
+      `;
+      screen.style.background = '#f8fafc';
     }
   }
 
-  async function boot(attempt = 1) {
-    console.info(`[Bootstrap] Iniciando boot... (Tentativa ${attempt}/${MAX_RETRIES})`);
-    renderLoadingScreen();
-    setupGlobalErrorHandling();
+  async function checkDependencies() {
+    if (typeof window.sb === 'undefined') throw new Error('Falha na conexão (Supabase).');
+    if (typeof window.EncartAPI === 'undefined') throw new Error('Módulos de API ausentes.');
+    if (typeof window.EventBus === 'undefined') throw new Error('EventBus ausente.');
+  }
+
+  const withTimeout = (promise, moduleName) => {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error(`Timeout no módulo: ${moduleName}`)), MODULE_TIMEOUT_MS)
+      )
+    ]);
+  };
+
+  async function boot() {
+    createLoadingScreen();
 
     try {
-      // Pequeno delay na primeira tentativa para dar chance aos scripts síncronos pesados
-      if (attempt === 1) await new Promise(r => setTimeout(r, 100));
+      await checkDependencies();
 
-      validateDependencies();
+      // 1. Inicia StoreContext (dependência central bloqueante)
+      if (!window.StoreContext) throw new Error('Módulo StoreContext não encontrado.');
+      await withTimeout(window.StoreContext.init(), 'StoreContext');
 
-      if (typeof window.LojaApp === 'undefined' || typeof window.LojaApp.init !== 'function') {
-        throw new Error('LojaApp não definida ou sem método init()');
-      }
+      // 2. Inicia módulos paralelos (falhas são toleradas/isoladas)
+      const modules = [
+        { name: 'StoreUI', ref: window.StoreUI },
+        { name: 'ProductCatalog', ref: window.ProductCatalog },
+        { name: 'CartManager', ref: window.CartManager },
+        { name: 'Promotions', ref: window.Promotions }
+      ];
 
-      console.info('[Bootstrap] Dependências validadas. Iniciando LojaApp...');
-      await window.LojaApp.init();
-      
-      console.info('[Bootstrap] Boot concluído com sucesso.');
+      const promises = modules
+        .filter(m => m.ref && typeof m.ref.init === 'function')
+        .map(m => withTimeout(m.ref.init(), m.name)
+          .catch(err => {
+            window.EventBus.log('Bootstrap', `Falha isolada no módulo ${m.name}`, err.message, true);
+            // Retorna null para Promise.allSettled não quebrar a stack
+            return null; 
+          })
+        );
+
+      await Promise.allSettled(promises);
+
+      // Finaliza carregamento
       removeLoadingScreen();
-
-    } catch (error) {
-      console.warn(`[Bootstrap] Falha na tentativa ${attempt}:`, error.message);
-      
-      if (attempt < MAX_RETRIES) {
-        console.info(`[Bootstrap] Agendando nova tentativa em ${RETRY_DELAY}ms...`);
-        setTimeout(() => boot(attempt + 1), RETRY_DELAY);
-      } else {
-        showCriticalError(error.message || 'Falha ao inicializar dependências da loja.');
-      }
+    } catch (err) {
+      console.error('[Bootstrap] Erro Fatal:', err);
+      showErrorScreen(err.message || 'Falha de conexão. Verifique sua internet.');
     }
   }
 
-  return { boot, showCriticalError, removeLoadingScreen };
+  // Captura erros não tratados genéricos para evitar tela branca pura
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('[Global Error]', event.reason);
+  });
+
+  return { boot };
 })();
 
-// Aguarda o DOMContentLoaded para iniciar o bootstrap, 
-// dando chance para os scripts injetados no final do body serem lidos pelo parser.
-document.addEventListener('DOMContentLoaded', () => {
-  StoreBootstrap.boot();
-});
+// Inicia o processo quando o DOM estiver pronto
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => window.StoreBootstrap.boot());
+} else {
+  window.StoreBootstrap.boot();
+}
