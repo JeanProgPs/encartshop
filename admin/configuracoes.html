@@ -178,7 +178,12 @@
     if (!_store) return;
 
     const storeUrl = StoreModule.getStoreUrl(_store);
-    document.getElementById('loja-link').textContent = storeUrl;
+    const linkEl = document.getElementById('loja-link');
+    if (linkEl) {
+      linkEl.textContent = storeUrl;
+      linkEl.parentElement.onclick = () => window.open(storeUrl, '_blank');
+      linkEl.style.cursor = 'pointer';
+    }
 
     document.getElementById('s-name').value          = _store.name          || '';
     document.getElementById('s-slogan').value        = _store.slogan        || '';

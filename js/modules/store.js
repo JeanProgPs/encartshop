@@ -55,15 +55,8 @@ const StoreModule = (() => {
   function getStoreUrl(store) {
     if (!store) return '';
     
-    // Prioriza o slug do banco, se não houver gera na hora (fallback)
-    const slug = store.slug || slugify(store.name || 'loja');
-    
-    const isInsideAdmin = window.location.pathname.includes('/admin/');
-    if (isInsideAdmin || window.location.pathname.endsWith('/admin')) {
-        return `../loja/index.html?s=${slug}`;
-    }
-
-    return `loja/index.html?s=${slug}`;
+    const param = store.slug ? store.slug : store.id;
+    return `https://encartshop.com/loja/${param}`;
   }
 
   async function save(storeData) {

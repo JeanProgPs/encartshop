@@ -150,8 +150,8 @@
   }
 
   function getStoreUrl(store) {
-    const slug = slugify(store.name || 'loja');
-    return `${window.location.origin}/loja/index.html?s=${slug}`;
+    const param = store.slug || store.id;
+    return `https://encartshop.com/loja/${param}`;
   }
 
   function copyLink(url) {
