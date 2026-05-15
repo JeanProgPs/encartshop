@@ -4,31 +4,366 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Suporte – EncartShop</title>
+  <meta name="description" content="Entre em contato com o suporte da EncartShop. Estamos prontos para ajudar você.">
   <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { max-width: 800px; margin: 0 auto; padding: 2rem; font-family: var(--font-body, Arial, sans-serif); }
-    h1 { font-size: 2rem; margin-bottom: 1rem; }
-    p, li { margin-bottom: 1rem; line-height: 1.6; }
-    ul { list-style: disc inside; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: #0f0f13;
+      color: #e2e2e8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1.5rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #8b8b9a;
+      text-decoration: none;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: #7c6af5; }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .header .badge {
+      display: inline-block;
+      background: rgba(124, 106, 245, 0.15);
+      color: #9d8ff7;
+      border: 1px solid rgba(124, 106, 245, 0.3);
+      border-radius: 50px;
+      padding: 0.3rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #fff 0%, #9d8ff7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    .header p {
+      color: #8b8b9a;
+      font-size: 1rem;
+    }
+
+    .contact-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .contact-card {
+      background: #1a1a24;
+      border: 1px solid #2a2a38;
+      border-radius: 14px;
+      padding: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      text-decoration: none;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .contact-card:hover {
+      border-color: #7c6af5;
+      transform: translateY(-2px);
+    }
+    .contact-card .icon {
+      font-size: 1.6rem;
+      flex-shrink: 0;
+    }
+    .contact-card .info strong {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #8b8b9a;
+      margin-bottom: 0.2rem;
+    }
+    .contact-card .info span {
+      font-size: 0.9rem;
+      color: #e2e2e8;
+      font-weight: 500;
+    }
+
+    .form-card {
+      background: #1a1a24;
+      border: 1px solid #2a2a38;
+      border-radius: 18px;
+      padding: 2rem;
+    }
+    .form-card h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: #fff;
+    }
+
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #9d9daf;
+      margin-bottom: 0.4rem;
+    }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      background: #12121a;
+      border: 1px solid #2a2a38;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: #e2e2e8;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      border-color: #7c6af5;
+      box-shadow: 0 0 0 3px rgba(124, 106, 245, 0.15);
+    }
+    .form-group textarea { resize: vertical; min-height: 130px; }
+    .form-group select option { background: #1a1a24; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #7c6af5, #5b4dd4);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 0.9rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .btn-submit:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .alert {
+      display: none;
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin-top: 1rem;
+      font-size: 0.92rem;
+      font-weight: 500;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .alert.show { display: flex; }
+    .alert-success { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; }
+    .alert-error   { background: rgba(239, 68, 68, 0.1);  border: 1px solid rgba(239, 68, 68, 0.3);  color: #f87171; }
+
+    .footer-note {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.82rem;
+      color: #55556a;
+    }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-  <h1>Suporte EncartShop</h1>
-  <p>Precisa de ajuda? Estamos aqui para atender você.</p>
-  <ul>
-    <li><strong>E‑mail:</strong> <a href="mailto:suporteencartshop@gmail.com">suporteencartshop@gmail.com</a></li>
-    <li><strong>WhatsApp:</strong> (21) 97625‑5597</li>
-    <li><strong>Horário de atendimento:</strong> Seg‑Sex, 9h‑18h</li>
-  </ul>
-  <p>Preencha o formulário abaixo e retornaremos em até 24h.</p>
-  <form action="#" method="POST">
-    <label for="nome">Nome:</label><br>
-    <input type="text" id="nome" name="nome" required style="width:100%;margin-bottom:0.5rem;">
-    <label for="email">E‑mail:</label><br>
-    <input type="email" id="email" name="email" required style="width:100%;margin-bottom:0.5rem;">
-    <label for="mensagem">Mensagem:</label><br>
-    <textarea id="mensagem" name="mensagem" rows="5" required style="width:100%;margin-bottom:0.5rem;"></textarea>
-    <button type="submit" class="btn btn-primary">Enviar</button>
-  </form>
+  <div class="container">
+    <a href="/" class="back-link">← Voltar ao início</a>
+
+    <div class="header">
+      <div class="badge">Suporte</div>
+      <h1>Como podemos ajudar?</h1>
+      <p>Nossa equipe responde em até 24h úteis.</p>
+    </div>
+
+    <div class="contact-cards">
+      <a href="mailto:suporteencartshop@gmail.com" class="contact-card">
+        <span class="icon">✉️</span>
+        <div class="info">
+          <strong>E-mail</strong>
+          <span>suporteencartshop@gmail.com</span>
+        </div>
+      </a>
+      <a href="https://wa.me/5521976255597" target="_blank" class="contact-card">
+        <span class="icon">💬</span>
+        <div class="info">
+          <strong>WhatsApp</strong>
+          <span>(21) 97625‑5597</span>
+        </div>
+      </a>
+      <div class="contact-card">
+        <span class="icon">🕐</span>
+        <div class="info">
+          <strong>Horário</strong>
+          <span>Seg–Sex, 9h–18h</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h2>📩 Envie uma mensagem</h2>
+      <form id="support-form" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nome">Seu nome *</label>
+            <input type="text" id="nome" name="nome" placeholder="João Silva" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Seu e-mail *</label>
+            <input type="email" id="email" name="email" placeholder="voce@email.com" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="assunto">Assunto *</label>
+          <select id="assunto" name="assunto" required>
+            <option value="" disabled selected>Selecione um assunto</option>
+            <option value="Dúvida sobre planos">Dúvida sobre planos</option>
+            <option value="Problema técnico">Problema técnico</option>
+            <option value="Pagamento / Cobrança">Pagamento / Cobrança</option>
+            <option value="Solicitar cancelamento">Solicitar cancelamento</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="mensagem">Mensagem *</label>
+          <textarea id="mensagem" name="mensagem" placeholder="Descreva sua dúvida ou problema em detalhes..." required></textarea>
+        </div>
+
+        <button type="submit" class="btn-submit" id="btn-submit">
+          <span class="spinner" id="spinner"></span>
+          <span id="btn-text">Enviar mensagem</span>
+        </button>
+
+        <div class="alert alert-success" id="alert-success">
+          ✅ Mensagem enviada com sucesso! Retornaremos em breve.
+        </div>
+        <div class="alert alert-error" id="alert-error">
+          ❌ <span id="error-msg">Ocorreu um erro ao enviar. Tente novamente ou nos contate pelo WhatsApp.</span>
+        </div>
+      </form>
+    </div>
+
+    <p class="footer-note">© 2025 EncartShop · Todos os direitos reservados.</p>
+  </div>
+
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    // ─── CONFIGURAÇÃO EMAILJS ──────────────────────────────────────────────────
+    // 1. Crie uma conta gratuita em https://www.emailjs.com
+    // 2. Crie um Service (Gmail) → anote o SERVICE_ID
+    // 3. Crie um Template com variáveis: {{nome}}, {{email}}, {{assunto}}, {{mensagem}}
+    //    → anote o TEMPLATE_ID
+    // 4. Em Account > API Keys → anote a PUBLIC_KEY
+    // 5. Substitua os valores abaixo:
+    const EMAILJS_PUBLIC_KEY  = 'YgCdkt_49AF5j11YC';
+    const EMAILJS_SERVICE_ID  = 'service_k7kb6r6';
+    const EMAILJS_TEMPLATE_ID = 'template_cwr';
+    // ──────────────────────────────────────────────────────────────────────────
+
+    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+    const form      = document.getElementById('support-form');
+    const btnSubmit = document.getElementById('btn-submit');
+    const btnText   = document.getElementById('btn-text');
+    const spinner   = document.getElementById('spinner');
+    const alertOk   = document.getElementById('alert-success');
+    const alertErr  = document.getElementById('alert-error');
+    const errMsg    = document.getElementById('error-msg');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Validação básica
+      const nome     = form.nome.value.trim();
+      const email    = form.email.value.trim();
+      const assunto  = form.assunto.value;
+      const mensagem = form.mensagem.value.trim();
+
+      if (!nome || !email || !assunto || !mensagem) {
+        showError('Por favor, preencha todos os campos obrigatórios.');
+        return;
+      }
+
+      // Loading state
+      alertOk.classList.remove('show');
+      alertErr.classList.remove('show');
+      btnSubmit.disabled = true;
+      spinner.style.display = 'block';
+      btnText.textContent = 'Enviando...';
+
+      try {
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+          name: nome,
+          title: assunto,
+          email,
+          mensagem,
+          reply_to: email,
+        });
+
+        alertOk.classList.add('show');
+        form.reset();
+      } catch (err) {
+        console.error('EmailJS error:', err);
+        showError('Ocorreu um erro ao enviar. Tente novamente ou nos contate pelo WhatsApp.');
+      } finally {
+        btnSubmit.disabled = false;
+        spinner.style.display = 'none';
+        btnText.textContent = 'Enviar mensagem';
+      }
+    });
+
+    function showError(msg) {
+      errMsg.textContent = msg;
+      alertErr.classList.add('show');
+    }
+  </script>
 </body>
 </html>
