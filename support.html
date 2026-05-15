@@ -352,7 +352,9 @@
         form.reset();
       } catch (err) {
         console.error('EmailJS error:', err);
-        showError('Ocorreu um erro ao enviar. Tente novamente ou nos contate pelo WhatsApp.');
+        const status = err?.status || err?.statusCode || '';
+        const text   = err?.text   || err?.message   || JSON.stringify(err);
+        showError(`Erro ${status}: ${text}`);
       } finally {
         btnSubmit.disabled = false;
         spinner.style.display = 'none';
