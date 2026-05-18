@@ -50,8 +50,45 @@ window.StoreContext = (() => {
       document.documentElement.style.setProperty('--brand-glow', activeStore.color + '22');
     }
 
+    // 6. Aplicar identidade visual (logo + branding)
+    applyBranding(activeStore);
+
     EventBus.log('StoreContext', 'Loja carregada com sucesso', { id: activeStore.id });
     EventBus.emit(EventBus.EVENTS.STORE_LOADED, { store: activeStore, isOwner });
+  }
+
+  /**
+   * Injeta a logo no header da vitrine pública e atualiza meta tags OG inline.
+   * Fallback: exibe a inicial do nome da loja em fundo colorido.
+   */
+  function applyBranding(store) {
+    const logoEl = document.getElementById('store-logo-el');
+    if (!logoEl) return;
+
+    if (store.logo_url) {
+      // Substitui o ícone placeholder por imagem real
+      logoEl.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = store.logo_url;
+      img.alt = store.name || 'Logo';
+      img.style.cssText = 'width:100%; height:100%; object-fit:cover; border-radius:10px;';
+      img.onerror = () => {
+        // Fallback se a URL falhar
+        logoEl.innerHTML = `<span style="font-weight:900;color:#fff;">${(store.name||'L').charAt(0).toUpperCase()}</span>`;
+      };
+      logoEl.appendChild(img);
+    } else {
+      // Fallback: inicial do nome da loja
+      logoEl.innerHTML = `<span style="font-weight:900;color:#fff;font-size:1rem;">${(store.name||'L').charAt(0).toUpperCase()}</span>`;
+    }
+
+    // Atualiza og:image inline se existir placeholder
+    if (store.logo_url) {
+      const ogImg = document.querySelector('meta[property="og:image"]');
+      if (ogImg) ogImg.setAttribute('content', store.logo_url);
+      const twImg = document.querySelector('meta[property="twitter:image"]');
+      if (twImg) twImg.setAttribute('content', store.logo_url);
+    }
   }
 
   function getStore() { return activeStore; }

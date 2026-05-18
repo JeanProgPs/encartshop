@@ -6,6 +6,13 @@
   <title>Loja — EncartShop</title>
   <meta name="description" content="Confira nossas ofertas e faça seu pedido pelo WhatsApp!">
   <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <!-- Open Graph (preenchido dinamicamente pelo StoreContext / Edge Function) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Loja — EncartShop">
+  <meta property="og:description" content="Confira nossas ofertas e faça seu pedido pelo WhatsApp!">
+  <meta property="og:image" content="https://encartshop.com/assets/preview-default.png">
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:image" content="https://encartshop.com/assets/preview-default.png">
   <link rel="stylesheet" href="/style.css">
   <style>
     /* ── Reset loja ──────────────────────────────────────────── */
@@ -319,7 +326,9 @@
 
 <header class="store-header">
   <div class="store-logo-wrap">
-    <div class="store-logo-icon">🛒</div>
+    <div class="store-logo-icon" id="store-logo-el">
+      <span style="font-weight:900;color:#fff;">🛒</span>
+    </div>
     <span id="header-store-name" class="store-name-text">...</span>
   </div>
   <button id="header-cart-btn" class="header-cart-btn hidden" onclick="openCart()">
