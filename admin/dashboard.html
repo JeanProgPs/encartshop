@@ -93,41 +93,6 @@
         </a>
       </div>
 
-      <!-- Central de Aprendizado -->
-      <h3 style="font-size:1rem;font-weight:700;margin:32px 0 16px;">🎥 Guia de Início Rápido</h3>
-      <div class="card" style="padding:24px; display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:24px; overflow:hidden;">
-        <div style="position:relative; border-radius:12px; overflow:hidden; border:1px solid var(--border); box-shadow:var(--shadow-sm); aspect-ratio:16/10; background:#000; display:flex; align-items:center; justify-content:center;">
-          <img src="/onboarding_tutorial.webp" alt="Tutorial EncartShop" style="width:100%; height:100%; object-fit:contain;" id="tutorial-video">
-          <!-- Legendas Dinâmicas em Glassmorphism -->
-          <div style="position:absolute; bottom:12px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:8px 16px; border-radius:8px; font-size:0.75rem; text-align:center; max-width:85%; width:max-content; z-index:10; font-weight:500;" id="tutorial-caption">
-            Carregando legenda...
-          </div>
-        </div>
-        
-        <div style="display:flex; flex-direction:column; justify-content:center; gap:16px;">
-          <div>
-            <span class="badge" style="background:var(--brand-glow); color:var(--brand); font-weight:700; margin-bottom:8px; display:inline-block; border-radius:6px; padding:4px 8px; font-size:0.7rem;">Tutorial Legendado</span>
-            <h4 style="font-size:1.15rem; font-weight:700; color:var(--text); margin-bottom:6px; margin-top:0;">Como cadastrar sua loja & primeiro produto</h4>
-            <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin:0;">Assista ao lado o passo a passo completo ilustrado de como configurar suas taxas de entrega, planos e publicar o primeiro item.</p>
-          </div>
-          
-          <div style="display:flex; flex-direction:column; gap:10px;" id="tutorial-steps">
-            <div class="step-item active" data-step="1" style="display:flex; align-items:flex-start; gap:10px; font-size:0.8rem; padding:10px; border-radius:8px; border:1px solid transparent; transition:all 0.3s ease;">
-              <span style="background:var(--brand); color:#fff; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700; font-size:0.75rem; transition:all 0.3s ease;">1</span>
-              <span><strong>Preencha o Assistente:</strong> Insira nome, slogan, horário e cores da marca na Etapa 1.</span>
-            </div>
-            <div class="step-item" data-step="2" style="display:flex; align-items:flex-start; gap:10px; font-size:0.8rem; padding:10px; border-radius:8px; border:1px solid transparent; transition:all 0.3s ease;">
-              <span style="background:var(--border); color:var(--text-muted); width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700; font-size:0.75rem; transition:all 0.3s ease;">2</span>
-              <span><strong>Defina Frete e Atendimento:</strong> Configure o WhatsApp e as taxas de entrega ideais nas etapas seguintes.</span>
-            </div>
-            <div class="step-item" data-step="3" style="display:flex; align-items:flex-start; gap:10px; font-size:0.8rem; padding:10px; border-radius:8px; border:1px solid transparent; transition:all 0.3s ease;">
-              <span style="background:var(--border); color:var(--text-muted); width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700; font-size:0.75rem; transition:all 0.3s ease;">3</span>
-              <span><strong>Cadastre seu Primeiro Produto:</strong> Crie um produto no catálogo e veja a foto em tempo real!</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Pedidos Recentes -->
       <div class="recent-orders">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -259,56 +224,6 @@
     navigator.clipboard?.writeText(url).then(() => showToast('Link copiado!', 'success')).catch(() => showToast('Não foi possível copiar.', 'error'));
   }
 
-  // ── Controle de Legendas Sincronizadas do Vídeo Tutorial ─────────
-  function initTutorialCaptions() {
-    const captionEl = document.getElementById('tutorial-caption');
-    const stepItems = document.querySelectorAll('.step-item');
-    if (!captionEl) return;
-
-    const captionTracks = [
-      { start: 0,  end: 4,  step: 1, text: "Passo 1: Comece preenchendo as informações básicas, horário e cores da loja." },
-      { start: 4,  end: 8,  step: 2, text: "Passo 2: Digite seu WhatsApp para receber os pedidos e configure o banner no topo." },
-      { start: 8,  end: 12, step: 2, text: "Passo 3: Defina a taxa de entrega e o valor mínimo para ativar o Frete Grátis." },
-      { start: 12, end: 16, step: 2, text: "Passo 4: Escolha seu plano administrativo e crie suas credenciais de login." },
-      { start: 16, end: 20, step: 3, text: "Passo 5: No menu Produtos, clique em Adicionar e insira título, preço e link da imagem." },
-      { start: 20, end: 27, step: 3, text: "Pronto! O sistema gera o preview do produto em tempo real e salva no seu catálogo. 🎉" }
-    ];
-
-    let currentTime = 0;
-    const duration = 27; // duração total aproximada em segundos do loop WebP
-
-    setInterval(() => {
-      currentTime = (currentTime + 1) % duration;
-      const track = captionTracks.find(t => currentTime >= t.start && currentTime < t.end);
-      if (track) {
-        captionEl.textContent = track.text;
-        
-        // Atualiza a classe ativa nos cards de texto lateral
-        stepItems.forEach(item => {
-          const stepNum = parseInt(item.dataset.step);
-          if (stepNum === track.step) {
-            item.style.background = 'var(--brand-glow)';
-            item.style.borderColor = 'var(--brand)';
-            const circle = item.querySelector('span');
-            if (circle) {
-              circle.style.background = 'var(--brand)';
-              circle.style.color = '#fff';
-            }
-          } else {
-            item.style.background = 'transparent';
-            item.style.borderColor = 'transparent';
-            const circle = item.querySelector('span');
-            if (circle) {
-              circle.style.background = 'var(--border)';
-              circle.style.color = 'var(--text-muted)';
-            }
-          }
-        });
-      }
-    }, 1000);
-  }
-
-  initTutorialCaptions();
   initDashboard();
 </script>
 </body>
