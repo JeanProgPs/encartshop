@@ -29,6 +29,7 @@
       max-width: 1100px;
       margin: 0 auto 100px;
       padding: 0 24px;
+      transition: max-width 0.3s ease;
     }
 
     .demo-footer-cta {
@@ -64,10 +65,50 @@
       color: var(--text);
     }
 
+    /* Player controls */
+    .player-control-bar {
+      background: rgba(0,0,0,0.2);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .control-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .control-btn:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: var(--text-muted);
+    }
+    .control-btn.btn-primary {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+    }
+    .control-btn.btn-primary:hover {
+      background: var(--brand-dark);
+      border-color: var(--brand-dark);
+    }
+
     @media (max-width: 768px) {
       .demo-hero { padding: 80px 24px 30px; }
       .landing-nav { padding: 0 16px; }
       .tab-btn { width: 100%; justify-content: center; }
+      .player-control-bar { justify-content: center; }
     }
   </style>
 </head>
@@ -96,7 +137,7 @@
   <p>Explore como configurar seu negócio e navegar pelo painel do lojista na prática antes de criar sua conta.</p>
 </section>
 
-<div class="demo-container">
+<div class="demo-container" id="player-container">
   
   <!-- Tabs Navigation -->
   <div style="display:flex; justify-content:center; gap:16px; margin-bottom:40px; flex-wrap:wrap;">
@@ -108,14 +149,45 @@
     </button>
   </div>
 
-  <div class="card" style="padding:28px; display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:32px; overflow:hidden; text-align:left; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-xl);">
+  <div class="card" id="player-card" style="padding:28px; display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:32px; overflow:hidden; text-align:left; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-xl); transition: max-width 0.3s ease;">
     
     <!-- Player Video Column -->
-    <div style="position:relative; border-radius:12px; overflow:hidden; border:1px solid var(--border); box-shadow:var(--shadow-sm); aspect-ratio:16/10; background:#000; display:flex; align-items:center; justify-content:center;">
-      <img src="onboarding_tutorial.webp" alt="Tutorial EncartShop" style="width:100%; height:100%; object-fit:contain;" id="tutorial-video">
-      <!-- Legendas Dinâmicas em Glassmorphism -->
-      <div style="position:absolute; bottom:12px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:8px 16px; border-radius:8px; font-size:0.75rem; text-align:center; max-width:85%; width:max-content; z-index:10; font-weight:500;" id="tutorial-caption">
-        Carregando legenda...
+    <div style="display:flex; flex-direction:column; border-radius:12px; overflow:hidden; border:1px solid var(--border); background:var(--bg-body);">
+      
+      <!-- Video viewport wrapper -->
+      <div id="player-wrapper" style="position:relative; aspect-ratio:16/10; background:#000; display:flex; align-items:center; justify-content:center; width: 100%;">
+        <img src="onboarding_tutorial.webp" alt="Tutorial EncartShop" style="width:100%; height:100%; object-fit:contain; transition: opacity 0.3s ease;" id="tutorial-video">
+        
+        <!-- Pause overlay -->
+        <div id="pause-overlay" style="display:none; position:absolute; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; flex-direction:column; gap:12px; z-index:9;">
+          <div style="width:56px; height:56px; background:var(--brand); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.6rem; cursor:pointer; box-shadow:var(--shadow-brand);" onclick="togglePlayPause()">▶️</div>
+          <span style="color:#fff; font-weight:700; font-size:0.9rem;">Tutorial Pausado</span>
+        </div>
+
+        <!-- Legendas Dinâmicas em Glassmorphism -->
+        <div style="position:absolute; bottom:12px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:8px 16px; border-radius:8px; font-size:0.75rem; text-align:center; max-width:85%; width:max-content; z-index:10; font-weight:500;" id="tutorial-caption">
+          Carregando legenda...
+        </div>
+      </div>
+
+      <!-- Video Control Bar -->
+      <div class="player-control-bar">
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="control-btn" id="play-pause-btn" onclick="togglePlayPause()">
+            <span>⏸️</span> Pausar
+          </button>
+          <button class="control-btn" onclick="restartVideo()">
+            <span>🔄</span> Reiniciar
+          </button>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="control-btn" id="zoom-btn" onclick="toggleZoom()">
+            <span>🔍</span> Ampliar
+          </button>
+          <button class="control-btn btn-primary" onclick="toggleFullscreen()">
+            <span>📺</span> Tela Cheia
+          </button>
+        </div>
       </div>
     </div>
     
@@ -185,12 +257,12 @@
     },
     dashboard: {
       videoSrc: "dashboard_tutorial.webp",
-      duration: 17,
+      duration: 12,
       tracks: [
-        { start: 0,  end: 5,  step: 1, text: "Passo 1: Acesse seu painel e confira a mensagem de boas-vindas com nome da loja." },
-        { start: 5,  end: 9,  step: 2, text: "Passo 2: Clique no link da sua loja ou use o botão 'Copiar Link' para compartilhar no Instagram." },
-        { start: 9,  end: 13, step: 3, text: "Passo 3: Acompanhe faturamento, pedidos novos e produtos ativos nos cartões de métricas." },
-        { start: 13, end: 17, step: 4, text: "Passo 4: Utilize os cartões de ações rápidas para gerenciar produtos, pedidos ou alterar configurações." }
+        { start: 0,  end: 3,  step: 1, text: "Passo 1: Acesse seu painel e confira a mensagem de boas-vindas com o nome da loja." },
+        { start: 3,  end: 6,  step: 2, text: "Passo 2: Clique no link da sua loja ou use o botão 'Copiar Link' para compartilhar no Instagram." },
+        { start: 6,  end: 9,  step: 2, text: "Passo 3: Acompanhe faturamento, pedidos novos e produtos ativos nos cartões de métricas." },
+        { start: 9,  end: 12, step: 3, text: "Passo 4: Utilize os cartões de ações rápidas para gerenciar produtos, pedidos ou alterar configurações." }
       ],
       stepsHTML: `
         <div class="step-item active" data-step="1" style="display:flex; align-items:flex-start; gap:10px; font-size:0.85rem; padding:12px; border-radius:8px; border:1px solid transparent; transition:all 0.3s ease;">
@@ -212,6 +284,7 @@
   let activeTab = 'onboarding';
   let currentTime = 0;
   let timerInterval = null;
+  let isPaused = false;
 
   function switchTutorial(tabName) {
     if (tabName === activeTab) return;
@@ -225,8 +298,14 @@
     document.getElementById('desc-onboarding').style.display = tabName === 'onboarding' ? 'block' : 'none';
     document.getElementById('desc-dashboard').style.display = tabName === 'dashboard' ? 'block' : 'none';
 
+    // Restaura estado de play/pause se estivesse pausado
+    isPaused = false;
+    document.getElementById('play-pause-btn').innerHTML = '<span>⏸️</span> Pausar';
+    document.getElementById('pause-overlay').style.display = 'none';
+    
     // Atualiza vídeo
     const videoEl = document.getElementById('tutorial-video');
+    videoEl.style.opacity = '1';
     videoEl.src = tutorials[tabName].videoSrc;
 
     // Atualiza lista de passos no DOM
@@ -235,6 +314,65 @@
     // Reinicia loop de legendas
     currentTime = 0;
     startCaptionsLoop();
+  }
+
+  function togglePlayPause() {
+    isPaused = !isPaused;
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const pauseOverlay = document.getElementById('pause-overlay');
+    const videoEl = document.getElementById('tutorial-video');
+
+    if (isPaused) {
+      if (timerInterval) clearInterval(timerInterval);
+      playPauseBtn.innerHTML = '<span>▶️</span> Continuar';
+      pauseOverlay.style.display = 'flex';
+      videoEl.style.opacity = '0.4';
+    } else {
+      startCaptionsLoop();
+      playPauseBtn.innerHTML = '<span>⏸️</span> Pausar';
+      pauseOverlay.style.display = 'none';
+      videoEl.style.opacity = '1';
+    }
+  }
+
+  function restartVideo() {
+    const videoEl = document.getElementById('tutorial-video');
+    const currentSrc = videoEl.src.split('?')[0];
+    // Adiciona timestamp para forçar recarregamento do WebP do zero
+    videoEl.src = currentSrc + '?t=' + Date.now();
+
+    currentTime = 0;
+    isPaused = false;
+    
+    document.getElementById('play-pause-btn').innerHTML = '<span>⏸️</span> Pausar';
+    document.getElementById('pause-overlay').style.display = 'none';
+    videoEl.style.opacity = '1';
+
+    startCaptionsLoop();
+  }
+
+  function toggleZoom() {
+    const playerCard = document.getElementById('player-card');
+    const zoomBtn = document.getElementById('zoom-btn');
+    
+    if (playerCard.style.maxWidth === '100%') {
+      playerCard.style.maxWidth = 'none';
+      zoomBtn.innerHTML = '<span>📉</span> Reduzir';
+    } else {
+      playerCard.style.maxWidth = '100%';
+      zoomBtn.innerHTML = '<span>🔍</span> Ampliar';
+    }
+  }
+
+  function toggleFullscreen() {
+    const playerWrapper = document.getElementById('player-wrapper');
+    if (!document.fullscreenElement) {
+      playerWrapper.requestFullscreen().catch(err => {
+        alert(`Erro ao ativar tela cheia: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
   }
 
   function startCaptionsLoop() {

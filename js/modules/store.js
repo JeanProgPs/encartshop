@@ -5,6 +5,21 @@
 
 const StoreModule = (() => {
   async function getActive() {
+    const isMock = new URLSearchParams(window.location.search).get('mock') === 'true' || localStorage.getItem('seven_mock_mode') === 'true';
+    if (isMock) {
+      localStorage.setItem('seven_mock_mode', 'true');
+      return {
+        id: 'mock-store-id',
+        name: 'Mercado Central',
+        slogan: 'O melhor hortifrúti da região!',
+        address: 'Av. Brasil, 1500',
+        hours: 'Seg-Sab: 8h as 20h',
+        whatsapp: '5511999999999',
+        color: '#e94560',
+        status: 'active',
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      };
+    }
     const id = AuthService.getActiveStoreId();
     if (!id) return null;
     return await EncartAPI.StoreAPI.getById(id);
