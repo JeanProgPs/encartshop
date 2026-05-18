@@ -27,7 +27,10 @@ const UIComponents = (() => {
       box-shadow:0 4px 20px rgba(0,0,0,0.25);font-size:0.875rem;font-weight:500;
       display:flex;align-items:center;gap:10px;pointer-events:all;
       animation:encart-slide-in 0.3s ease;`;
-    toast.innerHTML = `<span style="font-size:1rem;flex-shrink:0">${s.icon}</span><span>${message}</span>`;
+    toast.innerHTML = `<span style="font-size:1rem;flex-shrink:0">${s.icon}</span>`;
+    const textNode = document.createElement('span');
+    textNode.textContent = message;
+    toast.appendChild(textNode);
     container.appendChild(toast);
     const ms = type === 'error' ? 5000 : 3500;
     setTimeout(() => {

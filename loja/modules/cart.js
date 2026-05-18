@@ -117,14 +117,17 @@ window.CartManager = (() => {
     if (btn) { btn.disabled = true; btn.textContent = 'Preparando pedido...'; }
 
     try {
+      const orderRef = Math.random().toString(36).substring(2, 7).toUpperCase();
+      const finalCustomerName = `${name} [#${orderRef}]`;
+
       const itemsText = cart.map(i =>
         `• ${i.qty}${i.unit === 'kg' ? 'kg' : 'x'} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`
       ).join('\n');
 
-      const msg = `🛒 *Novo Pedido — ${store.name}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n${deliveryMsg}\n*Subtotal:* ${UIRender.fmtPrice(subtotal)}\n*Total:* ${UIRender.fmtPrice(finalTotal)}\n\n_Enviado via EncartShop_`;
+      const msg = `🛒 *Novo Pedido — ${store.name}*\n\n*Ref:* #${orderRef}\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n${deliveryMsg}\n*Subtotal:* ${UIRender.fmtPrice(subtotal)}\n*Total:* ${UIRender.fmtPrice(finalTotal)}\n\n_Enviado via EncartShop - Por segurança, confirme os itens e preços no painel administrativo pesquisando por #${orderRef}_`;
 
       EncartAPI.OrderAPI.create(store.id, {
-        customer_name: name,
+        customer_name: finalCustomerName,
         items: cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price, unit: i.unit })),
         total: finalTotal,
         status: 'novo'

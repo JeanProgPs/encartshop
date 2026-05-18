@@ -39,7 +39,10 @@ const EncartHelpers = (() => {
       pointer-events:all; max-width:320px;
       font-family:var(--font-body, 'Inter', sans-serif);
     `;
-    toast.innerHTML = `<span style="font-size:1rem;flex-shrink:0">${style.icon}</span><span>${message}</span>`;
+    toast.innerHTML = `<span style="font-size:1rem;flex-shrink:0">${style.icon}</span>`;
+    const textNode = document.createElement('span');
+    textNode.textContent = message;
+    toast.appendChild(textNode);
     container.appendChild(toast);
 
     const timeout = type === 'error' ? 5000 : 3500;
@@ -108,6 +111,33 @@ const EncartHelpers = (() => {
     }
   }
 
+  // ── HTML Escaper ───────────────────────────────────────────────
+  function escapeHTML(str) {
+    if (str === undefined || str === null) return '';
+    return String(str).replace(/[&<>'"]/g, 
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
+  }
+
+  // ── HTML Sanitizer (DOMPurify) ──────────────────────────────────
+  function sanitizeHTML(content) {
+    if (content === undefined || content === null) return '';
+    if (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function') {
+      return window.DOMPurify.sanitize(content);
+    }
+    // Fallback seguro de escape básico se o DOMPurify não estiver carregado
+    return String(content).replace(/[&<>'"]/g, 
+      tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
+  }
+
+  // ── Safe Text Content Setter ────────────────────────────────────
+  function safeText(element, value) {
+    if (element) {
+      element.textContent = (value === undefined || value === null) ? '' : String(value);
+    }
+  }
+
   // ── Inject Global CSS Animations ──────────────────────────────
   function injectStyles() {
     if (document.getElementById('encart-helpers-css')) return;
@@ -136,9 +166,12 @@ const EncartHelpers = (() => {
 
   injectStyles();
 
-  return { showToast, setButtonLoading, skeleton, safeArray, safeObject };
+  return { showToast, setButtonLoading, skeleton, safeArray, safeObject, escapeHTML, sanitizeHTML, safeText };
 })();
 
 // ── Aliases globais ────────────────────────────────────────────
 window.EncartHelpers = EncartHelpers;
 window.showToast = EncartHelpers.showToast; // retrocompatibilidade
+window.escapeHTML = EncartHelpers.escapeHTML;
+window.sanitizeHTML = EncartHelpers.sanitizeHTML;
+window.safeText = EncartHelpers.safeText;

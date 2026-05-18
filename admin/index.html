@@ -108,7 +108,9 @@
 </div>
 
 <!-- Scripts: CDN → Core → Auth → Storage -->
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/helpers.js"></script>
 <script src="/js/core/supabaseClient.js"></script>
 <script src="/js/core/api.js"></script>
 <script src="/js/auth/authService.js"></script>
@@ -148,7 +150,7 @@
       <div class="store-option" id="opt-${s.id}" onclick="selectAndGo('${s.id}')">
         <div class="store-color-dot" style="background:${s.color || '#22c55e'};">ES</div>
         <div class="store-option-info">
-          <h4>${s.name}</h4>
+          <h4>${escapeHTML(s.name)}</h4>
           <p>Clique para entrar</p>
         </div>
         <span class="check">✓</span>

@@ -74,7 +74,8 @@ window.StoreUI = (() => {
       tabs.push(`<button class="cat-tab ${activeCategory==='Ofertas'?'active':''}" data-cat="Ofertas" style="${activeCategory!=='Ofertas'?'color:#ef4444;border-color:#ef4444':''}">🔥 Ofertas</button>`);
     }
     categories.forEach(cat => {
-      tabs.push(`<button class="cat-tab ${activeCategory===cat?'active':''}" data-cat="${cat}">${cat}</button>`);
+      const catEsc = escapeHTML(cat);
+      tabs.push(`<button class="cat-tab ${activeCategory===cat?'active':''}" data-cat="${catEsc}">${catEsc}</button>`);
     });
 
     tabsWrap.innerHTML = tabs.join('');
@@ -137,12 +138,13 @@ window.StoreUI = (() => {
       const qtyLabel = item.unit === 'kg'
         ? (item.qty < 1 ? `${item.qty * 1000}g` : `${item.qty.toFixed(1).replace('.', ',')}kg`)
         : `${item.qty}x`;
+      const img = escapeHTML(item.image) || defaultImg;
       return `
         <div class="cart-item-row">
-          <img class="cart-item-img" src="${item.image || defaultImg}" alt="${item.name}" onerror="this.src='${defaultImg}'">
+          <img class="cart-item-img" src="${img}" alt="${escapeHTML(item.name)}" onerror="this.src='${defaultImg}'">
           <div class="cart-item-info">
-            <div class="cart-item-name">${item.name}</div>
-            <div class="cart-item-unit-price">${fmt(item.price)} / ${item.unit || 'un'}</div>
+            <div class="cart-item-name">${escapeHTML(item.name)}</div>
+            <div class="cart-item-unit-price">${fmt(item.price)} / ${escapeHTML(item.unit || 'un')}</div>
             <div class="cart-item-price">${fmt(item.price * item.qty)}</div>
           </div>
           <div class="cart-qty-control">

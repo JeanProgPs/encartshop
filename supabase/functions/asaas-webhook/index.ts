@@ -1,8 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
+const ASAAS_WEBHOOK_SECRET = Deno.env.get("ASAAS_WEBHOOK_SECRET") || ""
+
 serve(async (req) => {
   try {
+    // 1. Validação de assinatura/token do webhook Asaas
+    const receivedToken = req.headers.get("asaas-access-token")
+    if (ASAAS_WEBHOOK_SECRET && receivedToken !== ASAAS_WEBHOOK_SECRET) {
+      console.warn("[asaas-webhook] Tentativa de acesso não autorizada. Token inválido ou ausente.");
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''

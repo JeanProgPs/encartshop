@@ -37,7 +37,7 @@ window.StoreBootstrap = (() => {
       screen.innerHTML = `
         <div style="font-size:3rem;margin-bottom:16px;">⚠️</div>
         <h2 style="color:#ef4444;font-size:1.4rem;margin:0 0 8px 0;text-align:center;">Erro ao carregar loja</h2>
-        <p style="color:#64748b;max-width:300px;text-align:center;line-height:1.5;">${message}</p>
+        <p style="color:#64748b;max-width:300px;text-align:center;line-height:1.5;">${escapeHTML(message)}</p>
         <button onclick="window.location.reload()" style="margin-top:24px;padding:10px 20px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Tentar Novamente</button>
       `;
       screen.style.background = '#f8fafc';

@@ -133,7 +133,7 @@ window.ProductCatalog = (() => {
     return `
       <div class="category-group">
         <div class="category-group-header">
-          <span class="category-group-title">${title}</span>
+          <span class="category-group-title">${escapeHTML(title)}</span>
           <span class="category-group-count">${products.length}</span>
           <div class="category-group-line"></div>
         </div>

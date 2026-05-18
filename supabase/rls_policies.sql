@@ -22,11 +22,10 @@ CREATE POLICY "stores_select_own"
   ON stores FOR SELECT
   USING (auth.uid() = user_id);
 
--- SELECT PÚBLICO: loja pública pode buscar por id (necessário para a storefront)
--- Bloqueia enumeração: só retorna 1 linha com o id exato pedido pelo cliente
+-- SELECT PÚBLICO: loja pública pode buscar por id se estiver ativa ou pertencer ao dono autenticado
 CREATE POLICY "stores_select_public_by_id"
   ON stores FOR SELECT
-  USING (true);
+  USING (status = 'active' OR auth.uid() = user_id);
 -- Nota: a proteção real contra enumeração em lojas públicas é feita via
 -- busca por UUID (impossível de adivinhar). A policy acima permite que
 -- a loja pública funcione. Para ambientes de maior segurança, usar uma
@@ -60,10 +59,14 @@ DROP POLICY IF EXISTS "products_insert_own"       ON products;
 DROP POLICY IF EXISTS "products_update_own"       ON products;
 DROP POLICY IF EXISTS "products_delete_own"       ON products;
 
--- SELECT público: qualquer um pode ver produtos (necessário para loja pública)
+-- SELECT público: qualquer um pode ver produtos de lojas ativas, ou dono autenticado
 CREATE POLICY "products_select_public"
   ON products FOR SELECT
-  USING (true);
+  USING (
+    store_id IN (
+      SELECT id FROM stores WHERE status = 'active' OR user_id = auth.uid()
+    )
+  );
 
 -- INSERT: usuário só insere produto na PRÓPRIA loja
 CREATE POLICY "products_insert_own"
@@ -187,22 +190,24 @@ CREATE POLICY "storage_products_select_public"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'products');
 
--- Política de upload: apenas autenticados, na pasta do próprio store_id
+-- Política de upload: apenas autenticados, restrito à pasta do próprio store_id (dono logado)
 DROP POLICY IF EXISTS "storage_products_insert_auth" ON storage.objects;
 CREATE POLICY "storage_products_insert_auth"
   ON storage.objects FOR INSERT
   WITH CHECK (
     bucket_id = 'products'
     AND auth.role() = 'authenticated'
+    AND (text_to_array(name, '/'::text))[1] = (SELECT id::text FROM stores WHERE user_id = auth.uid() LIMIT 1)
   );
 
--- Política de delete: apenas autenticados
+-- Política de delete: apenas autenticados, restrito à pasta do próprio store_id (dono logado)
 DROP POLICY IF EXISTS "storage_products_delete_auth" ON storage.objects;
 CREATE POLICY "storage_products_delete_auth"
   ON storage.objects FOR DELETE
   USING (
     bucket_id = 'products'
     AND auth.role() = 'authenticated'
+    AND (text_to_array(name, '/'::text))[1] = (SELECT id::text FROM stores WHERE user_id = auth.uid() LIMIT 1)
   );
 
 -- ============================================================
