@@ -200,15 +200,24 @@
         <!-- Segurança -->
         <div class="config-card">
           <h3>🔒 Segurança do Painel</h3>
-          <p class="desc">Altere seu e-mail e senha de acesso ao painel administrativo.</p>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Novo E-mail de Acesso</label>
-              <input id="s-auth-email" type="email" class="form-input" placeholder="novo@email.com">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Nova Senha</label>
-              <input id="s-auth-pass" type="password" class="form-input" placeholder="Deixe vazio para não alterar">
+          <p class="desc">Altere seu e-mail e senha de acesso ao painel administrativo. <strong>Deixe em branco</strong> o que não deseja alterar.</p>
+          <!-- autocomplete="off" no form fictício bloqueia autofill do navegador -->
+          <div autocomplete="off">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Novo E-mail de Acesso</label>
+                <input id="s-auth-email" type="email" class="form-input"
+                       placeholder="novo@email.com"
+                       autocomplete="off"
+                       value="">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nova Senha</label>
+                <input id="s-auth-pass" type="password" class="form-input"
+                       placeholder="Deixe vazio para não alterar"
+                       autocomplete="new-password"
+                       value="">
+              </div>
             </div>
           </div>
           <div style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);">
