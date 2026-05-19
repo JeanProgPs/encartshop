@@ -95,24 +95,31 @@ window.StoreUI = (() => {
   }
 
   function _updateCartIndicators(cart) {
-    const itemCount = cart.length;
+    const totalQty  = cart.reduce((s, i) => s + i.qty, 0);
     const total     = cart.reduce((s, i) => s + i.price * i.qty, 0);
     const fmt       = v => UIRender.fmtPrice(v);
 
     const hBtn = document.getElementById('header-cart-btn');
     const hCnt = document.getElementById('header-cart-count');
-    if (hBtn) hBtn.classList.toggle('hidden', itemCount === 0);
-    if (hCnt) hCnt.textContent = itemCount;
+    if (hBtn) hBtn.classList.toggle('hidden', totalQty === 0);
+    if (hCnt) hCnt.textContent = totalQty;
 
     const bubble     = document.getElementById('cart-bubble');
     const bubbleTotal = document.getElementById('cart-bubble-total');
     const cnt        = document.getElementById('cart-count');
-    if (bubble) bubble.classList.toggle('hidden', itemCount === 0);
-    if (cnt) cnt.textContent = itemCount;
+    const cntLabel   = document.getElementById('cart-count-label');
+
+    if (bubble) {
+      bubble.classList.toggle('cart-visible', totalQty > 0);
+    }
+    if (cnt) cnt.textContent = totalQty;
+    if (cntLabel) {
+      cntLabel.textContent = totalQty === 1 ? 'item' : 'itens';
+    }
     if (bubbleTotal) bubbleTotal.textContent = fmt(total);
 
     const drawerBadge = document.getElementById('cart-drawer-count');
-    if (drawerBadge) drawerBadge.textContent = itemCount;
+    if (drawerBadge) drawerBadge.textContent = totalQty;
   }
 
   function _renderCartBody(cart) {
