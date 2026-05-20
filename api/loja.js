@@ -12,8 +12,12 @@ module.exports = async (req, res) => {
   const SUPABASE_KEY = 'sb_publishable_DlDsDwmZCJxd4lIYh19Idg_7Ve-xAef';
 
   try {
-    // 1. Busca dados da loja no Supabase via REST API (evita dependência pesada do SDK)
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/stores?slug=eq.${slug}&select=*`, {
+    // 1. Identifica se o parâmetro 'slug' é um UUID válido para determinar a coluna de busca
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
+    const queryParam = isUUID ? `id=eq.${slug}` : `slug=eq.${slug}`;
+
+    // 2. Busca dados da loja no Supabase via REST API (evita dependência pesada do SDK)
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/stores?${queryParam}&select=*`, {
       headers: {
         'apikey': SUPABASE_KEY,
         'Authorization': `Bearer ${SUPABASE_KEY}`
@@ -35,7 +39,7 @@ module.exports = async (req, res) => {
     // 3. Prepara metadados dinâmicos
     const storeName = store.name || 'Loja';
     const storeDesc = store.slogan || store.banner_text || 'Encontre os melhores produtos para pedir direto pelo WhatsApp.';
-    const storeUrl  = `https://encartshop.com/loja/${slug}`;
+    const storeUrl  = `https://encartshop.com/loja/${store.slug || slug}`;
     const storeImage = store.banner_url || store.logo_url || 'https://encartshop.com/assets/preview-default.png';
     const robotsPolicy = getRobotsPolicy(req.headers.host);
 
