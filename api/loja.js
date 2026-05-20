@@ -36,6 +36,23 @@ module.exports = async (req, res) => {
       return res.status(200).send(html);
     }
 
+    // 2.5. Busca os 12 principais produtos ativos para pré-renderização (SSR Híbrido SEO)
+    let activeProducts = [];
+    try {
+      const prodResponse = await fetch(`${SUPABASE_URL}/rest/v1/products?store_id=eq.${store.id}&active=eq.true&order=name.asc&limit=12&select=*`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      const products = await prodResponse.json();
+      if (Array.isArray(products)) {
+        activeProducts = products;
+      }
+    } catch (err) {
+      console.error('Error fetching products for SSR SEO:', err);
+    }
+
     // 3. Prepara metadados dinâmicos
     const storeName = store.name || 'Loja';
     const storeDesc = store.slogan || store.banner_text || 'Encontre os melhores produtos para pedir direto pelo WhatsApp.';
@@ -102,6 +119,56 @@ module.exports = async (req, res) => {
 
     html = html.replace('</head>', `${metaTags}\n</head>`);
 
+    // 4.5. Pré-renderiza produtos ativos para SEO (SSR Híbrido)
+    if (activeProducts.length > 0) {
+      const staticCardsHTML = activeProducts.map(p => {
+        const isPromo = !!p.promo_price;
+        const unit = p.unit || 'un';
+        const defaultImg = 'https://images.placeholders.dev/?width=400&height=400&text=Sem%20Imagem&bgColor=%23f1f5f9&textColor=%2364748b';
+        const img = escapeHTML(p.image) || defaultImg;
+        const priceNormal = fmtPriceLocal(p.price);
+        const pricePromo = isPromo ? fmtPriceLocal(p.promo_price) : '';
+        const nameEscaped = escapeHTML(p.name);
+
+        return `
+      <div class="product-card" id="prod-static-${p.id}">
+        <div class="product-image-wrap">
+          <img src="${img}" alt="${nameEscaped}" loading="lazy">
+          ${isPromo ? `<div class="promo-badge">🔥 OFERTA</div>` : ''}
+        </div>
+        <div class="product-info">
+          <div class="product-name" title="${nameEscaped}">${nameEscaped}</div>
+          <div class="product-price-row">
+            ${isPromo 
+              ? `<div class="price-normal">${priceNormal}</div><div class="price-promo">${pricePromo}</div>`
+              : `<div class="price-regular">${priceNormal}</div>`
+            }
+            <span class="product-unit-label">/${unit}</span>
+          </div>
+          <div class="product-card-actions">
+            <button class="btn-add-cart">
+              <span>Adicionar</span>
+            </button>
+          </div>
+        </div>
+      </div>`;
+      }).join('\n');
+
+      const productsGridHTML = `
+    <div class="category-group">
+      <div class="category-group-header">
+        <span class="category-group-title">Destaques</span>
+        <span class="category-group-count">${activeProducts.length}</span>
+        <div class="category-group-line"></div>
+      </div>
+      <div class="product-grid">
+        ${staticCardsHTML}
+      </div>
+    </div>`;
+
+      html = html.replace('<div id="products-area">', `<div id="products-area">\n${productsGridHTML}`);
+    }
+
     // 5. Retorna o HTML modificado
     res.setHeader('Content-Type', 'text/html');
     return res.status(200).send(html);
@@ -125,5 +192,20 @@ function getRobotsPolicy(host) {
   const normalized = host.toLowerCase();
   const isProduction = normalized === 'encartshop.com' || normalized === 'www.encartshop.com' || normalized.endsWith('.encartshop.com');
   return isProduction ? 'index, follow' : 'noindex, nofollow';
+}
+
+function escapeHTML(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function fmtPriceLocal(v) {
+  if (v === undefined || v === null) return 'R$ 0,00';
+  return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
