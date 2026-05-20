@@ -34,34 +34,68 @@ module.exports = async (req, res) => {
 
     // 3. Prepara metadados dinâmicos
     const storeName = store.name || 'Loja';
-    const storeDesc = store.slogan || store.banner_text || 'Confira nossas ofertas e faça seu pedido pelo WhatsApp!';
+    const storeDesc = store.slogan || store.banner_text || 'Encontre os melhores produtos para pedir direto pelo WhatsApp.';
     const storeUrl  = `https://encartshop.com/loja/${slug}`;
-    
-    // Lógica de fallback para imagem: Banner -> Logo -> Default
     const storeImage = store.banner_url || store.logo_url || 'https://encartshop.com/assets/preview-default.png';
+    const robotsPolicy = getRobotsPolicy(req.headers.host);
 
     // 4. Injeta metadados no HEAD
-    // Remove tags estáticas se existirem para evitar duplicidade
     html = html.replace(/<title>.*?<\/title>/, `<title>${storeName} — EncartShop</title>`);
     html = html.replace(/<meta name="description" content=".*?">/, `<meta name="description" content="${storeDesc}">`);
+    html = html.replace(/<link rel="canonical" href=".*?">/, `<link rel="canonical" href="${storeUrl}">`);
+    html = html.replace(/<meta name="robots" content=".*?">/, `<meta name="robots" content="${robotsPolicy}">`);
+
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Store",
+          "name": storeName,
+          "description": storeDesc,
+          "url": storeUrl,
+          "image": storeImage,
+          "logo": storeImage,
+          "telephone": store.phone || undefined,
+          "address": store.address ? {
+            "@type": "PostalAddress",
+            "streetAddress": store.address
+          } : undefined,
+          "sameAs": Array.isArray(store.social_links) && store.social_links.length ? store.social_links : undefined
+        },
+        {
+          "@type": "Organization",
+          "name": "EncartShop",
+          "url": "https://encartshop.com",
+          "logo": "https://encartshop.com/assets/favicon.png",
+          "sameAs": [
+            "https://www.facebook.com/encartshop",
+            "https://www.instagram.com/encartshop"
+          ]
+        }
+      ].filter(Boolean)
+    };
 
     const metaTags = `
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
+    <meta property="og:site_name" content="EncartShop">
     <meta property="og:url" content="${storeUrl}">
     <meta property="og:title" content="${storeName} — EncartShop">
     <meta property="og:description" content="${storeDesc}">
     <meta property="og:image" content="${storeImage}">
 
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="${storeUrl}">
-    <meta property="twitter:title" content="${storeName} — EncartShop">
-    <meta property="twitter:description" content="${storeDesc}">
-    <meta property="twitter:image" content="${storeImage}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="${storeUrl}">
+    <meta name="twitter:title" content="${storeName} — EncartShop">
+    <meta name="twitter:description" content="${storeDesc}">
+    <meta name="twitter:image" content="${storeImage}">
+
+    <meta name="robots" content="${robotsPolicy}">
+    <link rel="canonical" href="${storeUrl}">
+    <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
     `;
 
-    // Insere as novas tags antes do fechamento do </head>
     html = html.replace('</head>', `${metaTags}\n</head>`);
 
     // 5. Retorna o HTML modificado
@@ -81,3 +115,11 @@ module.exports = async (req, res) => {
     }
   }
 };
+
+function getRobotsPolicy(host) {
+  if (!host) return 'noindex, nofollow';
+  const normalized = host.toLowerCase();
+  const isProduction = normalized === 'encartshop.com' || normalized === 'www.encartshop.com' || normalized.endsWith('.encartshop.com');
+  return isProduction ? 'index, follow' : 'noindex, nofollow';
+}
+

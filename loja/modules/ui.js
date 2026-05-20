@@ -13,7 +13,6 @@ window.StoreUI = (() => {
     // 1. Quando a Loja Carregar -> Preenche Header e Banner
     EventBus.on(EventBus.EVENTS.STORE_LOADED, (data) => {
       store = data.store;
-      document.title = (store.name || 'Loja') + ' — EncartShop';
       _setEl('header-store-name', store.name || '');
       _setEl('store-banner',      store.banner_text || 'Confira nossas ofertas!');
       _setEl('header-hours',      store.hours || '');
