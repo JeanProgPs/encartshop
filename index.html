@@ -216,15 +216,7 @@
       animation: float 4s ease-in-out infinite alternate;
     }
 
-    /* ── Social Proof ──────────────────────────────────────────── */
-    .l-stats-row {
-      display: flex; justify-content: center; gap: 80px; flex-wrap: wrap;
-      padding: 60px 24px; background: rgba(255,255,255,0.01);
-      border-bottom: 1px solid var(--l-card-border);
-    }
-    .l-stat-item { text-align: center; }
-    .l-stat-val { font-family: 'Outfit', sans-serif; font-size: 3.5rem; font-weight: 800; color: white; line-height: 1; margin-bottom: 8px;}
-    .l-stat-label { font-size: 0.9rem; color: var(--l-text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; }
+
 
     /* ── Pricing ───────────────────────────────────────────────── */
     .l-pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px; margin-top: 60px; }
@@ -308,7 +300,7 @@
       .l-bento-grid { grid-template-columns: 1fr; }
       .l-delivery-wrapper { flex-direction: column; gap: 40px; text-align: center;}
       .l-delivery-badge { right: 0; bottom: 20px;}
-      .l-stats-row { gap: 40px; flex-direction: column; padding: 40px 20px;}
+
       .l-footer { flex-direction: column; text-align: center; justify-content: center; padding: 40px 24px; }
     }
   </style>
@@ -372,21 +364,7 @@
     </div>
   </section>
 
-  <!-- Social Proof -->
-  <div class="l-stats-row">
-    <div class="l-stat-item reveal">
-      <div class="l-stat-val counter" data-target="5000">0</div>
-      <div class="l-stat-label">Lojas Ativas</div>
-    </div>
-    <div class="l-stat-item reveal" style="transition-delay: 0.1s;">
-      <div class="l-stat-val counter" data-target="250">0</div>
-      <div class="l-stat-label">Mil Pedidos/Mês</div>
-    </div>
-    <div class="l-stat-item reveal" style="transition-delay: 0.2s;">
-      <div class="l-stat-val">99.9%</div>
-      <div class="l-stat-label">Uptime</div>
-    </div>
-  </div>
+
 
   <!-- How it Works -->
   <section id="funciona" class="l-section">
