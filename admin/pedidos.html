@@ -33,6 +33,16 @@
 
     .mobile-menu-btn { display:none;background:none;border:none;color:var(--text);cursor:pointer;padding:8px; }
     @media(max-width:768px){ .mobile-menu-btn{display:flex;} }
+
+    @keyframes order-glow {
+      0% { border-color: var(--accent); box-shadow: 0 0 0 0 rgba(217, 70, 239, 0.4); background: rgba(217, 70, 239, 0.05); }
+      50% { border-color: var(--success); box-shadow: 0 0 15px 4px rgba(16, 185, 129, 0.2); background: rgba(16, 185, 129, 0.08); }
+      100% { border-color: var(--border); box-shadow: 0 0 0 0 transparent; background: var(--bg-card); }
+    }
+    .order-highlight {
+      animation: order-glow 3s ease-in-out;
+      border-width: 1.5px !important;
+    }
   </style>
 </head>
 <body data-page="pedidos">
@@ -78,6 +88,7 @@
 
 <div id="toast-container"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/js/core/helpers.js"></script>
 <script src="/js/core/supabaseClient.js"></script>
@@ -107,10 +118,47 @@
       </div>`;
     try {
       await renderOrders();
+      
+      // Lógica de Deep-Linking de Pedido via URL ref
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchRef = urlParams.get('ref');
+      if (searchRef) {
+        const refUpper = searchRef.toUpperCase();
+        // Tenta achar o pedido que contém a ref no customer_name ou que termina com a ref no id
+        const matchedOrder = allOrders.find(o => {
+          const nameMatch = o.customer_name && o.customer_name.toUpperCase().includes(`#${refUpper}`);
+          const idMatch = o.id && String(o.id).toUpperCase().endsWith(refUpper);
+          return nameMatch || idMatch;
+        });
+
+        if (matchedOrder) {
+          // Muda o filtro para 'all' para garantir que o pedido seja exibido
+          currentFilter = 'all';
+          // Atualiza as abas de filtro na interface
+          document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+          const allTab = document.querySelector('.filter-tab[data-filter="all"]');
+          if (allTab) allTab.classList.add('active');
+          
+          // Re-renderiza a lista com o filtro ativo correto
+          renderOrderList();
+
+          // Aguarda um pequeno delay para renderização e faz scroll + destaque
+          setTimeout(() => {
+            const card = document.getElementById(`order-${matchedOrder.id}`);
+            if (card) {
+              card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              card.classList.add('order-highlight');
+              if (window.showToast) showToast(`Pedido #${searchRef} localizado e destacado!`, 'success');
+            }
+          }, 400);
+        } else {
+          if (window.showToast) showToast(`Pedido com a referência #${searchRef} não foi encontrado.`, 'warning');
+        }
+      }
     } catch(err) {
       console.error('[Pedidos] Erro ao carregar:', err);
       document.getElementById('orders-list').innerHTML = UIRender.emptyState('⚠️', 'Erro ao carregar pedidos', 'Tente recarregar a página.');
-      showToast('Erro ao carregar pedidos.', 'error');
+      if (window.showToast) showToast('Erro ao carregar pedidos.', 'error');
     }
   }
 

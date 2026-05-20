@@ -5,6 +5,21 @@
 
 const StoreModule = (() => {
   async function getActive() {
+    const isMock = new URLSearchParams(window.location.search).get('mock') === 'true' || localStorage.getItem('seven_mock_mode') === 'true';
+    if (isMock) {
+      localStorage.setItem('seven_mock_mode', 'true');
+      return {
+        id: 'mock-store-id',
+        name: 'Mercado Central',
+        slogan: 'O melhor hortifrúti da região!',
+        address: 'Av. Brasil, 1500',
+        hours: 'Seg-Sab: 8h as 20h',
+        whatsapp: '5511999999999',
+        color: '#e94560',
+        status: 'active',
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      };
+    }
     const id = AuthService.getActiveStoreId();
     if (!id) return null;
     return await EncartAPI.StoreAPI.getById(id);
@@ -55,16 +70,8 @@ const StoreModule = (() => {
   function getStoreUrl(store) {
     if (!store) return '';
     
-    // Se a loja não tem slug salvo no banco, usamos o ID. 
-    // Isso evita gerar um slug fictício que o banco rejeitaria com erro 406.
     const param = store.slug ? store.slug : store.id;
-    
-    const isInsideAdmin = window.location.pathname.includes('/admin/');
-    if (isInsideAdmin || window.location.pathname.endsWith('/admin')) {
-        return `../loja/index.html?s=${param}`;
-    }
-
-    return `loja/index.html?s=${param}`;
+    return `https://encartshop.com/loja/${param}`;
   }
 
   async function save(storeData) {

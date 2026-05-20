@@ -85,13 +85,15 @@ window.SmartBanner = (() => {
 
     const slidesHTML = offers.map((p, idx) => {
       const pct = Math.round(p._discountPct);
+      const img = escapeHTML(p.image);
+      const nameEscaped = escapeHTML(p.name);
       return `
         <div class="smart-slide" onclick="window.addToCart('${p.id}')">
-          <img src="${p.image}" alt="${p.name}" class="smart-slide-img" loading="${idx === 0 ? 'eager' : 'lazy'}">
+          <img src="${img}" alt="${nameEscaped}" class="smart-slide-img" loading="${idx === 0 ? 'eager' : 'lazy'}">
           <div class="smart-slide-overlay">
             <div class="smart-slide-badge">🔥 ${pct}% OFF</div>
             <div class="smart-slide-content">
-              <h3 class="smart-slide-title">${p.name}</h3>
+              <h3 class="smart-slide-title">${nameEscaped}</h3>
               <div class="smart-slide-prices">
                 <span class="smart-slide-old">${fmt(p.price)}</span>
                 <span class="smart-slide-new">${fmt(p.promo_price)}</span>

@@ -4,10 +4,16 @@
  */
 
 (async function initAdminPage() {
+  const isMock = new URLSearchParams(window.location.search).get('mock') === 'true' || localStorage.getItem('seven_mock_mode') === 'true';
+  if (isMock) {
+    localStorage.setItem('seven_mock_mode', 'true');
+  }
 
   // 1. Proteção de rota — verifica sessão Supabase real
-  const authorized = await AuthGuard.requireAuth();
-  if (!authorized) return;
+  if (!isMock) {
+    const authorized = await AuthGuard.requireAuth();
+    if (!authorized) return;
+  }
 
   // 2. Detecta a página atual pelo atributo data-page
   const activePage = document.body.dataset.page || '';

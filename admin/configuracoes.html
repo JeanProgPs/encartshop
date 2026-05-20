@@ -22,9 +22,57 @@
     }
     .link-preview span { word-break:break-all; }
 
+    /* Logo Upload */
+    .logo-upload-area {
+      display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+    }
+    .logo-preview-circle {
+      width: 96px; height: 96px; border-radius: 50%;
+      background: var(--primary-light); border: 2px dashed var(--border);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; flex-shrink: 0; transition: border-color 0.2s ease;
+      cursor: pointer; position: relative;
+    }
+    .logo-preview-circle:hover { border-color: var(--brand); }
+    .logo-preview-circle img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .logo-preview-circle .logo-placeholder {
+      font-size: 2rem; font-weight: 800; color: var(--brand);
+      font-family: var(--font-display);
+    }
+    .logo-upload-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; opacity: 0; transition: opacity 0.2s ease;
+      color: #fff; font-size: 0.7rem; font-weight: 700; flex-direction: column; gap: 4px;
+    }
+    .logo-preview-circle:hover .logo-upload-overlay { opacity: 1; }
+    .logo-upload-controls { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 10px; }
+    .logo-upload-btn {
+      background: var(--bg-body); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 16px;
+      font-size: 0.85rem; font-weight: 600; color: var(--text);
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      transition: all 0.2s ease; width: fit-content;
+    }
+    .logo-upload-btn:hover { border-color: var(--brand); color: var(--brand); }
+    .logo-progress-wrap {
+      display: none; align-items: center; gap: 10px;
+    }
+    .logo-progress-bar {
+      flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+    }
+    .logo-progress-fill {
+      height: 100%; background: var(--brand); border-radius: 3px;
+      width: 0%; transition: width 0.3s ease;
+    }
+    .logo-status { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
+    .logo-status.success { color: var(--success); }
+    .logo-status.error   { color: var(--danger); }
+
     @media(max-width:768px) {
       .mobile-menu-btn{display:flex;}
       .form-grid{grid-template-columns:1fr;}
+      .logo-upload-area { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
@@ -49,6 +97,38 @@
           <div class="link-preview">
             <span id="loja-link">Carregando...</span>
             <button class="btn btn-ghost btn-sm" onclick="copyLink()">📋 Copiar</button>
+          </div>
+        </div>
+
+        <!-- Identidade Visual -->
+        <div class="config-card">
+          <h3>🖼️ Identidade Visual</h3>
+          <p class="desc">Faça upload da logo da sua loja. Ela aparecerá no header da vitrine pública e nos compartilhamentos no WhatsApp e redes sociais.</p>
+          <div class="logo-upload-area">
+            <!-- Preview circular clicável -->
+            <div class="logo-preview-circle" id="logo-circle" onclick="document.getElementById('logo-file-input').click()">
+              <img id="logo-preview-img" src="" alt="Logo da loja" style="display:none;">
+              <span class="logo-placeholder" id="logo-placeholder">?</span>
+              <div class="logo-upload-overlay">
+                <span style="font-size:1.2rem;">📷</span>
+                <span>Trocar</span>
+              </div>
+            </div>
+
+            <!-- Controles de upload -->
+            <div class="logo-upload-controls">
+              <input type="file" id="logo-file-input" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="handleLogoSelect(event)">
+              <button class="logo-upload-btn" onclick="document.getElementById('logo-file-input').click()">
+                📁 Escolher Logo
+              </button>
+              <div class="logo-progress-wrap" id="logo-progress-wrap">
+                <div class="logo-progress-bar">
+                  <div class="logo-progress-fill" id="logo-progress-fill"></div>
+                </div>
+                <span id="logo-progress-pct" style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap;">0%</span>
+              </div>
+              <div class="logo-status" id="logo-status">JPG, PNG ou WEBP • Máx. 2 MB • Recomendado: imagem quadrada</div>
+            </div>
           </div>
         </div>
 
@@ -120,15 +200,24 @@
         <!-- Segurança -->
         <div class="config-card">
           <h3>🔒 Segurança do Painel</h3>
-          <p class="desc">Altere seu e-mail e senha de acesso ao painel administrativo.</p>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Novo E-mail de Acesso</label>
-              <input id="s-auth-email" type="email" class="form-input" placeholder="novo@email.com">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Nova Senha</label>
-              <input id="s-auth-pass" type="password" class="form-input" placeholder="Deixe vazio para não alterar">
+          <p class="desc">Altere seu e-mail e senha de acesso ao painel administrativo. <strong>Deixe em branco</strong> o que não deseja alterar.</p>
+          <!-- autocomplete="off" no form fictício bloqueia autofill do navegador -->
+          <div autocomplete="off">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Novo E-mail de Acesso</label>
+                <input id="s-auth-email" type="email" class="form-input"
+                       placeholder="novo@email.com"
+                       autocomplete="off"
+                       value="">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nova Senha</label>
+                <input id="s-auth-pass" type="password" class="form-input"
+                       placeholder="Deixe vazio para não alterar"
+                       autocomplete="new-password"
+                       value="">
+              </div>
             </div>
           </div>
           <div style="margin-top:10px;font-size:0.8rem;color:var(--text-muted);">
@@ -160,7 +249,9 @@
 
 <div id="toast-container"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/helpers.js"></script>
 <script src="/js/core/supabaseClient.js"></script>
 <script src="/js/core/api.js"></script>
 <script src="/js/auth/authService.js"></script>
@@ -172,13 +263,19 @@
 <script src="/js/admin-common.js"></script>
 <script>
   let _store = null;
+  let _pendingLogoFile = null; // arquivo selecionado aguardando o Salvar Tudo
 
   async function load() {
     _store = await StoreModule.getActive();
     if (!_store) return;
 
     const storeUrl = StoreModule.getStoreUrl(_store);
-    document.getElementById('loja-link').textContent = storeUrl;
+    const linkEl = document.getElementById('loja-link');
+    if (linkEl) {
+      linkEl.textContent = storeUrl;
+      linkEl.parentElement.onclick = () => window.open(storeUrl, '_blank');
+      linkEl.style.cursor = 'pointer';
+    }
 
     document.getElementById('s-name').value          = _store.name          || '';
     document.getElementById('s-slogan').value        = _store.slogan        || '';
@@ -192,6 +289,88 @@
     document.getElementById('s-delivery-fee').value  = isCombine ? '' : (_store.delivery_fee  || 0);
     document.getElementById('s-delivery-free').value = isCombine ? '' : (_store.delivery_free || 0);
     toggleCombineDelivery(isCombine);
+
+    // Carrega logo existente no preview
+    renderLogoPreviewer(_store);
+  }
+
+  function renderLogoPreviewer(store) {
+    const imgEl         = document.getElementById('logo-preview-img');
+    const placeholder   = document.getElementById('logo-placeholder');
+    if (store.logo_url) {
+      imgEl.src = store.logo_url;
+      imgEl.style.display = 'block';
+      placeholder.style.display = 'none';
+    } else {
+      imgEl.style.display = 'none';
+      placeholder.style.display = 'block';
+      placeholder.textContent = (store.name || 'L').charAt(0).toUpperCase();
+    }
+  }
+
+  function handleLogoSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validação imediata
+    const err = StorageModule.validateFile(file);
+    const statusEl = document.getElementById('logo-status');
+    if (err) {
+      statusEl.textContent = '❌ ' + err;
+      statusEl.className = 'logo-status error';
+      return;
+    }
+
+    _pendingLogoFile = file;
+    statusEl.textContent = '✅ Logo selecionada. Clique em Salvar para confirmar.';
+    statusEl.className = 'logo-status success';
+
+    // Preview imediato via FileReader
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imgEl       = document.getElementById('logo-preview-img');
+      const placeholder = document.getElementById('logo-placeholder');
+      imgEl.src = e.target.result;
+      imgEl.style.display = 'block';
+      placeholder.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function uploadPendingLogo() {
+    if (!_pendingLogoFile || !_store) return null;
+
+    const progressWrap = document.getElementById('logo-progress-wrap');
+    const progressFill = document.getElementById('logo-progress-fill');
+    const progressPct  = document.getElementById('logo-progress-pct');
+    const statusEl     = document.getElementById('logo-status');
+
+    progressWrap.style.display = 'flex';
+
+    try {
+      const { publicUrl, path } = await StorageModule.uploadLogo(
+        _pendingLogoFile,
+        _store.id,
+        (pct) => {
+          progressFill.style.width = pct + '%';
+          progressPct.textContent = pct + '%';
+        }
+      );
+
+      // Remove logo antiga do storage (best-effort)
+      if (_store.logo_path) {
+        await StorageModule.deleteLogo(_store.logo_path);
+      }
+
+      _pendingLogoFile = null;
+      progressWrap.style.display = 'none';
+      return { logo_url: publicUrl, logo_path: path };
+    } catch (e) {
+      statusEl.textContent = '❌ Erro no upload: ' + e.message;
+      statusEl.className = 'logo-status error';
+      progressWrap.style.display = 'none';
+      return null;
+    }
   }
 
   function toggleCombineDelivery(checked) {
@@ -225,7 +404,11 @@
 
       const isCombine = document.getElementById('s-delivery-combine').checked;
 
-      const { success, error } = await StoreModule.save({
+      // 1. Upload da logo (se houver arquivo pendente)
+      const logoData = await uploadPendingLogo();
+
+      // 2. Salva dados da loja (incluindo logo_url/logo_path se novo upload)
+      const storePayload = {
         name,
         slogan:        document.getElementById('s-slogan').value.trim(),
         address:       document.getElementById('s-address').value.trim(),
@@ -234,11 +417,17 @@
         whatsapp:      wa,
         delivery_fee:  isCombine ? -1 : (parseFloat(document.getElementById('s-delivery-fee').value) || 0),
         delivery_free: isCombine ? 0 : (parseFloat(document.getElementById('s-delivery-free').value) || 0),
-      });
+      };
 
+      if (logoData) {
+        storePayload.logo_url  = logoData.logo_url;
+        storePayload.logo_path = logoData.logo_path;
+      }
+
+      const { success, error } = await StoreModule.save(storePayload);
       if (!success) { showToast(error || 'Falha ao salvar.', 'error'); return; }
 
-      // Atualiza credenciais de auth (Supabase Auth)
+      // 3. Atualiza credenciais de auth (Supabase Auth)
       const newEmail = document.getElementById('s-auth-email').value.trim();
       const newPass  = document.getElementById('s-auth-pass').value;
       if (newEmail || newPass) {
@@ -252,11 +441,18 @@
 
       const nameEl = document.getElementById('sidebar-store-name');
       if (nameEl) nameEl.textContent = name;
-      
+
+      // Atualiza status da logo após salvar
+      const statusEl = document.getElementById('logo-status');
+      if (logoData) {
+        statusEl.textContent = '✅ Logo salva com sucesso!';
+        statusEl.className = 'logo-status success';
+      }
+
       showToast('Configurações salvas com sucesso!', 'success');
-      await load(); // atualiza link com novo slug
+      await load();
     } catch (err) {
-      console.error("Erro ao salvar configurações:", err);
+      console.error('Erro ao salvar configurações:', err);
       showToast('Erro inesperado ao salvar.', 'error');
     }
   }

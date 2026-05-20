@@ -60,9 +60,12 @@
     <div class="page-content">
       <!-- Boas-vindas -->
       <div class="welcome-banner">
-        <div>
-          <h2 id="welcome-text">Olá! 👋</h2>
-          <p id="store-subtitle">Gerencie seus produtos e acompanhe os pedidos</p>
+        <div style="display:flex;align-items:center;gap:16px">
+          <div id="welcome-store-logo-wrap" style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.85);box-shadow:0 4px 12px rgba(0,0,0,0.06);display:none;align-items:center;justify-content:center;overflow:hidden;border:2px solid #fff;flex-shrink:0;"></div>
+          <div>
+            <h2 id="welcome-text">Olá! 👋</h2>
+            <p id="store-subtitle">Gerencie seus produtos e acompanhe os pedidos</p>
+          </div>
         </div>
         <a id="view-store-btn" href="#" target="_blank" class="btn btn-outline btn-sm">Ver Loja →</a>
       </div>
@@ -110,6 +113,7 @@
 <div id="toast-container"></div>
 
 <!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/core/helpers.js"></script>
 <script src="../js/core/supabaseClient.js"></script>
@@ -148,16 +152,44 @@
       document.getElementById('welcome-text').textContent   = `Olá, ${_store.name}! 👋`;
       document.getElementById('store-subtitle').textContent = 'Gerencie seus produtos e acompanhe os pedidos';
 
+      // Dynamic welcome logo injection
+      if (_store.logo_url) {
+        const logoWrap = document.getElementById('welcome-store-logo-wrap');
+        if (logoWrap) {
+          logoWrap.style.display = 'flex';
+          logoWrap.innerHTML = `<img src="${_store.logo_url}" alt="${_store.name}" style="width:100%;height:100%;object-fit:cover;">`;
+        }
+      }
+
       const storeUrl = StoreModule.getStoreUrl(_store);
       document.getElementById('store-url-display').textContent = storeUrl;
       document.getElementById('view-store-btn').href  = storeUrl;
       document.getElementById('qa-store-link').href   = storeUrl;
 
-      const storeId  = AuthService.getActiveStoreId();
-      const [products, orders] = await Promise.all([
-        EncartAPI.ProductAPI.getByStore(storeId),
-        EncartAPI.OrderAPI.getByStore(storeId)
-      ]);
+      const isMock = new URLSearchParams(window.location.search).get('mock') === 'true' || localStorage.getItem('seven_mock_mode') === 'true';
+      let products, orders;
+      if (isMock) {
+        products = [
+          { id: 'p1', name: 'Bolo de Chocolate Belga', active: true, promo_price: 18.00 },
+          { id: 'p2', name: 'Quiche Loraine Tradicional', active: true },
+          { id: 'p3', name: 'Torta Cremosa de Limão', active: true, promo_price: 14.50 },
+          { id: 'p4', name: 'Muffin de Mirtilo Fresco', active: true },
+          { id: 'p5', name: 'Croissant Folhado Amanteigado', active: true }
+        ];
+        orders = [
+          { id: 'o1', customer_name: 'Ana Silva', total: 68.00, status: 'novo', created_at: new Date(Date.now() - 1000*60*15).toISOString(), items: [1,2] },
+          { id: 'o2', customer_name: 'Carlos Souza', total: 145.00, status: 'entregue', created_at: new Date(Date.now() - 1000*60*60*2).toISOString(), items: [1,2,3] },
+          { id: 'o3', customer_name: 'Mariana Lima', total: 95.00, status: 'novo', created_at: new Date(Date.now() - 1000*60*60*4).toISOString(), items: [1] }
+        ];
+      } else {
+        const storeId  = AuthService.getActiveStoreId();
+        const [pData, oData] = await Promise.all([
+          EncartAPI.ProductAPI.getByStore(storeId),
+          EncartAPI.OrderAPI.getByStore(storeId)
+        ]);
+        products = pData;
+        orders = oData;
+      }
 
       const safeProducts = Array.isArray(products) ? products : [];
       const safeOrders   = Array.isArray(orders)   ? orders   : [];
@@ -201,7 +233,7 @@
         recentList.innerHTML = safeOrders.slice(0, 5).map(o => `
           <div class="order-row">
             <div class="order-info">
-              <h4>#${String(o.id).slice(-5).toUpperCase()} — ${o.customer_name || 'Cliente'}</h4>
+              <h4>#${String(o.id).slice(-5).toUpperCase()} — ${escapeHTML(o.customer_name || 'Cliente')}</h4>
               <p>${fmtD(o.created_at)} · ${Array.isArray(o.items) ? o.items.length : '?'} item(s)</p>
             </div>
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">

@@ -13,7 +13,6 @@ window.StoreUI = (() => {
     // 1. Quando a Loja Carregar -> Preenche Header e Banner
     EventBus.on(EventBus.EVENTS.STORE_LOADED, (data) => {
       store = data.store;
-      document.title = (store.name || 'Loja') + ' — EncartShop';
       _setEl('header-store-name', store.name || '');
       _setEl('store-banner',      store.banner_text || 'Confira nossas ofertas!');
       _setEl('header-hours',      store.hours || '');
@@ -74,7 +73,8 @@ window.StoreUI = (() => {
       tabs.push(`<button class="cat-tab ${activeCategory==='Ofertas'?'active':''}" data-cat="Ofertas" style="${activeCategory!=='Ofertas'?'color:#ef4444;border-color:#ef4444':''}">🔥 Ofertas</button>`);
     }
     categories.forEach(cat => {
-      tabs.push(`<button class="cat-tab ${activeCategory===cat?'active':''}" data-cat="${cat}">${cat}</button>`);
+      const catEsc = escapeHTML(cat);
+      tabs.push(`<button class="cat-tab ${activeCategory===cat?'active':''}" data-cat="${catEsc}">${catEsc}</button>`);
     });
 
     tabsWrap.innerHTML = tabs.join('');
@@ -94,24 +94,31 @@ window.StoreUI = (() => {
   }
 
   function _updateCartIndicators(cart) {
-    const itemCount = cart.length;
+    const totalQty  = cart.reduce((s, i) => s + i.qty, 0);
     const total     = cart.reduce((s, i) => s + i.price * i.qty, 0);
     const fmt       = v => UIRender.fmtPrice(v);
 
     const hBtn = document.getElementById('header-cart-btn');
     const hCnt = document.getElementById('header-cart-count');
-    if (hBtn) hBtn.classList.toggle('hidden', itemCount === 0);
-    if (hCnt) hCnt.textContent = itemCount;
+    if (hBtn) hBtn.classList.toggle('hidden', totalQty === 0);
+    if (hCnt) hCnt.textContent = totalQty;
 
     const bubble     = document.getElementById('cart-bubble');
     const bubbleTotal = document.getElementById('cart-bubble-total');
     const cnt        = document.getElementById('cart-count');
-    if (bubble) bubble.classList.toggle('hidden', itemCount === 0);
-    if (cnt) cnt.textContent = itemCount;
+    const cntLabel   = document.getElementById('cart-count-label');
+
+    if (bubble) {
+      bubble.classList.toggle('cart-visible', totalQty > 0);
+    }
+    if (cnt) cnt.textContent = totalQty;
+    if (cntLabel) {
+      cntLabel.textContent = totalQty === 1 ? 'item' : 'itens';
+    }
     if (bubbleTotal) bubbleTotal.textContent = fmt(total);
 
     const drawerBadge = document.getElementById('cart-drawer-count');
-    if (drawerBadge) drawerBadge.textContent = itemCount;
+    if (drawerBadge) drawerBadge.textContent = totalQty;
   }
 
   function _renderCartBody(cart) {
@@ -137,12 +144,13 @@ window.StoreUI = (() => {
       const qtyLabel = item.unit === 'kg'
         ? (item.qty < 1 ? `${item.qty * 1000}g` : `${item.qty.toFixed(1).replace('.', ',')}kg`)
         : `${item.qty}x`;
+      const img = escapeHTML(item.image) || defaultImg;
       return `
         <div class="cart-item-row">
-          <img class="cart-item-img" src="${item.image || defaultImg}" alt="${item.name}" onerror="this.src='${defaultImg}'">
+          <img class="cart-item-img" src="${img}" alt="${escapeHTML(item.name)}" onerror="this.src='${defaultImg}'">
           <div class="cart-item-info">
-            <div class="cart-item-name">${item.name}</div>
-            <div class="cart-item-unit-price">${fmt(item.price)} / ${item.unit || 'un'}</div>
+            <div class="cart-item-name">${escapeHTML(item.name)}</div>
+            <div class="cart-item-unit-price">${fmt(item.price)} / ${escapeHTML(item.unit || 'un')}</div>
             <div class="cart-item-price">${fmt(item.price * item.qty)}</div>
           </div>
           <div class="cart-qty-control">

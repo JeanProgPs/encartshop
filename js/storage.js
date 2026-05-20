@@ -1,14 +1,18 @@
 /**
- * EncartShop — Storage Module v2
+ * EncartShop — Storage Module v3
  * Upload seguro com validação, compressão e feedback de progresso.
+ * Suporta produtos (bucket: products) e logos (bucket: logos).
  */
 
 const StorageModule = (() => {
-  const BUCKET_NAME  = 'products';
-  const MAX_SIZE_MB  = 2;
+  const BUCKET_PRODUCTS = 'products';
+  const BUCKET_LOGOS    = 'logos';
+
+  const MAX_SIZE_MB    = 2;
   const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
   const ALLOWED_TYPES  = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  const MAX_DIMENSION  = 1200; // pixels — comprime se maior
+  const MAX_DIMENSION  = 1200; // pixels para produtos
+  const LOGO_DIMENSION = 400;  // pixels para logos (quadrado)
 
   /**
    * Valida o arquivo antes do upload.
@@ -27,12 +31,13 @@ const StorageModule = (() => {
   }
 
   /**
-   * Comprime a imagem antes do upload via Canvas API.
-   * Redimensiona se largura/altura > MAX_DIMENSION.
-   * Converte para WebP com qualidade 0.82.
+   * Comprime imagem via Canvas API.
+   * @param {File} file
+   * @param {number} maxDimension - largura/altura máxima
+   * @param {number} quality - qualidade WebP (0–1)
    * @returns {Promise<Blob>}
    */
-  async function compressImage(file) {
+  async function compressImage(file, maxDimension = MAX_DIMENSION, quality = 0.82) {
     return new Promise((resolve, reject) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
@@ -43,13 +48,13 @@ const StorageModule = (() => {
         let { width, height } = img;
 
         // Redimensiona mantendo proporção se necessário
-        if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        if (width > maxDimension || height > maxDimension) {
           if (width > height) {
-            height = Math.round((height * MAX_DIMENSION) / width);
-            width  = MAX_DIMENSION;
+            height = Math.round((height * maxDimension) / width);
+            width  = maxDimension;
           } else {
-            width  = Math.round((width  * MAX_DIMENSION) / height);
-            height = MAX_DIMENSION;
+            width  = Math.round((width  * maxDimension) / height);
+            height = maxDimension;
           }
         }
 
@@ -60,14 +65,13 @@ const StorageModule = (() => {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Tenta WebP primeiro, fallback para JPEG
         canvas.toBlob(
           (blob) => {
             if (blob) resolve(blob);
             else reject(new Error('Falha ao comprimir imagem.'));
           },
           'image/webp',
-          0.82
+          quality
         );
       };
 
@@ -81,47 +85,35 @@ const StorageModule = (() => {
   }
 
   /**
-   * Faz upload seguro de uma imagem:
-   * 1. Valida tipo e tamanho
-   * 2. Comprime via Canvas
-   * 3. Faz upload para Supabase Storage
-   * 4. Retorna URL pública
-   *
-   * @param {File} file
-   * @param {string} storeId — pasta do storage (uuid da loja)
-   * @param {Function} onProgress — callback(percent) opcional
-   * @returns {Promise<string>} URL pública
+   * Upload genérico para qualquer bucket.
+   * @private
    */
-  async function uploadImage(file, storeId = 'general', onProgress = null) {
-    // 1. Valida
+  async function _upload(file, bucketName, folder, maxDim, quality, onProgress) {
     const validationError = validateFile(file);
     if (validationError) throw new Error(validationError);
 
     if (typeof onProgress === 'function') onProgress(10);
 
-    // 2. Comprime
     let uploadBlob;
     try {
-      uploadBlob = await compressImage(file);
+      uploadBlob = await compressImage(file, maxDim, quality);
     } catch (compressErr) {
       console.warn('[StorageModule] Compressão falhou, usando arquivo original:', compressErr);
-      uploadBlob = file; // fallback sem compressão
+      uploadBlob = file;
     }
 
     if (typeof onProgress === 'function') onProgress(40);
 
-    // 3. Gera nome único (uuid-like sem dependência externa)
-    const ext      = 'webp'; // sempre salva como webp após compressão
+    const ext      = 'webp';
     const random   = Math.random().toString(36).substring(2, 10);
     const ts       = Date.now();
     const fileName = `${random}-${ts}.${ext}`;
-    const filePath = `${storeId}/${fileName}`;
+    const filePath = `${folder}/${fileName}`;
 
-    // 4. Upload
     const { data, error } = await window.sb.storage
-      .from(BUCKET_NAME)
+      .from(bucketName)
       .upload(filePath, uploadBlob, {
-        cacheControl: '31536000', // 1 ano — imagens imutáveis por nome
+        cacheControl: '31536000',
         upsert: false,
         contentType: 'image/webp'
       });
@@ -130,7 +122,7 @@ const StorageModule = (() => {
 
     if (error) {
       if (error.message?.includes('bucket not found')) {
-        throw new Error('Bucket "products" não encontrado. Configure o Storage no painel do Supabase.');
+        throw new Error(`Bucket "${bucketName}" não encontrado. Configure o Storage no painel do Supabase.`);
       }
       if (error.message?.includes('row-level security')) {
         throw new Error('Sem permissão para fazer upload. Verifique as policies do Storage.');
@@ -138,17 +130,61 @@ const StorageModule = (() => {
       throw error;
     }
 
-    // 5. URL pública
     const { data: { publicUrl } } = window.sb.storage
-      .from(BUCKET_NAME)
+      .from(bucketName)
       .getPublicUrl(filePath);
 
     if (typeof onProgress === 'function') onProgress(100);
 
-    return publicUrl;
+    return { publicUrl, path: filePath };
   }
 
-  return { uploadImage, validateFile, compressImage, MAX_SIZE_MB, ALLOWED_TYPES };
+  /**
+   * Upload de imagem de produto (bucket: products).
+   * @param {File} file
+   * @param {string} storeId
+   * @param {Function} onProgress
+   * @returns {Promise<string>} URL pública
+   */
+  async function uploadImage(file, storeId = 'general', onProgress = null) {
+    const result = await _upload(file, BUCKET_PRODUCTS, storeId, MAX_DIMENSION, 0.82, onProgress);
+    return result.publicUrl;
+  }
+
+  /**
+   * Upload de logo da loja (bucket: logos).
+   * Redimensiona para máx. 400×400 com qualidade 0.90.
+   * @param {File} file
+   * @param {string} storeId
+   * @param {Function} onProgress
+   * @returns {Promise<{publicUrl: string, path: string}>}
+   */
+  async function uploadLogo(file, storeId = 'general', onProgress = null) {
+    return await _upload(file, BUCKET_LOGOS, storeId, LOGO_DIMENSION, 0.90, onProgress);
+  }
+
+  /**
+   * Remove uma logo antiga do bucket logos (best-effort, não bloqueia fluxo).
+   * @param {string} path - caminho do arquivo (ex: "store-uuid/abc-123.webp")
+   */
+  async function deleteLogo(path) {
+    if (!path) return;
+    try {
+      await window.sb.storage.from(BUCKET_LOGOS).remove([path]);
+    } catch (e) {
+      console.warn('[StorageModule] Falha ao remover logo antiga:', e);
+    }
+  }
+
+  return {
+    uploadImage,
+    uploadLogo,
+    deleteLogo,
+    validateFile,
+    compressImage,
+    MAX_SIZE_MB,
+    ALLOWED_TYPES
+  };
 })();
 
 window.StorageModule = StorageModule;

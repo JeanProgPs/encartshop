@@ -139,15 +139,15 @@ const SubscriptionModule = (() => {
       <div style="display:flex;align-items:center;gap:12px;">
         <span style="font-size:1.2rem">${isWarning ? '🔔' : '⚠️'}</span>
         <div>
-          <strong style="display:block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px">${alert.title}</strong>
-          <span>${alert.message}</span>
+          <strong style="display:block;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px">${escapeHTML(alert.title)}</strong>
+          <span>${escapeHTML(alert.message)}</span>
         </div>
       </div>
-      <a href="${alert.btnUrl}" style="
+      <a href="${escapeHTML(alert.btnUrl)}" style="
         background:#fff;color:${isWarning ? '#b45309' : 'var(--danger)'};
         padding:8px 16px;border-radius:8px;font-weight:700;font-size:0.82rem;
         white-space:nowrap;text-decoration:none;flex-shrink:0;
-      ">${alert.btnText}</a>`;
+      ">${escapeHTML(alert.btnText)}</a>`;
 
     const target = document.querySelector('.main-content') || document.body;
     target.insertBefore(banner, target.firstChild);

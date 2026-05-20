@@ -95,7 +95,7 @@ window.DeliveryModule = (() => {
         <label class="delivery-module-label">Bairro / Região de Entrega</label>
         <select class="delivery-module-select" onchange="window.DeliveryModule.setZone(this.value)">
           <option value="" disabled ${!selectedZone ? 'selected' : ''}>Selecione sua região...</option>
-          ${zones.map(z => `<option value="${z.id}" ${selectedZone && selectedZone.id === z.id ? 'selected' : ''}>${z.region_name}</option>`).join('')}
+          ${zones.map(z => `<option value="${z.id}" ${selectedZone && selectedZone.id === z.id ? 'selected' : ''}>${escapeHTML(z.region_name)}</option>`).join('')}
         </select>
       </div>
     `;
@@ -109,12 +109,12 @@ window.DeliveryModule = (() => {
       if (!minOrderMet && state.minimum_order > 0) {
         alertHTML = `
           <div class="delivery-module-alert">
-            Pedido mínimo para <b>${selectedZone.region_name}</b> é de ${fmt(state.minimum_order)}.
+            Pedido mínimo para <b>${escapeHTML(selectedZone.region_name)}</b> é de ${fmt(state.minimum_order)}.
             Faltam ${fmt(state.minimum_order - state.subtotal)}.
           </div>
         `;
       } else if (selectedZone.estimated_time) {
-        alertHTML = `<div class="delivery-module-time">⏱️ Previsão: ${selectedZone.estimated_time}</div>`;
+        alertHTML = `<div class="delivery-module-time">⏱️ Previsão: ${escapeHTML(selectedZone.estimated_time)}</div>`;
       }
 
       infoHTML = `

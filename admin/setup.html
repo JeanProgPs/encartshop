@@ -287,7 +287,9 @@
 </div>
 
 <div id="toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/helpers.js"></script>
 <script src="/js/core/supabaseClient.js"></script>
 <script src="/js/core/api.js"></script>
 <script src="/js/auth/authService.js"></script>
@@ -508,7 +510,7 @@
 
   function showError(msg) {
     const errEl = document.getElementById('setup-error');
-    errEl.innerHTML = `❌ ${msg}`;
+    errEl.textContent = `❌ ${msg}`;
     errEl.style.display = 'block';
   }
 
@@ -516,7 +518,10 @@
     const icons = {success:'✅',error:'❌',info:'ℹ️'};
     const t = document.createElement('div');
     t.className = `toast ${type}`;
-    t.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+    t.innerHTML = `<span>${icons[type]}</span>`;
+    const textSpan = document.createElement('span');
+    textSpan.textContent = msg;
+    t.appendChild(textSpan);
     let c = document.getElementById('toast-container');
     if (!c) { c = document.createElement('div'); c.id = 'toast-container'; document.body.appendChild(c); }
     c.appendChild(t);

@@ -9,6 +9,8 @@
     { "source": "/setup", "destination": "/admin/setup" },
     { "source": "/lojas", "destination": "/admin/lojas" },
     { "source": "/pagamento", "destination": "/admin/pagamento" },
+    { "source": "/loja/:slug", "destination": "/api/loja?slug=:slug" },
+    { "source": "/loja", "destination": "/loja/index.html" },
     { "source": "/admin", "destination": "/admin/index" }
   ],
   "headers": [

@@ -6,9 +6,9 @@ const UIRender = (() => {
   function emptyState(icon, title, desc) {
     return `
       <div style="text-align:center; padding:40px 20px; color:var(--text-muted);">
-        <div style="font-size:3rem; margin-bottom:16px; opacity:0.8;">${icon}</div>
-        <h4 style="font-size:1.1rem; font-weight:700; color:var(--text); margin-bottom:8px;">${title}</h4>
-        <p style="font-size:0.9rem; max-width:300px; margin:0 auto; line-height:1.5;">${desc}</p>
+        <div style="font-size:3rem; margin-bottom:16px; opacity:0.8;">${escapeHTML(icon)}</div>
+        <h4 style="font-size:1.1rem; font-weight:700; color:var(--text); margin-bottom:8px;">${escapeHTML(title)}</h4>
+        <p style="font-size:0.9rem; max-width:300px; margin:0 auto; line-height:1.5;">${escapeHTML(desc)}</p>
       </div>
     `;
   }
@@ -26,7 +26,7 @@ const UIRender = (() => {
 
   function productAdminCard(p, callbacks) {
     const defaultImg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="%23eee"><rect width="100%" height="100%"/><text x="50%" y="50%" fill="%23999" font-family="sans-serif" font-size="20" text-anchor="middle" dy=".3em">Sem Imagem</text></svg>';
-    const img = p.image || defaultImg;
+    const img = escapeHTML(p.image) || defaultImg;
     const priceStr = fmtPrice(p.price);
     const promoStr = p.promo_price ? `<span style="font-size:0.8rem;color:var(--danger);font-weight:700;">${fmtPrice(p.promo_price)}</span> <span style="font-size:0.7rem;text-decoration:line-through;color:var(--text-muted);">${priceStr}</span>` : `<span style="font-weight:700;">${priceStr}</span>`;
     const opacity = p.active ? '1' : '0.5';
@@ -34,13 +34,13 @@ const UIRender = (() => {
     return `
       <div class="prod-admin-card" style="opacity:${opacity}">
         <div class="img-wrap">
-          <img src="${img}" alt="${p.name}">
+          <img src="${img}" alt="${escapeHTML(p.name)}">
           ${!p.active ? `<div style="position:absolute;top:8px;right:8px;background:var(--danger);color:white;font-size:0.7rem;padding:2px 6px;border-radius:4px;font-weight:bold;">Inativo</div>` : ''}
           ${p.promo_price && p.active ? `<div style="position:absolute;top:8px;left:8px;background:var(--accent);color:white;font-size:0.7rem;padding:2px 6px;border-radius:4px;font-weight:bold;">Promoção</div>` : ''}
         </div>
         <div class="card-body">
-          <div class="card-name">${p.name}</div>
-          <div class="card-cat">${p.category || 'Sem categoria'}</div>
+          <div class="card-name">${escapeHTML(p.name)}</div>
+          <div class="card-cat">${escapeHTML(p.category || 'Sem categoria')}</div>
           <div class="prices">${promoStr}</div>
           <div class="card-actions">
             <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="${callbacks.onEdit}('${p.id}')">Editar</button>
@@ -61,16 +61,16 @@ const UIRender = (() => {
     const isKg = unit.toLowerCase() === 'kg';
     const qtyLabel = isKg ? (cartQty < 1 && cartQty > 0 ? `${cartQty * 1000}g` : `${cartQty.toFixed(1).replace('.',',')}kg`) : `${cartQty}x`;
     const defaultImg = 'https://images.placeholders.dev/?width=400&height=400&text=Sem%20Imagem&bgColor=%23f1f5f9&textColor=%2364748b';
-    const img = p.image || defaultImg;
+    const img = escapeHTML(p.image) || defaultImg;
 
     return `
       <div class="product-card" id="prod-${p.id}">
         <div class="product-image-wrap">
-          <img src="${img}" alt="${p.name}" loading="lazy" onerror="this.src='${defaultImg}'">
+          <img src="${img}" alt="${escapeHTML(p.name)}" loading="lazy" onerror="this.src='${defaultImg}'">
           ${isPromo ? `<div class="promo-badge">🔥 OFERTA</div>` : ''}
         </div>
         <div class="product-info">
-          <div class="product-name" title="${p.name}">${p.name}</div>
+          <div class="product-name" title="${escapeHTML(p.name)}">${escapeHTML(p.name)}</div>
           <div class="product-price-row">
             ${isPromo 
               ? `<div class="price-normal">${fmtPrice(p.price)}</div><div class="price-promo">${fmtPrice(p.promo_price)}</div>`
@@ -124,7 +124,7 @@ const UIRender = (() => {
         <div class="order-header">
           <div>
             <div class="order-id">#${String(o.id).slice(-5).toUpperCase()}</div>
-            <div class="order-customer">${o.customer_name || 'Cliente'}</div>
+            <div class="order-customer">${escapeHTML(o.customer_name || 'Cliente')}</div>
             <div class="order-meta">${dateStr} · ${itemsCount} item(s)</div>
           </div>
           <span class="badge ${statusClass}">${statusLabel}</span>
@@ -132,7 +132,7 @@ const UIRender = (() => {
         <div class="order-items">
           ${(o.items || []).map(item => `
             <div class="order-item">
-              <span class="item-name">${item.name}</span>
+              <span class="item-name">${escapeHTML(item.name)}</span>
               <span class="item-qty">${item.qty || item.quantity}x</span>
             </div>
           `).join('')}

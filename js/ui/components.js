@@ -27,7 +27,10 @@ const UIComponents = (() => {
       box-shadow:0 4px 20px rgba(0,0,0,0.25);font-size:0.875rem;font-weight:500;
       display:flex;align-items:center;gap:10px;pointer-events:all;
       animation:encart-slide-in 0.3s ease;`;
-    toast.innerHTML = `<span style="font-size:1rem;flex-shrink:0">${s.icon}</span><span>${message}</span>`;
+    toast.innerHTML = `<span style="font-size:1rem;flex-shrink:0">${s.icon}</span>`;
+    const textNode = document.createElement('span');
+    textNode.textContent = message;
+    toast.appendChild(textNode);
     container.appendChild(toast);
     const ms = type === 'error' ? 5000 : 3500;
     setTimeout(() => {
@@ -48,7 +51,7 @@ const UIComponents = (() => {
 
     sidebar.innerHTML = `
       <div class="sidebar-logo">
-        <div style="width:42px;height:42px;background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;margin-bottom:10px;box-shadow:var(--shadow-brand);">
+        <div id="sidebar-logo-container" style="width:42px;height:42px;background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;margin-bottom:10px;box-shadow:var(--shadow-brand);overflow:hidden;">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
         </div>
         <div class="logo-text">
@@ -78,7 +81,7 @@ const UIComponents = (() => {
       <div class="sidebar-footer" style="padding:16px 12px">
         <a href="#" id="view-store-btn" target="_blank" class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:16px;font-size:0.85rem">👁️ Ver Loja</a>
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:36px;height:36px;background:rgba(255,255,255,0.05);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem">👤</div>
+          <div id="sidebar-avatar-placeholder" style="width:36px;height:36px;background:rgba(255,255,255,0.05);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;overflow:hidden;flex-shrink:0;">👤</div>
           <div style="flex:1;overflow:hidden">
             <div id="sidebar-store-name" style="font-size:0.8rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Carregando...</div>
             <div style="font-size:0.7rem;color:var(--text-muted)">Administrador</div>
@@ -119,13 +122,25 @@ const UIComponents = (() => {
       window.location.replace('index.html');
     });
 
-    // ── Nome da loja na sidebar ───────────────────────────────
+    // ── Nome da loja e logo na sidebar ─────────────────────────
     StoreModule.getActive().then(store => {
       if (!store) return;
       const nameEl = sidebar.querySelector('#sidebar-store-name');
       if (nameEl) nameEl.textContent = store.name;
       const viewBtn = sidebar.querySelector('#view-store-btn');
       if (viewBtn) viewBtn.href = StoreModule.getStoreUrl(store);
+
+      // Dynamic Logo Injection
+      if (store.logo_url) {
+        const logoContainer = sidebar.querySelector('#sidebar-logo-container');
+        if (logoContainer) {
+          logoContainer.innerHTML = `<img src="${store.logo_url}" alt="${store.name}" style="width:100%;height:100%;object-fit:cover;">`;
+        }
+        const avatarEl = sidebar.querySelector('#sidebar-avatar-placeholder');
+        if (avatarEl) {
+          avatarEl.innerHTML = `<img src="${store.logo_url}" alt="${store.name}" style="width:100%;height:100%;object-fit:cover;">`;
+        }
+      }
     }).catch(() => {/* silencioso */});
   }
 
