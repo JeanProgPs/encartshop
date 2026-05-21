@@ -9,36 +9,60 @@
   <link rel="apple-touch-icon" href="/assets/favicon.png">
   <link rel="stylesheet" href="/style.css">
   <style>
+    :root {
+      --bg: #030712;
+      --bg-card: rgba(255, 255, 255, 0.02);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f9fafb;
+      --text-muted: #9ca3af;
+      --text-light: #d1d5db;
+      --brand: #6366f1;
+      --brand-dark: #4f46e5;
+      --shadow-brand: 0 0 30px rgba(99, 102, 241, 0.4);
+    }
     body { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
-           background:radial-gradient(ellipse 70% 60% at 50% 30%, rgba(34,197,94,0.12) 0%, transparent 70%); }
-    .setup-wrap { width:100%; max-width:520px; }
+           background: var(--bg); 
+           background-image: radial-gradient(ellipse at 50% 10%, rgba(99,102,241,0.15) 0%, transparent 60%);
+           color: var(--text); }
+    .setup-wrap { width:100%; max-width:520px; position:relative; z-index: 10; }
     .setup-logo { text-align:center; margin-bottom:28px; }
     .setup-logo .logo-icon { width:56px; height:56px; background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%); border-radius:16px;
       display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.1rem;
       color:#fff; font-family:var(--font-display); margin:0 auto 12px; box-shadow:var(--shadow-brand); letter-spacing:-0.03em; }
-    .setup-logo h1 { font-family:var(--font-display); font-size:1.6rem; font-weight:800; }
+    .setup-logo h1 { font-family:var(--font-display); font-size:1.6rem; font-weight:800; color: #fff; }
     .setup-logo p  { color:var(--text-muted); font-size:0.9rem; margin-top:4px; }
 
     /* Steps */
     .steps-indicator { display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:28px; }
     .step-dot { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-      font-size:0.75rem; font-weight:700; background:var(--bg-card); border:2px solid var(--border);
+      font-size:0.75rem; font-weight:700; background:rgba(255,255,255,0.05); border:2px solid var(--border);
       color:var(--text-muted); transition:var(--transition); flex-shrink:0; }
     .step-dot.active { background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%); border-color:var(--brand); color:#fff; box-shadow:var(--shadow-brand); }
     .step-dot.done   { background:var(--success); border-color:var(--success); color:#fff; }
     .step-line { flex:1; height:2px; background:var(--border); max-width:44px; transition:var(--transition); }
     .step-line.done { background:var(--success); }
 
-    .step-panel { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-xl); padding:28px; display:none; }
+    .step-panel { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-xl); padding:28px; display:none; backdrop-filter: blur(10px); }
     .step-panel.active { display:block; animation:slideUp 0.3s ease; }
     @keyframes slideUp { from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:translateY(0);} }
 
     .step-number { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--brand); margin-bottom:4px; }
-    .step-panel h2 { font-size:1.1rem; font-weight:700; margin-bottom:4px; }
+    .step-panel h2 { font-size:1.1rem; font-weight:700; margin-bottom:4px; color: #fff; }
     .step-panel .desc { color:var(--text-muted); font-size:0.85rem; line-height:1.6; margin-bottom:20px; }
     .form-stack { display:flex; flex-direction:column; gap:13px; }
     .step-footer { display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
     .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+    /* Inputs Override para Dark Theme */
+    .form-input {
+      background: rgba(0,0,0,0.2) !important;
+      border: 1px solid var(--border) !important;
+      color: var(--text) !important;
+    }
+    .form-input:focus {
+      border-color: var(--brand) !important;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+    }
 
     /* Color Picker */
     .color-palette { display:flex; flex-wrap:wrap; gap:8px; }
@@ -54,12 +78,15 @@
     /* Success */
     .success-panel { text-align:center; padding:8px 0; }
     .success-icon  { font-size:3.5rem; margin-bottom:14px; }
-    .success-panel h2 { font-family:var(--font-display); font-size:1.3rem; font-weight:800; margin-bottom:8px; }
+    .success-panel h2 { font-family:var(--font-display); font-size:1.3rem; font-weight:800; margin-bottom:8px; color:#fff;}
     .success-panel p  { color:var(--text-muted); font-size:0.875rem; margin-bottom:20px; line-height:1.7; }
     .success-links { display:flex; flex-direction:column; gap:10px; }
 
     .warning-box { background:rgba(243,156,18,0.08); border:1px solid rgba(243,156,18,0.2);
       border-radius:var(--radius); padding:12px 14px; font-size:0.8rem; color:var(--warning); line-height:1.6; }
+
+    .plan-option { background: rgba(0,0,0,0.2); transition: all 0.3s; }
+    .plan-option:hover { background: rgba(255,255,255,0.05); }
 
     @media(max-width:480px){ .form-row{grid-template-columns:1fr;} }
   </style>
