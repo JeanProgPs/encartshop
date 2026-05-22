@@ -527,7 +527,7 @@
   }
 
   function _renderPaywall(card) {
-    card.innerHTML = \`
+    card.innerHTML = `
       <div class="relative overflow-hidden p-8 rounded-xl bg-gradient-to-br from-bgPrimary to-bgSecondary border border-borderColor flex flex-col items-center text-center gap-4">
         <div class="bg-gradient-to-r from-warning to-yellow-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide flex items-center gap-1.5"><i data-lucide="star" class="w-3.5 h-3.5"></i> Recurso PRO</div>
         <i data-lucide="map" class="w-12 h-12 text-textSecondary opacity-80"></i>
@@ -536,7 +536,7 @@
         <a href="pagamento.html" class="mt-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-lg hover:brightness-110 transition-all shadow-md flex items-center gap-2">
           <i data-lucide="zap" class="w-4 h-4"></i> Fazer Upgrade
         </a>
-      </div>\`;
+      </div>`;
     setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
   }
 
@@ -551,26 +551,26 @@
         _regions.map(z => `
           <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-bgPrimary border border-borderColor rounded-lg hover:border-accent transition-colors gap-4">
             <div class="flex flex-col gap-1">
-              <span class="font-bold text-sm text-textPrimary">\${escapeHTML(z.region_name)}</span>
+              <span class="font-bold text-sm text-textPrimary">${escapeHTML(z.region_name)}</span>
               <div class="flex items-center flex-wrap gap-3 text-xs text-textSecondary">
-                <span class="flex items-center gap-1"><i data-lucide="dollar-sign" class="w-3.5 h-3.5"></i> \${z.delivery_fee == 0 ? '<span class="text-success font-semibold">Grátis</span>' : fmt(z.delivery_fee)}</span>
+                <span class="flex items-center gap-1"><i data-lucide="dollar-sign" class="w-3.5 h-3.5"></i> ${z.delivery_fee == 0 ? '<span class="text-success font-semibold">Grátis</span>' : fmt(z.delivery_fee)}</span>
                 ${z.minimum_order ? `<span class="flex items-center gap-1"><i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Mín. ${fmt(z.minimum_order)}</span>` : ''}
                 ${z.estimated_time ? `<span class="flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> ${escapeHTML(z.estimated_time)}</span>` : ''}
               </div>
             </div>
             <div class="flex items-center gap-3">
-              <label class="switch" title="\${z.active ? 'Desativar' : 'Ativar'} região">
-                <input type="checkbox" \${z.active ? 'checked' : ''} onchange="toggleRegionActive('\${z.id}', this.checked)">
+              <label class="switch" title="${z.active ? 'Desativar' : 'Ativar'} região">
+                <input type="checkbox" ${z.active ? 'checked' : ''} onchange="toggleRegionActive('${z.id}', this.checked)">
                 <span class="slider"></span>
               </label>
-              <button class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-cardBg text-textSecondary transition-colors" onclick="openRegionModal('\${z.id}')"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
-              <button class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-danger/10 text-danger transition-colors" onclick="deleteRegion('\${z.id}')"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+              <button class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-cardBg text-textSecondary transition-colors" onclick="openRegionModal('${z.id}')"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+              <button class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-danger/10 text-danger transition-colors" onclick="deleteRegion('${z.id}')"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
           </div>`).join('') +
         `</div>`;
     }
 
-    card.innerHTML = \`
+    card.innerHTML = `
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-2">
           <i data-lucide="map" class="w-5 h-5 text-textPrimary"></i>
@@ -579,7 +579,7 @@
         <button class="px-3 py-1.5 bg-cardBg border border-borderColor rounded-md text-xs font-semibold hover:bg-bgPrimary transition-colors flex items-center gap-1.5" onclick="openRegionModal(null)"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Região</button>
       </div>
       <p class="text-sm text-textSecondary mb-4">Gerencie taxas e prazos de entrega para cada bairro ou região.</p>
-      \${listHTML}\`;
+      ${listHTML}`;
       
     setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
   }
