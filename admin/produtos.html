@@ -232,11 +232,11 @@
     allProducts = await ProductsModule.getAll(storeId());
     const filtered = ProductsModule.filter(allProducts, { query: q, category: cat, status });
 
-    document.getElementById('product-count').textContent = \`\${filtered.length} produto(s) encontrado(s)\`;
+    document.getElementById('product-count').textContent = `${filtered.length} produto(s) encontrado(s)`;
 
     const grid = document.getElementById('products-grid');
     if (!filtered.length) {
-      grid.innerHTML = \`<div class="empty-state" style="grid-column:1/-1">\` + UIRender.emptyState('📦', 'Nenhum produto encontrado', 'Tente ajustar os filtros ou adicione seu primeiro produto.') + \`</div>\`;
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">` + UIRender.emptyState('📦', 'Nenhum produto encontrado', 'Tente ajustar os filtros ou adicione seu primeiro produto.') + `</div>`;
       return;
     }
     grid.innerHTML = filtered.map(p => UIRender.productAdminCard(p, {
@@ -314,7 +314,7 @@
     const url = document.getElementById('f-image').value.trim();
     const div = document.getElementById('img-preview');
     div.innerHTML = url
-      ? \`<img src="\${escapeHTML(url)}" onerror="this.parentElement.innerHTML='<span>URL inválida</span>'">\`
+      ? `<img src="${escapeHTML(url)}" onerror="this.parentElement.innerHTML='<span>URL inválida</span>'">`
       : '<span>Pré-visualização da imagem</span>';
   }
 
@@ -325,14 +325,14 @@
 
     const err = StorageModule.validateFile(file);
     if (err) {
-      div.innerHTML = \`<span style="color:var(--danger)">\${escapeHTML(err)}</span>\`;
+      div.innerHTML = `<span style="color:var(--danger)">${escapeHTML(err)}</span>`;
       document.getElementById('f-image-file').value = '';
       showToast(err, 'error');
       return;
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => div.innerHTML = \`<img src="\${escapeHTML(e.target.result)}" alt="preview">\`;
+    reader.onload = (e) => div.innerHTML = `<img src="${escapeHTML(e.target.result)}" alt="preview">`;
     reader.readAsDataURL(file);
   }
 
@@ -402,7 +402,7 @@
 
       if (errors.length) {
         const errEl = document.getElementById('form-errors');
-        errEl.innerHTML = errors.map(e => \`• \${escapeHTML(e)}\`).join('<br>');
+        errEl.innerHTML = errors.map(e => `• ${escapeHTML(e)}`).join('<br>');
         errEl.style.display = 'block';
       }
     } catch (err) {

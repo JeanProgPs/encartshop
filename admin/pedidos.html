@@ -140,7 +140,7 @@
       if (searchRef) {
         const refUpper = searchRef.toUpperCase();
         const matchedOrder = allOrders.find(o => {
-          const nameMatch = o.customer_name && o.customer_name.toUpperCase().includes(\`#\${refUpper}\`);
+          const nameMatch = o.customer_name && o.customer_name.toUpperCase().includes(`#${refUpper}`);
           const idMatch = o.id && String(o.id).toUpperCase().endsWith(refUpper);
           return nameMatch || idMatch;
         });
@@ -154,15 +154,15 @@
           renderOrderList();
 
           setTimeout(() => {
-            const card = document.getElementById(\`order-\${matchedOrder.id}\`);
+            const card = document.getElementById(`order-${matchedOrder.id}`);
             if (card) {
               card.scrollIntoView({ behavior: 'smooth', block: 'center' });
               card.classList.add('order-highlight');
-              if (window.showToast) showToast(\`Pedido #\${searchRef} localizado e destacado!\`, 'success');
+              if (window.showToast) showToast(`Pedido #${searchRef} localizado e destacado!`, 'success');
             }
           }, 400);
         } else {
-          if (window.showToast) showToast(\`Pedido com a referência #\${searchRef} não foi encontrado.\`, 'warning');
+          if (window.showToast) showToast(`Pedido com a referência #${searchRef} não foi encontrado.`, 'warning');
         }
       }
     } catch(err) {
@@ -195,7 +195,7 @@
     document.getElementById('cnt-cancelado').textContent = counts.cancelado  || 0;
 
     const badge = document.getElementById('new-orders-badge');
-    if (counts.novo > 0) { badge.textContent = \`\${counts.novo} novo(s)\`; badge.style.display = ''; }
+    if (counts.novo > 0) { badge.textContent = `${counts.novo} novo(s)`; badge.style.display = ''; }
     else badge.style.display = 'none';
   }
 
@@ -217,7 +217,7 @@
 
     const { success, error } = await OrdersModule.updateStatus(orderId, currentStatus, newStatus);
     if (success) {
-      showToast(\`Status atualizado: \${OrdersModule.getStatusLabel(newStatus)}\`, 'success');
+      showToast(`Status atualizado: ${OrdersModule.getStatusLabel(newStatus)}`, 'success');
       await renderOrders();
     } else {
       showToast(error || 'Falha ao atualizar status.', 'error');

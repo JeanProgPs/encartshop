@@ -545,17 +545,17 @@
     let listHTML = '';
 
     if (!_regions.length) {
-      listHTML = \`<div class="text-center p-8 border-2 border-dashed border-borderColor rounded-lg text-textSecondary text-sm"><i data-lucide="map-pin" class="w-6 h-6 mx-auto mb-2 opacity-50"></i> Nenhuma região cadastrada.</div>\`;
+      listHTML = `<div class="text-center p-8 border-2 border-dashed border-borderColor rounded-lg text-textSecondary text-sm"><i data-lucide="map-pin" class="w-6 h-6 mx-auto mb-2 opacity-50"></i> Nenhuma região cadastrada.</div>`;
     } else {
-      listHTML = \`<div class="flex flex-col gap-3 mt-4">\` +
-        _regions.map(z => \`
+      listHTML = `<div class="flex flex-col gap-3 mt-4">` +
+        _regions.map(z => `
           <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-bgPrimary border border-borderColor rounded-lg hover:border-accent transition-colors gap-4">
             <div class="flex flex-col gap-1">
               <span class="font-bold text-sm text-textPrimary">\${escapeHTML(z.region_name)}</span>
               <div class="flex items-center flex-wrap gap-3 text-xs text-textSecondary">
                 <span class="flex items-center gap-1"><i data-lucide="dollar-sign" class="w-3.5 h-3.5"></i> \${z.delivery_fee == 0 ? '<span class="text-success font-semibold">Grátis</span>' : fmt(z.delivery_fee)}</span>
-                \${z.minimum_order ? \`<span class="flex items-center gap-1"><i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Mín. \${fmt(z.minimum_order)}</span>\` : ''}
-                \${z.estimated_time ? \`<span class="flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> \${escapeHTML(z.estimated_time)}</span>\` : ''}
+                ${z.minimum_order ? `<span class="flex items-center gap-1"><i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Mín. ${fmt(z.minimum_order)}</span>` : ''}
+                ${z.estimated_time ? `<span class="flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> ${escapeHTML(z.estimated_time)}</span>` : ''}
               </div>
             </div>
             <div class="flex items-center gap-3">
@@ -566,8 +566,8 @@
               <button class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-cardBg text-textSecondary transition-colors" onclick="openRegionModal('\${z.id}')"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
               <button class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-danger/10 text-danger transition-colors" onclick="deleteRegion('\${z.id}')"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
-          </div>\`).join('') +
-        \`</div>\`;
+          </div>`).join('') +
+        `</div>`;
     }
 
     card.innerHTML = \`
