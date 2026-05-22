@@ -281,13 +281,13 @@
         return;
       }
 
-      document.getElementById('welcome-text').textContent   = \`Olá, \${_store.name}! 👋\`;
+      document.getElementById('welcome-text').textContent   = `Olá, ${_store.name}! 👋`;
       // Dynamic welcome logo injection
       if (_store.logo_url) {
         const logoWrap = document.getElementById('welcome-store-logo-wrap');
         if (logoWrap) {
           logoWrap.classList.remove('hidden');
-          logoWrap.innerHTML = \`<img src="\${_store.logo_url}" alt="\${_store.name}" class="w-full h-full object-cover">\`;
+          logoWrap.innerHTML = `<img src="${_store.logo_url}" alt="${_store.name}" class="w-full h-full object-cover">`;
         }
       }
 
@@ -401,23 +401,6 @@
               </span>
             </div>
           </div>`).join('');
-          <div class="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-bgPrimary/50 transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-bgPrimary flex items-center justify-center flex-shrink-0">
-                <span class="text-xs font-bold text-textSecondary">\${String(o.customer_name).charAt(0).toUpperCase()}</span>
-              </div>
-              <div>
-                <h4 class="text-sm font-semibold text-textPrimary">#\${String(o.id).slice(-5).toUpperCase()} — \${escapeHTML(o.customer_name || 'Cliente')}</h4>
-                <p class="text-xs text-textSecondary mt-0.5">\${fmtD(o.created_at)} · \${Array.isArray(o.items) ? o.items.length : '?'} item(s)</p>
-              </div>
-            </div>
-            <div class="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
-              <span class="text-sm font-bold text-textPrimary">\${fmt(o.total)}</span>
-              <span class="px-2.5 py-1 rounded-full border text-[11px] font-bold uppercase tracking-wider \${getStatusColor(o.status)}">
-                \${OrderModule.getStatusLabel(o.status)}
-              </span>
-            </div>
-          </div>\`).join('');
       }
       
       // Reinjetar ícones Lucide dinâmicos
