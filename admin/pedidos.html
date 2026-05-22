@@ -127,11 +127,11 @@
   const storeId     = () => AuthService.getActiveStoreId();
 
   async function initAdmin() {
-    document.getElementById('orders-list').innerHTML = \`
+    document.getElementById('orders-list').innerHTML = `
       <div style="display:flex;flex-direction:column;gap:16px;">
-        \${Array.from({length:3}).map((_,i) => \`
-          <div class="h-32 bg-cardBg border border-borderColor rounded-xl animate-pulse"></div>\`).join('')}
-      </div>\`;
+        ${Array.from({length:3}).map((_,i) => `
+          <div class="h-32 bg-cardBg border border-borderColor rounded-xl animate-pulse"></div>`).join('')}
+      </div>`;
     try {
       await renderOrders();
       
