@@ -207,7 +207,59 @@ CREATE POLICY "storage_products_delete_auth"
   USING (
     bucket_id = 'products'
     AND auth.role() = 'authenticated'
-    AND (text_to_array(name, '/'::text))[1] = (SELECT id::text FROM stores WHERE user_id = auth.uid() LIMIT 1)
+  );
+
+-- ============================================================
+-- TABELA: delivery_zones
+-- Zonas de entrega e taxas por região.
+-- Leitura pública para a vitrine, escrita restrita ao dono.
+-- ============================================================
+ALTER TABLE delivery_zones ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "delivery_zones_select_public" ON delivery_zones;
+DROP POLICY IF EXISTS "delivery_zones_insert_own"     ON delivery_zones;
+DROP POLICY IF EXISTS "delivery_zones_update_own"     ON delivery_zones;
+DROP POLICY IF EXISTS "delivery_zones_delete_own"     ON delivery_zones;
+
+-- SELECT público: qualquer um lê zonas de lojas ativas, ou dono autenticado
+CREATE POLICY "delivery_zones_select_public"
+  ON delivery_zones FOR SELECT
+  USING (
+    store_id IN (
+      SELECT id FROM stores WHERE status = 'active' OR user_id = auth.uid()
+    )
+  );
+
+-- INSERT: somente dono da loja pode inserir zonas para sua própria loja
+CREATE POLICY "delivery_zones_insert_own"
+  ON delivery_zones FOR INSERT
+  WITH CHECK (
+    auth.uid() = (
+      SELECT user_id FROM stores WHERE id = store_id LIMIT 1
+    )
+  );
+
+-- UPDATE: somente dono da loja pode atualizar zonas de sua própria loja
+CREATE POLICY "delivery_zones_update_own"
+  ON delivery_zones FOR UPDATE
+  USING (
+    auth.uid() = (
+      SELECT user_id FROM stores WHERE id = store_id LIMIT 1
+    )
+  )
+  WITH CHECK (
+    auth.uid() = (
+      SELECT user_id FROM stores WHERE id = store_id LIMIT 1
+    )
+  );
+
+-- DELETE: somente dono da loja pode excluir zonas de sua própria loja
+CREATE POLICY "delivery_zones_delete_own"
+  ON delivery_zones FOR DELETE
+  USING (
+    auth.uid() = (
+      SELECT user_id FROM stores WHERE id = store_id LIMIT 1
+    )
   );
 
 -- ============================================================

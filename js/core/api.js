@@ -200,6 +200,38 @@ const DeliveryAPI = {
       if (error) { console.error('DeliveryAPI.getActiveByStore:', error); return []; }
       return data || [];
     } catch (e) { return []; }
+  },
+  async getAllByStore(storeId) {
+    if (!storeId) return [];
+    try {
+      const { data, error } = await window.sb.from('delivery_zones')
+        .select('*')
+        .eq('store_id', storeId)
+        .order('region_name', { ascending: true });
+      if (error) { console.error('DeliveryAPI.getAllByStore:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async save(zoneData) {
+    if (!zoneData.store_id) throw new Error('store_id obrigatório');
+    try {
+      const { data, error } = await window.sb.from('delivery_zones')
+        .upsert([zoneData])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } catch (e) { throw e; }
+  },
+  async delete(zoneId) {
+    if (!zoneId) return false;
+    try {
+      const { error } = await window.sb.from('delivery_zones')
+        .delete()
+        .eq('id', zoneId);
+      if (error) { console.error('DeliveryAPI.delete:', error); return false; }
+      return true;
+    } catch (e) { return false; }
   }
 };
 

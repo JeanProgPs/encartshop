@@ -113,13 +113,15 @@ window.ProductCatalog = (() => {
       groups.push(_renderGroup('🔥 Ofertas', promoProds, true));
     }
 
-    const noCat = allProducts.filter(p => !p.category);
+    // Filtra produtos sem categoria ignorando os que possuem preço promocional (já listados em Ofertas)
+    const noCat = allProducts.filter(p => !p.category && !p.promo_price);
 
     if (!categories.length && !hasPromo) {
       groups.push(_renderGroup('Produtos', allProducts, false));
     } else {
       categories.forEach(cat => {
-        const catProds = allProducts.filter(p => p.category === cat);
+        // Exclusão mútua: filtra produtos da categoria ignorando os que possuem preço promocional (já listados em Ofertas)
+        const catProds = allProducts.filter(p => p.category === cat && !p.promo_price);
         if (catProds.length) groups.push(_renderGroup(cat, catProds, false));
       });
       if (noCat.length) groups.push(_renderGroup('Outros', noCat, false));

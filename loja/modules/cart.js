@@ -124,7 +124,7 @@ window.CartManager = (() => {
         `• ${i.qty}${i.unit === 'kg' ? 'kg' : 'x'} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`
       ).join('\n');
 
-      const msg = `🛒 *Novo Pedido — ${store.name}*\n\n*Ref:* #${orderRef}\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n${deliveryMsg}\n*Subtotal:* ${UIRender.fmtPrice(subtotal)}\n*Total:* ${UIRender.fmtPrice(finalTotal)}\n\n_Enviado via EncartShop - Por segurança, confirme os itens e preços no painel administrativo pesquisando por #${orderRef}_`;
+      const msg = `🛒 *Novo Pedido — ${store.name}*\n\n*Ref:* #${orderRef}\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n${deliveryMsg}\n*Subtotal:* ${UIRender.fmtPrice(subtotal)}\n*Total:* ${UIRender.fmtPrice(finalTotal)}\n\n🔗 *Gerenciar no Painel:* ${window.location.origin}/admin/pedidos.html?ref=${orderRef}\n\n_Enviado via EncartShop_`;
 
       EncartAPI.OrderAPI.create(store.id, {
         customer_name: finalCustomerName,
