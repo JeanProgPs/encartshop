@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Promoções — EncartShop</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/css/admin-promocoes.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body data-page="promocoes" class="bg-bgPrimary text-textPrimary antialiased selection:bg-accent selection:text-white">
+
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content flex-1 ml-0 md:ml-[256px] flex flex-col min-h-screen">
+    <header class="topbar">
+      <div class="topbar-title">Promoções</div>
+      <div class="topbar-actions">
+        <button class="btn btn-primary btn-sm">+ Nova Promoção</button>
+      </div>
+    </header>
+
+    <section class="page-content">
+      <div class="promotions-hero">
+        <div class="promo-hero-copy">
+          <span class="hero-label">Área de Promoções</span>
+          <h1>Crie campanhas para aumentar suas vendas</h1>
+          <p>Gerencie descontos, cupons, combos e frete grátis com uma interface premium, segura e leve.</p>
+        </div>
+        <div class="promo-actions">
+          <button class="btn btn-primary">+ Nova Promoção</button>
+          <button class="btn btn-outline">Cupom</button>
+          <button class="btn btn-outline">Combo</button>
+          <button class="btn btn-outline">Frete Grátis</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <article class="stat-card promo-stat">
+          <div class="stat-icon promo">🔥</div>
+          <div>
+            <div class="stat-value">6</div>
+            <div class="stat-label">Promoções Ativas</div>
+          </div>
+        </article>
+        <article class="stat-card promo-stat">
+          <div class="stat-icon promo">💰</div>
+          <div>
+            <div class="stat-value">R$ 12.450</div>
+            <div class="stat-label">Vendas Geradas</div>
+          </div>
+        </article>
+        <article class="stat-card promo-stat">
+          <div class="stat-icon promo">📈</div>
+          <div>
+            <div class="stat-value">14.2%</div>
+            <div class="stat-label">Conversão</div>
+          </div>
+        </article>
+        <article class="stat-card promo-stat">
+          <div class="stat-icon promo">🎯</div>
+          <div>
+            <div class="stat-value">R$ 86,30</div>
+            <div class="stat-label">Ticket Médio</div>
+          </div>
+        </article>
+      </div>
+
+      <div class="campaigns-header">
+        <div>
+          <h2>Grid de Campanhas</h2>
+          <p>Visualize seu portfólio de promoções com resultados e status rápidos.</p>
+        </div>
+        <button class="btn btn-outline">Nova Promoção</button>
+      </div>
+
+      <div class="campaign-grid">
+        <article class="campaign-card">
+          <div class="campaign-card-top">
+            <div class="campaign-name">Promoção Verão 2026</div>
+            <span class="status-badge status-active">Ativa</span>
+          </div>
+          <div class="campaign-meta">
+            <div class="campaign-row"><span class="campaign-label">Validade</span><span class="campaign-value">05/06/2026</span></div>
+            <div class="campaign-row"><span class="campaign-label">Tipo</span><span class="campaign-value">% desconto</span></div>
+            <div class="campaign-row"><span class="campaign-label">Desconto</span><span class="campaign-value">25%</span></div>
+          </div>
+          <div class="campaign-footer">
+            <div class="campaign-results">
+              <span class="campaign-result-pill">+480 pedidos</span>
+              <span class="campaign-result-pill">R$ 4.250</span>
+            </div>
+            <span class="campaign-label">Resultado básico</span>
+          </div>
+        </article>
+
+        <article class="campaign-card">
+          <div class="campaign-card-top">
+            <div class="campaign-name">Cupom Boas-vindas</div>
+            <span class="status-badge status-scheduled">Agendada</span>
+          </div>
+          <div class="campaign-meta">
+            <div class="campaign-row"><span class="campaign-label">Validade</span><span class="campaign-value">10/06/2026</span></div>
+            <div class="campaign-row"><span class="campaign-label">Tipo</span><span class="campaign-value">Valor fixo</span></div>
+            <div class="campaign-row"><span class="campaign-label">Desconto</span><span class="campaign-value">R$ 15</span></div>
+          </div>
+          <div class="campaign-footer">
+            <div class="campaign-results">
+              <span class="campaign-result-pill">+320 reservas</span>
+              <span class="campaign-result-pill">R$ 2.100</span>
+            </div>
+            <span class="campaign-label">Resultado básico</span>
+          </div>
+        </article>
+
+        <article class="campaign-card">
+          <div class="campaign-card-top">
+            <div class="campaign-name">Frete Grátis VIP</div>
+            <span class="status-badge status-paused">Pausada</span>
+          </div>
+          <div class="campaign-meta">
+            <div class="campaign-row"><span class="campaign-label">Validade</span><span class="campaign-value">15/07/2026</span></div>
+            <div class="campaign-row"><span class="campaign-label">Tipo</span><span class="campaign-value">Frete grátis</span></div>
+            <div class="campaign-row"><span class="campaign-label">Desconto</span><span class="campaign-value">100% frete</span></div>
+          </div>
+          <div class="campaign-footer">
+            <div class="campaign-results">
+              <span class="campaign-result-pill">+120 pedidos</span>
+              <span class="campaign-result-pill">R$ 1.240</span>
+            </div>
+            <span class="campaign-label">Resultado básico</span>
+          </div>
+        </article>
+
+        <article class="campaign-card">
+          <div class="campaign-card-top">
+            <div class="campaign-name">Combo Família</div>
+            <span class="status-badge status-ended">Encerrada</span>
+          </div>
+          <div class="campaign-meta">
+            <div class="campaign-row"><span class="campaign-label">Validade</span><span class="campaign-value">26/05/2026</span></div>
+            <div class="campaign-row"><span class="campaign-label">Tipo</span><span class="campaign-value">Combo</span></div>
+            <div class="campaign-row"><span class="campaign-label">Desconto</span><span class="campaign-value">R$ 25 combo</span></div>
+          </div>
+          <div class="campaign-footer">
+            <div class="campaign-results">
+              <span class="campaign-result-pill">+210 pedidos</span>
+              <span class="campaign-result-pill">R$ 2.790</span>
+            </div>
+            <span class="campaign-label">Resultado básico</span>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="/js/ui/components.js"></script>
+<script src="/js/admin-common.js"></script>
+<script>setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 100);</script>
+</body>
+</html>
