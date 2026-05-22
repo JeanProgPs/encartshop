@@ -1,0 +1,141 @@
+/* modern-ui.css - Premium UI enhancements for EncartShop admin panel */
+
+/* Global font and smooth transitions */
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Glassmorphism Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 260px;
+  padding: 24px 20px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+}
+
+.sidebar a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sidebar a:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+}
+
+.sidebar a.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Topbar with subtle elevation */
+.topbar {
+  position: sticky;
+  top: 0;
+  width: calc(100% - 260px);
+  margin-left: 260px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  z-index: 10;
+}
+
+.topbar-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Card enhancements */
+.card, .quick-card, .prod-admin-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover, .quick-card:hover, .prod-admin-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent);
+}
+
+/* Badge styling */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Modal backdrop and animation */
+.modal-overlay {
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.modal {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  animation: slide-down 0.3s ease-out forwards;
+  transform: translateY(-20px);
+  opacity: 0;
+}
+
+@keyframes slide-down {
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .sidebar { width: 200px; }
+  .topbar { width: calc(100% - 200px); margin-left: 200px; }
+}
+
+@media (max-width: 768px) {
+  .sidebar { position: absolute; transform: translateX(-100%); transition: transform 0.3s ease; }
+  .sidebar.open { transform: translateX(0); }
+  .topbar { width: 100%; margin-left: 0; }
+}
+
+/* Utility classes for spacing (gap-6, gap-4) used throughout */
+.gap-6 { gap: 1.5rem; }
+.gap-4 { gap: 1rem; }
+
+/* Scrollbar styling for sidebar */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px;
+}

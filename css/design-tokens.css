@@ -1,0 +1,21 @@
+:root {
+  /* Cores principais */
+  --bg-primary:    #f9fafb;
+  --bg-secondary: #ffffff;
+  --card-bg:       #ffffff;
+  --border-color:  #e5e7eb;
+  --text-primary:  #111827;
+  --text-secondary:#6b7280;
+  --accent:        #3b82f6;
+  --success:       #10b981;
+  --warning:       #f59e0b;
+  --danger:        #ef4444;
+
+  /* Tipografia */
+  --font-family:   "Inter", sans-serif;
+  --font-size-base: 1rem; /* 16px */
+  --line-height-base: 1.5;
+}
+
+/* Aplicação simples */
+body {font-family: var(--font-family); font-size: var(--font-size-base); line-height: var(--line-height-base); color: var(--text-primary); background: var(--bg-primary);}

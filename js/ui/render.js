@@ -103,16 +103,25 @@ const UIRender = (() => {
 
   function orderAdminCard(o) {
     const statusLabel = OrderModule.getStatusLabel(o.status);
-    const statusClass = OrderModule.getStatusClass(o.status);
+    
+    // Mapeamento de Cores para Status Premium
+    const getStatusColor = (status) => {
+      const s = status.toLowerCase();
+      if(s === 'novo' || s === 'pendente') return 'bg-warning/15 text-warning border-warning/20';
+      if(s === 'entregue' || s === 'concluido' || s === 'finalizado') return 'bg-success/15 text-success border-success/20';
+      if(s === 'cancelado') return 'bg-danger/15 text-danger border-danger/20';
+      return 'bg-info/15 text-info border-info/20';
+    };
+
+    const statusClass = getStatusColor(o.status);
     const dateStr = fmtDateShort(o.created_at);
     const totalStr = fmtPrice(o.total);
     const itemsCount = Array.isArray(o.items) ? o.items.length : 0;
     
-    // Determine next actions based on status flow
     const nextActions = OrderModule.STATUS_FLOW[o.status] || [];
     const actionButtons = nextActions.map(next => {
       const label = OrderModule.getStatusLabel(next);
-      return `<button class="btn btn-outline btn-sm order-action-btn" 
+      return `<button class="px-3 py-1.5 border border-borderColor rounded-lg bg-bgPrimary text-xs font-semibold hover:bg-cardBg hover:text-textPrimary transition-colors" 
                 data-order-id="${o.id}" 
                 data-current-status="${o.status}" 
                 data-new-status="${next}" 
@@ -120,30 +129,53 @@ const UIRender = (() => {
     }).join('');
 
     return `
-      <div class="order-card" id="order-${o.id}">
-        <div class="order-header">
-          <div>
-            <div class="order-id">#${String(o.id).slice(-5).toUpperCase()}</div>
-            <div class="order-customer">${escapeHTML(o.customer_name || 'Cliente')}</div>
-            <div class="order-meta">${dateStr} · ${itemsCount} item(s)</div>
-          </div>
-          <span class="badge ${statusClass}">${statusLabel}</span>
-        </div>
-        <div class="order-items">
-          ${(o.items || []).map(item => `
-            <div class="order-item">
-              <span class="item-name">${escapeHTML(item.name)}</span>
-              <span class="item-qty">${item.qty || item.quantity}x</span>
+      <div class="bg-cardBg border border-borderColor rounded-xl p-5 mb-4 hover-scale shadow-card transition-all" id="order-${o.id}">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-bgPrimary flex items-center justify-center flex-shrink-0">
+               <span class="text-sm font-bold text-textSecondary">${String(o.customer_name).charAt(0).toUpperCase()}</span>
             </div>
-          `).join('')}
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="text-sm font-bold text-textPrimary">${escapeHTML(o.customer_name || 'Cliente')}</h4>
+                <span class="text-xs font-mono text-textSecondary bg-bgPrimary px-1.5 py-0.5 rounded">#${String(o.id).slice(-5).toUpperCase()}</span>
+              </div>
+              <div class="text-xs text-textSecondary mt-1 flex items-center gap-1.5">
+                <i data-lucide="clock" class="w-3 h-3"></i> ${dateStr}
+                <span class="w-1 h-1 bg-borderColor rounded-full mx-1"></span>
+                <i data-lucide="package" class="w-3 h-3"></i> ${itemsCount} item(s)
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center sm:flex-col sm:items-end justify-between w-full sm:w-auto">
+            <span class="text-lg font-extrabold text-textPrimary tracking-tight">${totalStr}</span>
+            <span class="px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider mt-1 ${statusClass}">
+              ${statusLabel}
+            </span>
+          </div>
         </div>
-        <div class="order-total">
-          <span class="order-total-label">Total</span>
-          <span class="order-total-value">${totalStr}</span>
+        
+        <div class="border-t border-borderColor pt-4 pb-2 mb-2">
+          <h5 class="text-xs font-bold text-textSecondary uppercase tracking-wider mb-3">Itens do Pedido</h5>
+          <div class="flex flex-col gap-2">
+            ${(o.items || []).map(item => `
+              <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="w-6 h-6 rounded bg-bgPrimary flex items-center justify-center text-xs font-semibold text-textSecondary">${item.qty || item.quantity}x</span>
+                  <span class="font-medium text-textPrimary">${escapeHTML(item.name)}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
         </div>
-        <div class="order-actions">
-          ${actionButtons}
-          <button class="btn btn-ghost btn-icon" style="color:var(--danger);margin-left:auto;" onclick="handleDeleteOrder('${o.id}')" title="Excluir">🗑️</button>
+        
+        <div class="border-t border-borderColor pt-4 mt-2 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-2">
+            ${actionButtons}
+          </div>
+          <button class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-danger/10 text-textSecondary hover:text-danger transition-colors ml-auto" onclick="handleDeleteOrder('${o.id}')" title="Excluir Pedido">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
         </div>
       </div>
     `;
