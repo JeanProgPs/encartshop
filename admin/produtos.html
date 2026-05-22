@@ -5,25 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Produtos — EncartShop</title>
   <link rel="icon" type="image/png" href="/assets/favicon.png">
-  <link rel="shortcut icon" href="/assets/favicon.png">
-  <link rel="apple-touch-icon" href="/assets/favicon.png">
+  
   <link rel="stylesheet" href="/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bgPrimary: 'var(--bg-primary)',
+            bgSecondary: 'var(--bg-secondary)',
+            cardBg: 'var(--card-bg)',
+            borderColor: 'var(--border-color)',
+            textPrimary: 'var(--text-primary)',
+            textSecondary: 'var(--text-secondary)',
+            accent: 'var(--accent)',
+            success: 'var(--success)',
+            warning: 'var(--warning)',
+            danger: 'var(--danger)',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          boxShadow: {
+            'card': '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.03)',
+            'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.02)',
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
   <style>
     .product-admin-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
-    .prod-admin-card { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:var(--transition); }
-    .prod-admin-card:hover { border-color:rgba(255,255,255,0.12);transform:translateY(-2px); }
-    .prod-admin-card .img-wrap { aspect-ratio:4/3;overflow:hidden;background:var(--primary-light);position:relative; }
-    .prod-admin-card .img-wrap img { width:100%;height:100%;object-fit:cover; }
-    .prod-admin-card .card-body { padding:14px; }
-    .prod-admin-card .card-name { font-size:0.9rem;font-weight:700;margin-bottom:4px; }
-    .prod-admin-card .card-cat  { font-size:0.75rem;color:var(--text-muted);margin-bottom:10px; }
-    .prod-admin-card .prices    { display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
-    .card-actions { display:flex;gap:8px;margin-top:12px; }
-    .card-actions button { flex:1; padding: 10px; }
-    .toolbar { display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap; }
-    .toolbar-left { display:flex;align-items:center;gap:12px;flex:1;min-width:280px; }
-    .search-input { flex:1;background:rgba(255,255,255,0.04);border:1.5px solid var(--border);border-radius:var(--radius);padding:10px 16px;color:var(--text);font-size:0.9rem; }
-    .search-input:focus { outline:none;border-color:var(--accent); }
+    /* Estilos do Modal originais mantidos e adaptados ao novo sistema de cores */
     .modal-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:24px; }
     .modal-header h2 { font-size:1.1rem;font-weight:700; }
     .modal-footer { display:flex;gap:12px;justify-content:flex-end;margin-top:24px; }
@@ -32,52 +47,65 @@
     .img-preview img { width:100%;height:100%;object-fit:cover;border-radius:var(--radius); }
 
     @media(max-width:768px){
-      .mobile-menu-btn{display:flex;}
       .form-row{grid-template-columns:1fr; gap: 12px;}
       .product-admin-grid{grid-template-columns:repeat(2,1fr); gap: 12px;}
       .modal { width: 95%; padding: 20px; }
       .modal-footer { flex-direction: column; }
       .modal-footer button { width: 100%; }
-      .toolbar-left { flex-direction: column; align-items: stretch; }
-      .search-input { width: 100%; }
-      #filter-cat { width: 100% !important; }
-      #filter-status { width: 100% !important; }
     }
     @media(max-width:480px){ 
       .product-admin-grid{grid-template-columns:repeat(2,1fr); gap: 8px;} 
-      .prod-admin-card .card-name { font-size: 0.8rem; height: 2.4em; overflow: hidden; }
-      .prod-admin-card .card-body { padding: 10px; }
     }
+    
+    .fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(10px); }
+    @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
-<body data-page="produtos">
+<body data-page="produtos" class="bg-bgPrimary text-textPrimary antialiased selection:bg-accent selection:text-white">
 
-<div class="admin-layout">
+<div class="admin-layout flex min-h-screen">
   <aside class="sidebar" id="sidebar"></aside>
 
-  <main class="main-content">
-    <header class="topbar">
-      <span class="topbar-title">Produtos</span>
-      <button class="btn btn-primary btn-sm" onclick="openModal()">+ Adicionar Produto</button>
+  <main class="main-content flex-1 ml-0 md:ml-[256px] flex flex-col min-h-screen transition-all duration-300">
+    
+    <!-- Topbar Premium -->
+    <header class="h-[64px] bg-cardBg/80 backdrop-blur-md border-b border-borderColor sticky top-0 z-50 px-4 md:px-8 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <h2 class="text-sm font-semibold text-textPrimary leading-tight hidden md:block">Produtos</h2>
+      </div>
+      <div class="flex items-center gap-3">
+        <button class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-bgPrimary transition-colors relative">
+          <i data-lucide="bell" class="w-5 h-5 text-textSecondary"></i>
+        </button>
+        <button onclick="openModal()" class="flex items-center gap-2 bg-textPrimary text-white px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity">
+          <i data-lucide="plus" class="w-4 h-4"></i> Novo
+        </button>
+      </div>
     </header>
 
-    <div class="page-content">
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <input type="text" id="search-input" class="search-input" placeholder="🔍 Buscar produto..." oninput="renderProducts()">
-          <select id="filter-cat" class="form-input" style="width:auto;min-width:150px;" onchange="renderProducts()">
-            <option value="">Todas as categorias</option>
+    <div class="flex-1 p-4 md:p-8 flex flex-col gap-6 max-w-[1400px] w-full mx-auto fade-in-up">
+      
+      <!-- Toolbar Moderna -->
+      <div class="flex flex-col md:flex-row md:items-center gap-4 justify-between bg-cardBg p-4 border border-borderColor rounded-xl shadow-sm">
+        <div class="flex-1 max-w-md relative">
+          <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-textSecondary"></i>
+          <input type="text" id="search-input" class="w-full bg-bgPrimary border border-borderColor rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all" placeholder="Buscar produto..." oninput="renderProducts()">
+        </div>
+        <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <select id="filter-cat" class="w-full sm:w-auto bg-bgPrimary border border-borderColor rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent" onchange="renderProducts()">
+            <option value="">Todas categorias</option>
+          </select>
+          <select id="filter-status" class="w-full sm:w-auto bg-bgPrimary border border-borderColor rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent" onchange="renderProducts()">
+            <option value="">Todos status</option>
+            <option value="active">Ativos</option>
+            <option value="inactive">Inativos</option>
+            <option value="promo">Em Promoção</option>
           </select>
         </div>
-        <select id="filter-status" class="form-input" style="width:auto;" onchange="renderProducts()">
-          <option value="">Todos os status</option>
-          <option value="active">Ativos</option>
-          <option value="inactive">Inativos</option>
-          <option value="promo">Em Promoção</option>
-        </select>
       </div>
 
-      <div id="product-count" style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px;"></div>
+      <div id="product-count" class="text-sm text-textSecondary font-medium"></div>
+      
       <div class="product-admin-grid" id="products-grid"></div>
     </div>
   </main>
@@ -88,7 +116,9 @@
   <div class="modal" style="max-width:600px;" onclick="event.stopPropagation()">
     <div class="modal-header">
       <h2 id="modal-title">Adicionar Produto</h2>
-      <button class="btn btn-ghost btn-icon" onclick="closeModal()">✕</button>
+      <button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-bgPrimary transition-colors" onclick="closeModal()">
+        <i data-lucide="x" class="w-5 h-5 text-textSecondary"></i>
+      </button>
     </div>
     <div style="display:flex;flex-direction:column;gap:16px;">
       <div class="form-row">
@@ -134,8 +164,8 @@
       <div class="form-group">
         <label class="form-label">Imagem do Produto</label>
         <div style="display:flex;gap:8px;margin-bottom:8px;">
-          <button class="btn btn-ghost btn-sm" id="btn-img-link" onclick="toggleImgSource('link')" style="flex:1;">🔗 Link Externo</button>
-          <button class="btn btn-ghost btn-sm" id="btn-img-upload" onclick="toggleImgSource('upload')" style="flex:1;">📤 Subir Arquivo</button>
+          <button class="px-3 py-1.5 border border-borderColor rounded bg-cardBg text-sm font-medium hover:bg-bgPrimary transition-colors" id="btn-img-link" onclick="toggleImgSource('link')" style="flex:1;">🔗 Link</button>
+          <button class="px-3 py-1.5 border border-borderColor rounded bg-cardBg text-sm font-medium hover:bg-bgPrimary transition-colors" id="btn-img-upload" onclick="toggleImgSource('upload')" style="flex:1;">📤 Arquivo</button>
         </div>
         
         <div id="img-source-link">
@@ -147,7 +177,7 @@
           <p style="font-size:0.7rem;color:var(--text-muted);margin-top:4px">Máximo 2MB. Formatos: JPG, PNG, WEBP.</p>
           <div id="upload-progress" style="display:none;margin-top:8px">
             <div style="height:4px;background:rgba(0,0,0,0.08);border-radius:4px;overflow:hidden">
-              <div id="upload-bar" style="height:100%;background:var(--brand);border-radius:4px;width:0%;transition:width 0.3s ease"></div>
+              <div id="upload-bar" style="height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width 0.3s ease"></div>
             </div>
             <span id="upload-label" style="font-size:0.72rem;color:var(--text-muted)">0%</span>
           </div>
@@ -160,8 +190,8 @@
       <div id="form-errors" style="display:none;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.25);border-radius:var(--radius);padding:12px 16px;font-size:0.85rem;color:var(--danger);"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
-      <button id="save-btn" class="btn btn-primary" onclick="saveProduct()">Salvar Produto</button>
+      <button class="px-4 py-2 border border-borderColor rounded-lg text-sm font-medium hover:bg-bgPrimary transition-colors" onclick="closeModal()">Cancelar</button>
+      <button id="save-btn" class="px-4 py-2 bg-textPrimary text-white rounded-lg text-sm font-medium hover:bg-black transition-colors" onclick="saveProduct()">Salvar Produto</button>
     </div>
   </div>
 </div>
@@ -183,6 +213,7 @@
 <script src="/js/storage.js"></script>
 <script src="/js/admin-common.js"></script>
 <script>
+  lucide.createIcons();
   let editingId   = null;
   let allProducts = [];
   let imgSource   = 'link'; // 'link' ou 'upload'
@@ -201,16 +232,19 @@
     allProducts = await ProductsModule.getAll(storeId());
     const filtered = ProductsModule.filter(allProducts, { query: q, category: cat, status });
 
-    document.getElementById('product-count').textContent = `${filtered.length} produto(s) encontrado(s)`;
+    document.getElementById('product-count').textContent = \`\${filtered.length} produto(s) encontrado(s)\`;
 
     const grid = document.getElementById('products-grid');
     if (!filtered.length) {
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">` + UIRender.emptyState('📦', 'Nenhum produto encontrado', 'Tente ajustar os filtros ou adicione seu primeiro produto.') + `</div>`;
+      grid.innerHTML = \`<div class="empty-state" style="grid-column:1/-1">\` + UIRender.emptyState('📦', 'Nenhum produto encontrado', 'Tente ajustar os filtros ou adicione seu primeiro produto.') + \`</div>\`;
       return;
     }
     grid.innerHTML = filtered.map(p => UIRender.productAdminCard(p, {
       onEdit: 'editProduct', onToggle: 'toggleActive', onDelete: 'deleteProduct'
     })).join('');
+    
+    // Process icons in newly rendered cards
+    setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
   }
 
   async function loadCategories() {
@@ -218,7 +252,6 @@
     const cats  = ProductsModule.getCategories(prods);
     const sel   = document.getElementById('filter-cat');
     const dl    = document.getElementById('cat-list');
-    // Limpa opções anteriores (exceto "Todas")
     while (sel.options.length > 1) sel.remove(1);
     dl.innerHTML = '';
     cats.forEach(c => {
@@ -265,13 +298,13 @@
     const divUp   = document.getElementById('img-source-upload');
 
     if (src === 'link') {
-      btnLink.classList.add('btn-primary'); btnLink.classList.remove('btn-ghost');
-      btnUp.classList.add('btn-ghost'); btnUp.classList.remove('btn-primary');
+      btnLink.style.background = 'var(--text-primary)'; btnLink.style.color = '#fff';
+      btnUp.style.background = 'var(--card-bg)'; btnUp.style.color = 'inherit';
       divLink.classList.remove('hidden');
       divUp.classList.add('hidden');
     } else {
-      btnUp.classList.add('btn-primary'); btnUp.classList.remove('btn-ghost');
-      btnLink.classList.add('btn-ghost'); btnLink.classList.remove('btn-primary');
+      btnUp.style.background = 'var(--text-primary)'; btnUp.style.color = '#fff';
+      btnLink.style.background = 'var(--card-bg)'; btnLink.style.color = 'inherit';
       divUp.classList.remove('hidden');
       divLink.classList.add('hidden');
     }
@@ -281,7 +314,7 @@
     const url = document.getElementById('f-image').value.trim();
     const div = document.getElementById('img-preview');
     div.innerHTML = url
-      ? `<img src="${escapeHTML(url)}" onerror="this.parentElement.innerHTML='<span>URL inválida</span>'">`
+      ? \`<img src="\${escapeHTML(url)}" onerror="this.parentElement.innerHTML='<span>URL inválida</span>'">\`
       : '<span>Pré-visualização da imagem</span>';
   }
 
@@ -290,17 +323,16 @@
     const div  = document.getElementById('img-preview');
     if (!file) { div.innerHTML = '<span>Pré-visualização da imagem</span>'; return; }
 
-    // Valida antes de mostrar preview
     const err = StorageModule.validateFile(file);
     if (err) {
-      div.innerHTML = `<span style="color:var(--danger)">${escapeHTML(err)}</span>`;
+      div.innerHTML = \`<span style="color:var(--danger)">\${escapeHTML(err)}</span>\`;
       document.getElementById('f-image-file').value = '';
       showToast(err, 'error');
       return;
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => div.innerHTML = `<img src="${escapeHTML(e.target.result)}" alt="preview">`;
+    reader.onload = (e) => div.innerHTML = \`<img src="\${escapeHTML(e.target.result)}" alt="preview">\`;
     reader.readAsDataURL(file);
   }
 
@@ -312,11 +344,9 @@
       const promoVal = document.getElementById('f-promo-price').value;
       let imageUrl = document.getElementById('f-image').value.trim();
 
-      // Se for upload, processa com validação e progresso
       if (imgSource === 'upload') {
         const file = document.getElementById('f-image-file').files[0];
         if (file) {
-          // Valida antecipadamente
           const fileErr = StorageModule.validateFile(file);
           if (fileErr) {
             showToast(fileErr, 'error');
@@ -324,7 +354,6 @@
             return;
           }
 
-          // Mostra barra de progresso
           const progressWrap = document.getElementById('upload-progress');
           const progressBar  = document.getElementById('upload-bar');
           const progressLbl  = document.getElementById('upload-label');
@@ -373,7 +402,7 @@
 
       if (errors.length) {
         const errEl = document.getElementById('form-errors');
-        errEl.innerHTML = errors.map(e => `• ${escapeHTML(e)}`).join('<br>');
+        errEl.innerHTML = errors.map(e => \`• \${escapeHTML(e)}\`).join('<br>');
         errEl.style.display = 'block';
       }
     } catch (err) {

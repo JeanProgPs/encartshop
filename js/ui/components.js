@@ -49,53 +49,91 @@ const UIComponents = (() => {
       document.body.prepend(sidebar);
     }
 
+    // Estilos premium da sidebar
+    sidebar.style.cssText = `
+      width: var(--sidebar-width);
+      background: var(--bg-secondary);
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+      transition: var(--transition);
+    `;
+
+    const navItem = (id, icon, label) => `
+      <a href="${id}.html" class="nav-item ${activeItem === id ? 'active' : ''}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;color:${activeItem === id ? '#FFFFFF' : '#A1A1AA'};font-size:0.9rem;font-weight:500;transition:all 0.2s;text-decoration:none;margin-bottom:4px;background:${activeItem === id ? 'rgba(255,255,255,0.08)' : 'transparent'};">
+        <i data-lucide="${icon}" style="width:18px;height:18px;stroke-width:2.2;"></i>
+        <span>${label}</span>
+      </a>
+    `;
+
     sidebar.innerHTML = `
-      <div class="sidebar-logo">
-        <div id="sidebar-logo-container" style="width:42px;height:42px;background:linear-gradient(135deg,var(--brand) 0%,var(--brand-dark) 100%);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;margin-bottom:10px;box-shadow:var(--shadow-brand);overflow:hidden;">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-        </div>
-        <div class="logo-text">
-          <span class="brand">EncartShop</span>
-          <span class="sub" style="font-size:0.7rem;color:var(--text-muted)">Painel do Lojista</span>
+      <div class="sidebar-logo" style="padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,0.05);">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div id="sidebar-logo-container" style="width:36px;height:36px;background:#FFFFFF;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#0A0A0A;box-shadow:0 2px 10px rgba(0,0,0,0.2);overflow:hidden;">
+             <i data-lucide="shopping-bag" style="width:20px;height:20px;stroke-width:2.5;"></i>
+          </div>
+          <div style="display:flex;flex-direction:column;">
+             <span style="color:#FFFFFF;font-weight:700;font-size:1rem;letter-spacing:-0.02em;">EncartShop</span>
+             <span style="color:#A1A1AA;font-size:0.7rem;font-weight:500;">Painel de Controle</span>
+          </div>
         </div>
       </div>
-      <nav class="sidebar-nav">
-        <div class="nav-section-label">Menu</div>
-        <a href="dashboard.html" class="nav-item ${activeItem==='dashboard'?'active':''}">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          <span>Dashboard</span>
-        </a>
-        <a href="produtos.html" class="nav-item ${activeItem==='produtos'?'active':''}">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-          <span>Produtos</span>
-        </a>
-        <a href="pedidos.html" class="nav-item ${activeItem==='pedidos'?'active':''}">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-          <span>Pedidos</span>
-        </a>
-        <a href="configuracoes.html" class="nav-item ${activeItem==='configuracoes'?'active':''}">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9"/></svg>
-          <span>Configurações</span>
-        </a>
-      </nav>
-      <div class="sidebar-footer" style="padding:16px 12px">
-        <a href="#" id="view-store-btn" target="_blank" class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:16px;font-size:0.85rem">👁️ Ver Loja</a>
-        <div style="display:flex;align-items:center;gap:10px">
-          <div id="sidebar-avatar-placeholder" style="width:36px;height:36px;background:rgba(255,255,255,0.05);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;overflow:hidden;flex-shrink:0;">👤</div>
-          <div style="flex:1;overflow:hidden">
-            <div id="sidebar-store-name" style="font-size:0.8rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Carregando...</div>
-            <div style="font-size:0.7rem;color:var(--text-muted)">Administrador</div>
-          </div>
-          <button id="nav-logout" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px;font-size:1.2rem" title="Sair">🚪</button>
+      
+      <nav class="sidebar-nav" style="flex:1;padding:24px 16px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;scrollbar-width:none;">
+        
+        <div>
+          <div style="font-size:0.65rem;font-weight:700;color:#52525B;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;padding-left:14px;">Visão Geral</div>
+          ${navItem('dashboard', 'layout-dashboard', 'Dashboard')}
+          ${navItem('pedidos', 'shopping-cart', 'Pedidos')}
+          ${navItem('produtos', 'package', 'Produtos')}
+          ${navItem('clientes', 'users', 'Clientes')}
         </div>
-      </div>`;
+
+        <div>
+          <div style="font-size:0.65rem;font-weight:700;color:#52525B;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;padding-left:14px;">Crescimento</div>
+          ${navItem('marketing', 'megaphone', 'Marketing')}
+          ${navItem('promocoes', 'tag', 'Promoções')}
+          ${navItem('relatorios', 'bar-chart-3', 'Relatórios')}
+        </div>
+
+        <div>
+          <div style="font-size:0.65rem;font-weight:700;color:#52525B;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;padding-left:14px;">Gestão</div>
+          ${navItem('financeiro', 'wallet', 'Financeiro')}
+          ${navItem('configuracoes', 'settings', 'Configurações')}
+        </div>
+      </nav>
+
+      <div class="sidebar-footer" style="padding:16px;border-top:1px solid rgba(255,255,255,0.05);background:rgba(0,0,0,0.2);">
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;transition:var(--transition);cursor:pointer;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.04)'">
+          <div id="sidebar-avatar-placeholder" style="width:36px;height:36px;background:rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#FFF;overflow:hidden;flex-shrink:0;">
+            <i data-lucide="store" style="width:18px;height:18px;"></i>
+          </div>
+          <div style="flex:1;overflow:hidden;">
+            <div id="sidebar-store-name" style="color:#FFFFFF;font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Carregando...</div>
+            <div style="color:#A1A1AA;font-size:0.7rem;display:flex;align-items:center;gap:4px;margin-top:2px;">
+              <span style="width:6px;height:6px;border-radius:50%;background:var(--success);box-shadow:0 0 8px var(--success);"></span>
+              Plano Pro
+            </div>
+          </div>
+          <button id="nav-logout" style="background:none;border:none;color:#A1A1AA;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;transition:color 0.2s;" title="Sair" onmouseover="this.style.color='#FFF'" onmouseout="this.style.color='#A1A1AA'">
+             <i data-lucide="log-out" style="width:16px;height:16px;"></i>
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Processar ícones Lucide
+    setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
 
     // ── Overlay para fechar sidebar no mobile ────────────────
     let overlay = document.getElementById('sidebar-overlay');
     if (!overlay) {
       overlay = document.createElement('div');
       overlay.id = 'sidebar-overlay';
-      overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:199;backdrop-filter:blur(2px)';
+      overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(10,10,10,0.6);z-index:99;backdrop-filter:blur(4px);transition:all 0.3s;';
       overlay.addEventListener('click', closeSidebar);
       document.body.appendChild(overlay);
     }
@@ -108,12 +146,20 @@ const UIComponents = (() => {
         const btn = document.createElement('button');
         btn.className = 'mobile-toggle';
         btn.setAttribute('aria-label', 'Abrir menu');
-        btn.innerHTML = `<svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`;
-        btn.style.cssText = 'background:none;border:none;color:var(--text);cursor:pointer;padding:4px;display:flex;align-items:center;margin-right:12px;flex-shrink:0';
+        btn.innerHTML = `<i data-lucide="menu" style="width:24px;height:24px;color:var(--text-primary);"></i>`;
+        btn.style.cssText = 'background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;margin-right:16px;flex-shrink:0';
         btn.addEventListener('click', openSidebar);
         header.prepend(btn);
+        setTimeout(() => { if (window.lucide) window.lucide.createIcons({root: btn}); }, 10);
       }
     }
+
+    // ── Hover Sidebar nav items fix ───────────────────────────
+    const navs = sidebar.querySelectorAll('.nav-item:not(.active)');
+    navs.forEach(n => {
+      n.addEventListener('mouseenter', () => { n.style.color = '#FFFFFF'; n.style.background = 'rgba(255,255,255,0.04)'; });
+      n.addEventListener('mouseleave', () => { n.style.color = '#A1A1AA'; n.style.background = 'transparent'; });
+    });
 
     // ── Logout ────────────────────────────────────────────────
     sidebar.querySelector('#nav-logout')?.addEventListener('click', async (e) => {
@@ -127,8 +173,6 @@ const UIComponents = (() => {
       if (!store) return;
       const nameEl = sidebar.querySelector('#sidebar-store-name');
       if (nameEl) nameEl.textContent = store.name;
-      const viewBtn = sidebar.querySelector('#view-store-btn');
-      if (viewBtn) viewBtn.href = StoreModule.getStoreUrl(store);
 
       // Dynamic Logo Injection
       if (store.logo_url) {
