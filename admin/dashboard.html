@@ -67,6 +67,14 @@
     /* Scrollbar oculta para o seletor de período no mobile */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* Clientes: badges e drawer */
+    .badge-vip { background: linear-gradient(90deg,#fde68a,#f59e0b); color: #1f2937; }
+    .badge-pill { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+    .client-row:hover { background: rgba(255,255,255,0.02); }
+    .drawer-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; z-index:60; }
+    .drawer { position:fixed; right:0; top:0; height:100%; width:380px; max-width:100%; background:var(--card-bg); border-left:1px solid var(--border-color); transform:translateX(100%); transition:transform .28s cubic-bezier(.16,1,.3,1); z-index:70; }
+    .drawer.open { transform:translateX(0%); }
   </style>
 </head>
 <body data-page="dashboard" class="bg-bgPrimary text-textPrimary antialiased selection:bg-accent selection:text-white">
@@ -147,6 +155,33 @@
       <div id="stats-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 fade-in-up" style="animation-delay: 0.1s;">
         <!-- Skeletons -->
       </div>
+      
+      <!-- Clientes Section (Premium) -->
+      <section id="clients-section" class="fade-in-up mt-6 bg-cardBg border border-borderColor rounded-xl p-5" style="animation-delay: 0.15s; display:none;">
+        <div class="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-textPrimary">Clientes</h3>
+            <p class="text-sm text-textSecondary mt-1">Acompanhe seus clientes e aumente a recompra</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="client-search" type="search" placeholder="Buscar cliente" class="bg-bgPrimary border border-borderColor rounded-full py-1.5 px-4 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+            <button id="new-client-btn" class="hidden md:inline-flex items-center gap-2 bg-accent text-white px-3 py-1.5 rounded-full text-sm font-medium hover:opacity-90"><i data-lucide="plus" class="w-4 h-4"></i> Novo Cliente</button>
+            <button id="toggle-clients" class="inline-flex md:hidden items-center gap-2 bg-cardBg border border-borderColor px-3 py-1.5 rounded-full text-sm">Abrir Clientes</button>
+          </div>
+        </div>
+
+        <!-- Clientes KPIs -->
+        <div id="clients-kpis" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <!-- Cards injetados por JS -->
+        </div>
+
+        <!-- Lista moderna de clientes -->
+        <div class="overflow-x-auto">
+          <div id="clients-list" class="min-w-[720px] divide-y divide-borderColor rounded-md">
+            <!-- Linhas injetadas por JS -->
+          </div>
+        </div>
+      </section>
 
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
         
@@ -233,6 +268,24 @@
 </div>
 
 <div id="toast-container"></div>
+
+<!-- Drawer Cliente -->
+<div id="client-drawer-backdrop" class="drawer-backdrop" onclick="closeClientDrawer()"></div>
+<aside id="client-drawer" class="drawer" aria-hidden="true">
+  <div class="p-5 h-full flex flex-col gap-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h4 id="drawer-client-name" class="text-lg font-bold text-textPrimary">Cliente</h4>
+        <p id="drawer-client-sub" class="text-xs text-textSecondary">Informações rápidas</p>
+      </div>
+      <button onclick="closeClientDrawer()" class="p-2 rounded-full hover:bg-bgPrimary"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+
+    <div id="drawer-client-body" class="flex-1 overflow-auto">
+      <!-- Conteúdo injetado por JS -->
+    </div>
+  </div>
+</aside>
 
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
@@ -419,7 +472,165 @@
     navigator.clipboard?.writeText(url).then(() => showToast('Link copiado!', 'success')).catch(() => showToast('Não foi possível copiar.', 'error'));
   }
 
+  /* Clientes Module (UI leve, mock-friendly) */
+  (function(){
+    const isMock = new URLSearchParams(window.location.search).get('mock') === 'true' || localStorage.getItem('seven_mock_mode') === 'true';
+
+    const mockClients = [
+      { id: 'c1', name: 'Ana Silva', whatsapp: '+5511999887766', orders: 8, total: 680.50, last: new Date(Date.now()-1000*60*60*24*3).toISOString(), tags:['Recorrente','Cliente VIP'] },
+      { id: 'c2', name: 'Carlos Souza', whatsapp: '+5511988877665', orders: 3, total: 145.00, last: new Date(Date.now()-1000*60*60*24*30).toISOString(), tags:['Compra Frequente'] },
+      { id: 'c3', name: 'Mariana Lima', whatsapp: '+5511977766554', orders: 1, total: 95.00, last: new Date(Date.now()-1000*60*60*24*60).toISOString(), tags:['Novo Cliente'] },
+      { id: 'c4', name: 'Roberto Alves', whatsapp: '+5511966655443', orders: 12, total: 1200.00, last: new Date(Date.now()-1000*60*60*24*2).toISOString(), tags:['Cliente VIP','Recorrente'] },
+      { id: 'c5', name: 'Juliana Costa', whatsapp: '+5511955544332', orders: 0, total: 0, last: null, tags:['Inativo'] }
+    ];
+
+    const fmtPrice = v => (typeof UIRender !== 'undefined' && UIRender.fmtPrice) ? UIRender.fmtPrice(v) : (v ? 'R$ ' + Number(v).toFixed(2) : 'R$ 0,00');
+    const fmtDate = d => { if(!d) return '—'; if(typeof UIRender !== 'undefined' && UIRender.fmtDateShort) return UIRender.fmtDateShort(d); return new Date(d).toLocaleDateString(); };
+
+    function renderClientKPIs(clients){
+      const totalActive = clients.filter(c=>c.orders>0).length;
+      const newClients = clients.filter(c=>c.tags && c.tags.includes('Novo Cliente')).length;
+      const recurring = clients.filter(c=>c.orders>1).length;
+      const avgTicket = clients.reduce((s,c)=>s+(c.total||0),0) / Math.max(1, clients.filter(c=>c.orders>0).length);
+      const container = document.getElementById('clients-kpis');
+      container.innerHTML = `
+        <div class="bg-cardBg border border-borderColor rounded-xl p-4">
+          <div class="text-xs text-textSecondary">Clientes ativos</div>
+          <div class="text-xl font-bold text-textPrimary">${totalActive}</div>
+        </div>
+        <div class="bg-cardBg border border-borderColor rounded-xl p-4">
+          <div class="text-xs text-textSecondary">Novos clientes</div>
+          <div class="text-xl font-bold text-textPrimary">${newClients}</div>
+        </div>
+        <div class="bg-cardBg border border-borderColor rounded-xl p-4">
+          <div class="text-xs text-textSecondary">Clientes recorrentes</div>
+          <div class="text-xl font-bold text-textPrimary">${recurring}</div>
+        </div>
+        <div class="bg-cardBg border border-borderColor rounded-xl p-4">
+          <div class="text-xs text-textSecondary">Ticket médio</div>
+          <div class="text-xl font-bold text-textPrimary">${fmtPrice(avgTicket)}</div>
+        </div>
+      `;
+    }
+
+    function badgeHtml(tag){
+      const base = 'badge-pill px-2 py-1';
+      if(tag==='Cliente VIP') return `<span class="${base} badge-vip">VIP</span>`;
+      if(tag==='Recorrente') return `<span class="${base} border border-accent text-accent">Recorrente</span>`;
+      if(tag==='Novo Cliente') return `<span class="${base} bg-accent text-white">Novo</span>`;
+      if(tag==='Inativo') return `<span class="${base} border border-borderColor text-textSecondary">Inativo</span>`;
+      return `<span class="${base} bg-bgPrimary border border-borderColor text-textSecondary">${tag}</span>`;
+    }
+
+    function renderClientsList(clients){
+      const wrap = document.getElementById('clients-list');
+      if(!wrap) return;
+      if(!clients.length){ wrap.innerHTML = `<div class="p-6 text-sm text-textSecondary">Nenhum cliente encontrado.</div>`; return; }
+
+      wrap.innerHTML = clients.map(c=>{
+        const initials = (c.name||'').split(' ').map(s=>s.charAt(0)).slice(0,2).join('') || '#';
+        const tags = (c.tags||[]).slice(0,3).map(t=>badgeHtml(t)).join(' ');
+        return `
+          <div class="p-4 flex items-center justify-between client-row">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-bgPrimary flex items-center justify-center text-sm font-bold">${initials}</div>
+              <div>
+                <div class="text-sm font-semibold text-textPrimary">${escapeHTML(c.name || 'Cliente')}</div>
+                <div class="text-xs text-textSecondary">${c.whatsapp || '—'}</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-6">
+              <div class="text-sm text-textPrimary font-semibold">${c.orders}</div>
+              <div class="text-sm text-textPrimary font-semibold">${fmtPrice(c.total)}</div>
+              <div class="text-sm text-textSecondary">${fmtDate(c.last)}</div>
+              <div class="hidden sm:block">${tags}</div>
+              <div class="flex items-center gap-2">
+                <button data-client-id="${c.id}" class="view-client-btn text-sm text-accent font-semibold">Ver</button>
+                <a href="https://wa.me/${String(c.whatsapp||'').replace(/\D/g,'')}" target="_blank" class="text-sm text-textSecondary">WhatsApp</a>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // bind view buttons
+      wrap.querySelectorAll('.view-client-btn').forEach(b=>b.addEventListener('click', (e)=>{
+        const id = e.currentTarget.getAttribute('data-client-id');
+        const client = clients.find(x=>x.id===id);
+        openClientDrawer(client);
+      }));
+    }
+
+    function openClientDrawer(client){
+      if(!client) return;
+      document.getElementById('drawer-client-name').textContent = client.name;
+      document.getElementById('drawer-client-sub').textContent = client.whatsapp || '';
+      const body = document.getElementById('drawer-client-body');
+      body.innerHTML = `
+        <div class="space-y-3">
+          <div class="text-sm text-textSecondary">Total gasto</div>
+          <div class="text-2xl font-bold">${fmtPrice(client.total)}</div>
+          <div class="grid grid-cols-2 gap-3 mt-4">
+            <div class="bg-bgPrimary p-3 rounded-lg text-center">
+              <div class="text-xs text-textSecondary">Pedidos</div>
+              <div class="text-lg font-bold">${client.orders}</div>
+            </div>
+            <div class="bg-bgPrimary p-3 rounded-lg text-center">
+              <div class="text-xs text-textSecondary">Última compra</div>
+              <div class="text-lg font-bold">${fmtDate(client.last)}</div>
+            </div>
+          </div>
+          <div class="mt-4">
+            <div class="text-sm text-textSecondary">Histórico resumido</div>
+            <div class="text-sm text-textPrimary mt-2">${escapeHTML((client.history||'Sem histórico resumido'))}</div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('client-drawer-backdrop').style.display = 'block';
+      const drawer = document.getElementById('client-drawer');
+      drawer.classList.add('open');
+      drawer.setAttribute('aria-hidden','false');
+      setTimeout(()=>lucide.createIcons(),50);
+    }
+
+    window.closeClientDrawer = function(){
+      document.getElementById('client-drawer-backdrop').style.display = 'none';
+      const drawer = document.getElementById('client-drawer');
+      drawer.classList.remove('open');
+      drawer.setAttribute('aria-hidden','true');
+    };
+
+    function initClientsUI(){
+      const section = document.getElementById('clients-section');
+      const toggle = document.getElementById('toggle-clients');
+      if(!section) return;
+      section.style.display = 'block';
+      const data = isMock ? mockClients : (window.CustomerModule && CustomerModule.getByStore ? CustomerModule.getByStore(AuthService.getActiveStoreId()) : mockClients);
+      Promise.resolve(data).then(clients=>{
+        renderClientKPIs(clients);
+        renderClientsList(clients);
+        // search
+        const input = document.getElementById('client-search');
+        input.addEventListener('input', (e)=>{
+          const q = String(e.target.value||'').toLowerCase();
+          const filtered = clients.filter(c => (c.name||'').toLowerCase().includes(q) || (c.whatsapp||'').toLowerCase().includes(q));
+          renderClientKPIs(filtered);
+          renderClientsList(filtered);
+        });
+
+        // mobile toggle
+        if(toggle){ toggle.addEventListener('click', ()=>{ section.scrollIntoView({behavior:'smooth'}); }); }
+      }).catch(err=>{ console.warn('[Clients] erro ao carregar clientes', err); });
+    }
+
+    // Expor para uso manual durante debug
+    window._initClientsUI = initClientsUI;
+  })();
+
   initDashboard();
+  // Inicializa a UI de Clientes (mock-friendly)
+  if (typeof window._initClientsUI === 'function') window._initClientsUI();
 </script>
 </body>
 </html>
