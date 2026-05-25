@@ -8,8 +8,7 @@ module.exports = async (req, res) => {
     return res.status(400).send('Slug is required');
   }
 
-  const SUPABASE_URL = 'https://mhlxxxzuyfllnauhewnb.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_DlDsDwmZCJxd4lIYh19Idg_7Ve-xAef';
+  const { SUPABASE_URL, SUPABASE_ANON_KEY: SUPABASE_KEY } = require('../js/core/supabase');
 
   try {
     // 1. Identifica se o parâmetro 'slug' é um UUID válido para determinar a coluna de busca
