@@ -192,7 +192,8 @@ CREATE POLICY "storage_products_select_public"
 
 -- Política de upload: apenas autenticados, restrito à pasta do próprio store_id (dono logado)
 DROP POLICY IF EXISTS "storage_products_insert_auth" ON storage.objects;
-CREATE POLICY "storage_products_insert_auth"
+DROP POLICY IF EXISTS "storage_products_insert_own_store" ON storage.objects;
+CREATE POLICY "storage_products_insert_own_store"
   ON storage.objects FOR INSERT
   WITH CHECK (
     bucket_id = 'products'
@@ -200,13 +201,26 @@ CREATE POLICY "storage_products_insert_auth"
     AND (text_to_array(name, '/'::text))[1] = (SELECT id::text FROM stores WHERE user_id = auth.uid() LIMIT 1)
   );
 
+-- Política de update: apenas autenticados, restrito à pasta do próprio store_id (dono logado)
+DROP POLICY IF EXISTS "storage_products_update_auth" ON storage.objects;
+DROP POLICY IF EXISTS "storage_products_update_own_store" ON storage.objects;
+CREATE POLICY "storage_products_update_own_store"
+  ON storage.objects FOR UPDATE
+  USING (
+    bucket_id = 'products'
+    AND auth.role() = 'authenticated'
+    AND (text_to_array(name, '/'::text))[1] = (SELECT id::text FROM stores WHERE user_id = auth.uid() LIMIT 1)
+  );
+
 -- Política de delete: apenas autenticados, restrito à pasta do próprio store_id (dono logado)
 DROP POLICY IF EXISTS "storage_products_delete_auth" ON storage.objects;
-CREATE POLICY "storage_products_delete_auth"
+DROP POLICY IF EXISTS "storage_products_delete_own_store" ON storage.objects;
+CREATE POLICY "storage_products_delete_own_store"
   ON storage.objects FOR DELETE
   USING (
     bucket_id = 'products'
     AND auth.role() = 'authenticated'
+    AND (text_to_array(name, '/'::text))[1] = (SELECT id::text FROM stores WHERE user_id = auth.uid() LIMIT 1)
   );
 
 -- ============================================================
