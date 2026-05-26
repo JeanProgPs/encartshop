@@ -517,10 +517,11 @@
         target_type: tType,
         target_value: tType === 'none' ? null : tVal,
         starts_at: startsAt ? new Date(startsAt).toISOString() : null,
-        ends_at: endsAt ? new Date(endsAt).toISOString() : null,
-        subtitle: subtitle || null,
-        button_text: btnText || null,
-        overlay_style: overlay || 'none'
+        ends_at: endsAt ? new Date(endsAt).toISOString() : null
+        // Os campos visuais estendidos (subtitle, button_text, overlay_style) 
+        // são mantidos apenas em memória para o preview visual temporário, 
+        // já que não devem ser salvos na tabela store_campaigns para não quebrar 
+        // a compatibilidade ou o banco de dados atual.
       };
 
       if (id) {
