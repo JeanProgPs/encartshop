@@ -3,163 +3,440 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Promoções — EncartShop</title>
+  <title>Campanhas — EncartShop</title>
   <link rel="icon" type="image/png" href="/assets/favicon.png">
+  
   <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/css/admin-promocoes.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bgPrimary: 'var(--bg-primary)',
+            bgSecondary: 'var(--bg-secondary)',
+            cardBg: 'var(--card-bg)',
+            borderColor: 'var(--border-color)',
+            textPrimary: 'var(--text-primary)',
+            textSecondary: 'var(--text-secondary)',
+            accent: 'var(--accent)',
+            danger: 'var(--danger)',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .fade-in { animation: fadeIn 0.3s ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    
+    .sortable-ghost { opacity: 0.4; }
+    .sortable-drag { cursor: grabbing !important; }
+    
+    .campaign-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .campaign-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+  </style>
 </head>
 <body data-page="promocoes" class="bg-bgPrimary text-textPrimary antialiased selection:bg-accent selection:text-white">
 
-<div class="admin-layout">
+<div class="admin-layout flex min-h-screen">
   <aside class="sidebar" id="sidebar"></aside>
 
-  <main class="main-content flex-1 ml-0 md:ml-[256px] flex flex-col min-h-screen">
-    <header class="topbar">
-      <div class="topbar-title">Promoções</div>
-      <div class="topbar-actions">
-        <button class="btn btn-primary btn-sm">+ Nova Promoção</button>
-      </div>
+  <main class="main-content flex-1 ml-0 md:ml-[256px] flex flex-col min-h-screen transition-all duration-300">
+    <header class="h-[64px] bg-cardBg/80 backdrop-blur-md border-b border-borderColor sticky top-0 z-50 px-4 md:px-8 flex items-center justify-between">
+      <h2 class="text-sm font-semibold text-textPrimary hidden md:block" id="page-title">Campanhas</h2>
     </header>
 
-    <section class="page-content">
-      <div class="promotions-hero">
-        <div class="promo-hero-copy">
-          <span class="hero-label">Área de Promoções</span>
-          <h1>Crie campanhas para aumentar suas vendas</h1>
-          <p>Gerencie descontos, cupons, combos e frete grátis com uma interface premium, segura e leve.</p>
-        </div>
-        <div class="promo-actions">
-          <button class="btn btn-primary">+ Nova Promoção</button>
-          <button class="btn btn-outline">Cupom</button>
-          <button class="btn btn-outline">Combo</button>
-          <button class="btn btn-outline">Frete Grátis</button>
-        </div>
-      </div>
-
-      <div class="stats-grid">
-        <article class="stat-card promo-stat">
-          <div class="stat-icon promo">🔥</div>
-          <div>
-            <div class="stat-value">6</div>
-            <div class="stat-label">Promoções Ativas</div>
-          </div>
-        </article>
-        <article class="stat-card promo-stat">
-          <div class="stat-icon promo">💰</div>
-          <div>
-            <div class="stat-value">R$ 12.450</div>
-            <div class="stat-label">Vendas Geradas</div>
-          </div>
-        </article>
-        <article class="stat-card promo-stat">
-          <div class="stat-icon promo">📈</div>
-          <div>
-            <div class="stat-value">14.2%</div>
-            <div class="stat-label">Conversão</div>
-          </div>
-        </article>
-        <article class="stat-card promo-stat">
-          <div class="stat-icon promo">🎯</div>
-          <div>
-            <div class="stat-value">R$ 86,30</div>
-            <div class="stat-label">Ticket Médio</div>
-          </div>
-        </article>
-      </div>
-
-      <div class="campaigns-header">
+    <div class="flex-1 p-4 md:p-8 flex flex-col gap-6 max-w-[1000px] w-full mx-auto fade-in">
+      
+      <div class="bg-gradient-to-r from-accent to-blue-600 rounded-xl p-6 text-white shadow-md flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2>Grid de Campanhas</h2>
-          <p>Visualize seu portfólio de promoções com resultados e status rápidos.</p>
+          <h2 class="text-xl font-bold mb-1" id="banner-section-title">Banners Promocionais</h2>
+          <p class="text-white/80 text-sm max-w-xl">
+            Crie campanhas visuais para destacar categorias, produtos ou promoções especiais. 
+            Você pode arrastar para reordenar a exibição.
+          </p>
         </div>
-        <button class="btn btn-outline">Nova Promoção</button>
+        <button onclick="openCampaignModal()" class="bg-white text-accent px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i> Nova Campanha
+        </button>
       </div>
 
-      <div class="campaign-grid">
-        <article class="campaign-card">
-          <div class="campaign-card-top">
-            <div class="campaign-name">Promoção Verão 2026</div>
-            <span class="status-badge status-active">Ativa</span>
-          </div>
-          <div class="campaign-meta">
-            <div class="campaign-row"><span class="campaign-label">Validade</span><span class="campaign-value">05/06/2026</span></div>
-            <div class="campaign-row"><span class="campaign-label">Tipo</span><span class="campaign-value">% desconto</span></div>
-            <div class="campaign-row"><span class="campaign-label">Desconto</span><span class="campaign-value">25%</span></div>
-          </div>
-          <div class="campaign-footer">
-            <div class="campaign-results">
-              <span class="campaign-result-pill">+480 pedidos</span>
-              <span class="campaign-result-pill">R$ 4.250</span>
-            </div>
-            <span class="campaign-label">Resultado básico</span>
-          </div>
-        </article>
-
-        <article class="campaign-card">
-          <div class="campaign-card-top">
-            <div class="campaign-name">Cupom Boas-vindas</div>
-            <span class="status-badge status-scheduled">Agendada</span>
-          </div>
-          <div class="campaign-meta">
-            <div class="campaign-row"><span class="campaign-label">Validade</span><span class="campaign-value">10/06/2026</span></div>
-            <div class="campaign-row"><span class="campaign-label">Tipo</span><span class="campaign-value">Valor fixo</span></div>
-            <div class="campaign-row"><span class="campaign-label">Desconto</span><span class="campaign-value">R$ 15</span></div>
-          </div>
-          <div class="campaign-footer">
-            <div class="campaign-results">
-              <span class="campaign-result-pill">+320 reservas</span>
-              <span class="campaign-result-pill">R$ 2.100</span>
-            </div>
-            <span class="campaign-label">Resultado básico</span>
-          </div>
-        </article>
-
-        <article class="campaign-card">
-          <div class="campaign-card-top">
-            <div class="campaign-name">Frete Grátis VIP</div>
-            <span class="status-badge status-paused">Pausada</span>
-          </div>
-          <div class="campaign-meta">
-            <div class="campaign-row"><span class="campaign-label">Validade</span><span class="campaign-value">15/07/2026</span></div>
-            <div class="campaign-row"><span class="campaign-label">Tipo</span><span class="campaign-value">Frete grátis</span></div>
-            <div class="campaign-row"><span class="campaign-label">Desconto</span><span class="campaign-value">100% frete</span></div>
-          </div>
-          <div class="campaign-footer">
-            <div class="campaign-results">
-              <span class="campaign-result-pill">+120 pedidos</span>
-              <span class="campaign-result-pill">R$ 1.240</span>
-            </div>
-            <span class="campaign-label">Resultado básico</span>
-          </div>
-        </article>
-
-        <article class="campaign-card">
-          <div class="campaign-card-top">
-            <div class="campaign-name">Combo Família</div>
-            <span class="status-badge status-ended">Encerrada</span>
-          </div>
-          <div class="campaign-meta">
-            <div class="campaign-row"><span class="campaign-label">Validade</span><span class="campaign-value">26/05/2026</span></div>
-            <div class="campaign-row"><span class="campaign-label">Tipo</span><span class="campaign-value">Combo</span></div>
-            <div class="campaign-row"><span class="campaign-label">Desconto</span><span class="campaign-value">R$ 25 combo</span></div>
-          </div>
-          <div class="campaign-footer">
-            <div class="campaign-results">
-              <span class="campaign-result-pill">+210 pedidos</span>
-              <span class="campaign-result-pill">R$ 2.790</span>
-            </div>
-            <span class="campaign-label">Resultado básico</span>
-          </div>
-        </article>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="campaigns-grid">
+        <!-- Loader ou Vazio injetado via JS -->
       </div>
-    </section>
+
+    </div>
   </main>
 </div>
 
+<!-- Modal Nova/Editar Campanha -->
+<div id="campaign-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onclick="UIComponents.handleOverlayClick(event, 'campaign-modal')">
+  <div class="bg-cardBg w-full max-w-2xl rounded-2xl shadow-2xl border border-borderColor flex flex-col max-h-[90vh] overflow-hidden">
+    
+    <div class="px-6 py-4 border-b border-borderColor flex items-center justify-between">
+      <h2 class="text-lg font-bold" id="modal-title">Nova Campanha</h2>
+      <button onclick="UIComponents.closeModal('campaign-modal')" class="text-textSecondary hover:text-textPrimary">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <div class="p-6 overflow-y-auto flex-1 flex flex-col gap-5">
+      <input type="hidden" id="camp-id">
+      
+      <!-- Upload de Imagem Desktop -->
+      <div>
+        <label class="block text-sm font-semibold mb-2">Imagem Principal (Desktop/Tablet) *</label>
+        <div id="img-preview-desktop" class="w-full h-40 bg-bgPrimary rounded-xl border-2 border-dashed border-borderColor flex flex-col items-center justify-center cursor-pointer hover:border-accent hover:bg-accent/5 transition-all overflow-hidden relative" onclick="document.getElementById('upload-desktop').click()">
+          <div class="flex flex-col items-center gap-2 text-textSecondary" id="desktop-placeholder">
+            <i data-lucide="image-plus" class="w-8 h-8"></i>
+            <span class="text-sm">Clique para fazer upload (Recomendado: 1200x400)</span>
+          </div>
+          <img id="desktop-img-tag" src="" class="hidden absolute inset-0 w-full h-full object-cover">
+        </div>
+        <input type="file" id="upload-desktop" accept="image/*" class="hidden" onchange="handleImageUpload(event, 'desktop')">
+        <input type="hidden" id="desktop-url">
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold mb-1">Título (Opcional)</label>
+          <input type="text" id="camp-title" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-4 py-2 focus:border-accent outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold mb-1">Status</label>
+          <select id="camp-status" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-4 py-2 focus:border-accent outline-none">
+            <option value="true">Ativo</option>
+            <option value="false">Inativo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold mb-1">Ação ao Clicar (Destino)</label>
+          <select id="camp-target-type" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-4 py-2 focus:border-accent outline-none" onchange="updateTargetInput()">
+            <option value="category">Filtrar por Categoria</option>
+            <option value="custom_url">Link Externo / URL</option>
+            <option value="none">Nenhuma Ação</option>
+          </select>
+        </div>
+        <div id="target-val-container">
+          <label class="block text-sm font-semibold mb-1" id="target-val-label">Nome da Categoria</label>
+          <input type="text" id="camp-target-value" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-4 py-2 focus:border-accent outline-none" placeholder="Ex: Vestidos">
+        </div>
+      </div>
+    </div>
+
+    <div class="px-6 py-4 border-t border-borderColor bg-bgPrimary/50 flex items-center justify-end gap-3">
+      <button onclick="UIComponents.closeModal('campaign-modal')" class="px-4 py-2 text-sm font-semibold text-textSecondary hover:text-textPrimary">Cancelar</button>
+      <button onclick="saveCampaign()" id="btn-save-camp" class="px-6 py-2 bg-accent text-white rounded-lg text-sm font-bold shadow-md hover:bg-accent/90 transition-colors">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sortable.js -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/supabase.js"></script>
+<script src="/js/core/helpers.js"></script>
+<script src="/js/core/supabaseClient.js"></script>
+<script src="/js/core/api.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="/js/auth/authGuard.js"></script>
+<script src="/js/modules/store.js"></script>
 <script src="/js/ui/components.js"></script>
+<script src="/js/storage.js"></script>
 <script src="/js/admin-common.js"></script>
-<script>setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 100);</script>
+
+<script>
+  let _store = null;
+  let campaigns = [];
+  let sortableInstance = null;
+
+  async function load() {
+    _store = await StoreModule.getActive();
+    if (!_store) return;
+
+    // Atualiza textos baseados no segmento
+    const isFashion = _store.store_segment === 'fashion';
+    document.title = (isFashion ? "Outlet" : "Promoções") + " — EncartShop";
+    const pt = document.getElementById('page-title');
+    if (pt) pt.textContent = isFashion ? "Promoções / Outlet" : "Promoções";
+    
+    const bTitle = document.getElementById('banner-section-title');
+    if (bTitle) bTitle.textContent = isFashion ? "Vitrines e Outlet" : "Banners Promocionais";
+
+    await fetchCampaigns();
+  }
+
+  async function fetchCampaigns() {
+    const grid = document.getElementById('campaigns-grid');
+    grid.innerHTML = '<div class="col-span-full text-center py-10 text-textSecondary"><i data-lucide="loader-2" class="w-8 h-8 animate-spin mx-auto mb-2"></i> Carregando campanhas...</div>';
+    lucide.createIcons();
+
+    campaigns = await EncartAPI.CampaignAPI.getAllByStore(_store.id);
+    renderGrid();
+  }
+
+  function renderGrid() {
+    const grid = document.getElementById('campaigns-grid');
+    grid.innerHTML = '';
+
+    if (campaigns.length === 0) {
+      grid.innerHTML = `
+        <div class="col-span-full bg-cardBg border border-borderColor rounded-xl p-10 text-center flex flex-col items-center">
+          <div class="w-16 h-16 bg-bgPrimary rounded-full flex items-center justify-center mb-4 text-textSecondary">
+            <i data-lucide="image" class="w-8 h-8"></i>
+          </div>
+          <h3 class="text-lg font-bold mb-1">Nenhuma campanha ativa</h3>
+          <p class="text-sm text-textSecondary max-w-sm mb-6">Comece adicionando banners visuais para engajar seus clientes na página inicial.</p>
+          <button onclick="openCampaignModal()" class="bg-textPrimary text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm hover:bg-black transition-colors">Criar Primeira Campanha</button>
+        </div>
+      `;
+      lucide.createIcons();
+      return;
+    }
+
+    campaigns.forEach((camp, index) => {
+      const card = document.createElement('div');
+      card.className = 'campaign-card bg-cardBg border border-borderColor rounded-xl overflow-hidden flex flex-col relative group';
+      card.dataset.id = camp.id;
+      
+      const statusBadge = camp.is_active 
+        ? `<span class="absolute top-3 left-3 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm z-10">ATIVO</span>`
+        : `<span class="absolute top-3 left-3 bg-gray-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm z-10">INATIVO</span>`;
+
+      card.innerHTML = `
+        ${statusBadge}
+        <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          <button onclick="openCampaignModal('${camp.id}')" class="w-8 h-8 bg-white text-textPrimary rounded-full shadow-md flex items-center justify-center hover:bg-gray-50">
+            <i data-lucide="edit-2" class="w-4 h-4"></i>
+          </button>
+          <button onclick="deleteCampaign('${camp.id}')" class="w-8 h-8 bg-white text-danger rounded-full shadow-md flex items-center justify-center hover:bg-red-50">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <div class="h-40 bg-gray-100 relative cursor-move drag-handle">
+          <img src="${escapeHTML(camp.desktop_image)}" class="w-full h-full object-cover">
+        </div>
+        <div class="p-4 border-t border-borderColor flex-1 flex flex-col">
+          <h3 class="font-bold text-sm truncate mb-1">${escapeHTML(camp.title || 'Sem título')}</h3>
+          <p class="text-xs text-textSecondary mt-auto flex items-center gap-1">
+            <i data-lucide="link" class="w-3 h-3"></i> ${camp.target_type === 'none' ? 'Nenhum' : escapeHTML(camp.target_value || 'Nenhum')}
+          </p>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    lucide.createIcons();
+    initSortable();
+  }
+
+  function initSortable() {
+    const grid = document.getElementById('campaigns-grid');
+    if (sortableInstance) sortableInstance.destroy();
+    
+    // Só ativa o sortable se tiver mais de um item e não for o state vazio
+    if (campaigns.length > 0) {
+      sortableInstance = new Sortable(grid, {
+        animation: 150,
+        handle: '.drag-handle',
+        ghostClass: 'sortable-ghost',
+        onEnd: async function(evt) {
+          if (evt.oldIndex === evt.newIndex) return;
+          
+          // Reordena o array local baseado no DOM
+          const newOrderIds = Array.from(grid.children).map(el => el.dataset.id);
+          
+          const updates = newOrderIds.map((id, index) => {
+            const camp = campaigns.find(c => c.id === id);
+            camp.sort_order = index;
+            return camp;
+          });
+          
+          campaigns = updates;
+          
+          try {
+            // Atualizar no banco em lote
+            for (const camp of updates) {
+               await EncartAPI.CampaignAPI.save({ id: camp.id, store_id: _store.id, sort_order: camp.sort_order });
+            }
+            showToast('Ordem atualizada com sucesso', 'success');
+          } catch(e) {
+            showToast('Erro ao reordenar', 'error');
+            console.error(e);
+          }
+        }
+      });
+    }
+  }
+
+  function updateTargetInput() {
+    const type = document.getElementById('camp-target-type').value;
+    const container = document.getElementById('target-val-container');
+    const label = document.getElementById('target-val-label');
+    const input = document.getElementById('camp-target-value');
+    
+    if (type === 'none') {
+      container.style.display = 'none';
+      input.value = '';
+    } else {
+      container.style.display = 'block';
+      if (type === 'category') {
+        label.textContent = 'Nome da Categoria';
+        input.placeholder = 'Ex: Vestidos';
+      } else {
+        label.textContent = 'URL ou Destino';
+        input.placeholder = 'Ex: https://...';
+      }
+    }
+  }
+
+  function openCampaignModal(id = null) {
+    document.getElementById('camp-id').value = id || '';
+    
+    const imgPreview = document.getElementById('desktop-img-tag');
+    const placeholder = document.getElementById('desktop-placeholder');
+    const title = document.getElementById('camp-title');
+    const status = document.getElementById('camp-status');
+    const tType = document.getElementById('camp-target-type');
+    const tVal = document.getElementById('camp-target-value');
+    const desktopUrl = document.getElementById('desktop-url');
+
+    if (id) {
+      document.getElementById('modal-title').textContent = 'Editar Campanha';
+      const camp = campaigns.find(c => c.id === id);
+      
+      desktopUrl.value = camp.desktop_image;
+      imgPreview.src = camp.desktop_image;
+      imgPreview.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+      
+      title.value = camp.title || '';
+      status.value = camp.is_active ? 'true' : 'false';
+      tType.value = camp.target_type || 'category';
+      tVal.value = camp.target_value || '';
+    } else {
+      document.getElementById('modal-title').textContent = 'Nova Campanha';
+      desktopUrl.value = '';
+      imgPreview.src = '';
+      imgPreview.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+      title.value = '';
+      status.value = 'true';
+      tType.value = 'category';
+      tVal.value = '';
+    }
+    
+    updateTargetInput();
+    UIComponents.openModal('campaign-modal');
+  }
+
+  async function handleImageUpload(event, type) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const err = StorageModule.validateFile(file);
+    if (err) { showToast(err, 'error'); return; }
+
+    try {
+      showToast('Fazendo upload...', 'info');
+      const ext = file.name.split('.').pop();
+      const path = `stores/${_store.id}/camp_${Date.now()}.${ext}`;
+      
+      const { error } = await supabase.storage.from('lojas_assets').upload(path, file, { upsert: true });
+      if (error) throw error;
+      
+      const { data: { publicUrl } } = supabase.storage.from('lojas_assets').getPublicUrl(path);
+
+      if (type === 'desktop') {
+        document.getElementById('desktop-url').value = publicUrl;
+        const imgTag = document.getElementById('desktop-img-tag');
+        imgTag.src = publicUrl;
+        imgTag.classList.remove('hidden');
+        document.getElementById('desktop-placeholder').classList.add('hidden');
+      }
+      showToast('Imagem carregada!', 'success');
+    } catch (e) {
+      showToast('Erro no upload: ' + e.message, 'error');
+    } finally {
+      event.target.value = '';
+    }
+  }
+
+  async function saveCampaign() {
+    const id = document.getElementById('camp-id').value;
+    const desktopUrl = document.getElementById('desktop-url').value;
+    const title = document.getElementById('camp-title').value;
+    const isActive = document.getElementById('camp-status').value === 'true';
+    const tType = document.getElementById('camp-target-type').value;
+    const tVal = document.getElementById('camp-target-value').value;
+
+    if (!desktopUrl) {
+      showToast('Você precisa fazer o upload de uma imagem!', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btn-save-camp');
+    UIComponents.setLoading(btn, true, 'Salvando');
+
+    try {
+      const data = {
+        store_id: _store.id,
+        desktop_image: desktopUrl,
+        title: title,
+        is_active: isActive,
+        target_type: tType,
+        target_value: tType === 'none' ? null : tVal
+      };
+
+      if (id) {
+        data.id = id;
+      } else {
+        data.sort_order = campaigns.length; // Adiciona no final
+      }
+
+      await EncartAPI.CampaignAPI.save(data);
+      showToast('Campanha salva com sucesso!', 'success');
+      UIComponents.closeModal('campaign-modal');
+      await fetchCampaigns();
+    } catch(e) {
+      console.error(e);
+      showToast('Erro ao salvar campanha.', 'error');
+    } finally {
+      UIComponents.setLoading(btn, false, 'Salvar');
+    }
+  }
+
+  async function deleteCampaign(id) {
+    if(!confirm('Tem certeza que deseja remover esta campanha permanentemente?')) return;
+    try {
+      await EncartAPI.CampaignAPI.delete(id);
+      showToast('Removida com sucesso.', 'success');
+      await fetchCampaigns();
+    } catch(e) {
+      showToast('Erro ao remover.', 'error');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+    // Inicia após admin-common
+    setTimeout(load, 200);
+  });
+</script>
 </body>
 </html>

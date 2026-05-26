@@ -156,9 +156,10 @@
             <label class="text-sm font-medium text-textPrimary">Horário de Funcionamento</label>
             <input id="s-hours" type="text" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Seg–Sáb: 7h às 20h | Dom: 8h às 14h">
           </div>
-          <div class="flex flex-col gap-1.5">
+          <div class="flex flex-col gap-1.5" id="banner-text-container">
             <label class="text-sm font-medium text-textPrimary">Texto do Banner Promocional</label>
             <input id="s-banner" type="text" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="🔥 Promoções da semana! Aproveite!">
+            <div id="banner-json-notice" style="display:none;" class="text-xs text-accent mt-1">Sua loja possui campanhas com imagens ativas. Gerencie na aba Promoções.</div>
           </div>
         </div>
       </div>
@@ -329,7 +330,14 @@
     document.getElementById('s-slogan').value        = _store.slogan        || '';
     document.getElementById('s-address').value       = _store.address       || '';
     document.getElementById('s-hours').value         = _store.hours         || '';
-    document.getElementById('s-banner').value        = _store.banner_text   || '';
+    const bt = _store.banner_text || '';
+    if (bt.trim().startsWith('[')) {
+      document.getElementById('s-banner').style.display = 'none';
+      document.getElementById('banner-json-notice').style.display = 'block';
+    } else {
+      document.getElementById('s-banner').value = bt;
+    }
+    
     document.getElementById('s-whatsapp').value      = _store.whatsapp      || '';
     
     const isCombine = _store.delivery_fee === -1;
@@ -445,11 +453,16 @@
         slogan:        document.getElementById('s-slogan').value.trim(),
         address:       document.getElementById('s-address').value.trim(),
         hours:         document.getElementById('s-hours').value.trim(),
-        banner_text:   document.getElementById('s-banner').value.trim(),
         whatsapp:      wa,
         delivery_fee:  isCombine ? -1 : (parseFloat(document.getElementById('s-delivery-fee').value) || 0),
         delivery_free: isCombine ? 0 : (parseFloat(document.getElementById('s-delivery-free').value) || 0),
       };
+
+      // Preservar JSON do banner se estiver escondido
+      const sBannerInput = document.getElementById('s-banner');
+      if (sBannerInput.style.display !== 'none') {
+        storePayload.banner_text = sBannerInput.value.trim();
+      }
 
       if (logoData) {
         storePayload.logo_url  = logoData.logo_url;

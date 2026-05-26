@@ -115,7 +115,8 @@ window.ProductCatalog = (() => {
 
     if (hasPromo) {
       const promoProds = allProducts.filter(p => !!p.promo_price);
-      groups.push(_renderGroup('🔥 Ofertas', promoProds, true));
+      const promoTitle = storeSegment === 'fashion' ? 'OUTLET' : '🔥 Ofertas';
+      groups.push(_renderGroup(promoTitle, promoProds, true));
     }
 
     // Filtra produtos sem categoria ignorando os que possuem preço promocional (já listados em Ofertas)

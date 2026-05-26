@@ -72,7 +72,9 @@ window.StoreBootstrap = (() => {
         { name: 'DeliveryModule', ref: window.DeliveryModule },
         { name: 'ProductCatalog', ref: window.ProductCatalog },
         { name: 'CartManager', ref: window.CartManager },
-        { name: 'Promotions', ref: window.Promotions }
+        { name: 'Promotions', ref: window.Promotions },
+        { name: 'CampaignsModule', ref: window.CampaignsModule },
+        { name: 'FashionModule', ref: window.FashionModule }
       ];
 
       const promises = modules
