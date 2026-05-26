@@ -20,8 +20,11 @@ window.StoreContext = (() => {
 
     // Se não houver param na URL, tenta pegar do path (/loja/slug)
     if (!storeId && window.location.pathname.startsWith('/loja/')) {
-      const parts = window.location.pathname.split('/');
-      storeId = parts[parts.length - 1];
+      // Remove segmentos vazios (caso a URL termine com /) e pega o último segmento
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      if (parts.length) {
+        storeId = parts[parts.length - 1];
+      }
     }
 
     if (!storeId) throw new Error('Link da loja inválido. Verifique o link recebido.');
