@@ -78,6 +78,7 @@ const UIRender = (() => {
       <div class="product-card" id="prod-${p.id}" data-product-id="${p.id}" ${hasGallery ? `data-gallery='${escapeHTML(JSON.stringify(galleryImages))}'` : ''}>
         <div class="product-image-wrap" ${hasGallery ? `style="cursor:pointer;position:relative;"` : ''}>
           <img src="${img}" alt="${escapeHTML(p.name)}" loading="lazy" onerror="this.src='${defaultImg}'" class="product-main-image">
+          ${hasGallery && galleryImages.length > 1 ? `<img src="${escapeHTML(galleryImages[1])}" alt="${escapeHTML(p.name)} hover" loading="lazy" class="product-hover-image" onerror="this.src='${defaultImg}'">` : ''}
           ${isPromo ? `<div class="promo-badge">🔥 OFERTA</div>` : ''}
           ${hasGallery ? `<div class="gallery-indicator" style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.7rem;padding:4px 8px;border-radius:4px;font-weight:600;">📸 ${galleryImages.length}</div>` : ''}
         </div>

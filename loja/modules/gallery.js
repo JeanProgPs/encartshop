@@ -36,21 +36,21 @@ window.GalleryManager = (() => {
     if (!galleryImages.length) return;
 
     const html = `
-      <div id="gallery-modal-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;">
+      <div id="gallery-modal-overlay" class="fashion-gallery-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,10,10,0.98);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity 0.3s ease;">
         <div style="position:relative;width:100%;max-width:600px;display:flex;flex-direction:column;">
           <!-- Main Image -->
-          <div style="position:relative;width:100%;padding-bottom:100%;background:rgba(0,0,0,0.5);border-radius:12px;overflow:hidden;margin-bottom:12px;">
+          <div style="position:relative;width:100%;padding-bottom:120%;background:#f4f4f4;border-radius:0;overflow:hidden;margin-bottom:16px;">
             <img id="gallery-main-img" src="${escapeHTML(galleryImages[0])}" alt="Imagem do produto" 
-                 style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;cursor:zoom-in;"
+                 style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;cursor:zoom-in;transition:opacity 0.3s ease;"
                  onerror="this.src='https://images.placeholders.dev/?width=600&height=600&text=Imagem%20Indispon%C3%ADvel'">
           </div>
 
           <!-- Thumbnails -->
           ${galleryImages.length > 1 ? `
-            <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;flex-wrap:wrap;">
+            <div style="display:flex;gap:12px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;">
               ${galleryImages.map((img, i) => `
-                <div style="width:60px;height:60px;border:2px solid ${i === 0 ? 'var(--accent, #4f46e5)' : 'transparent'};border-radius:8px;cursor:pointer;overflow:hidden;background:rgba(0,0,0,0.3);" 
-                     onclick="GalleryManager.selectImage(${i})">
+                <div style="width:70px;height:90px;border:1px solid ${i === 0 ? '#fff' : 'transparent'};border-radius:0;cursor:pointer;overflow:hidden;background:#f4f4f4;opacity:${i === 0 ? '1' : '0.6'};transition:all 0.2s;" 
+                     onclick="GalleryManager.selectImage(${i})" id="gallery-thumb-${i}">
                   <img src="${escapeHTML(img)}" alt="Thumbnail ${i+1}" style="width:100%;height:100%;object-fit:cover;" onerror="this.src='https://images.placeholders.dev/?width=60&height=60&text=X'">
                 </div>
               `).join('')}
@@ -136,9 +136,10 @@ window.GalleryManager = (() => {
       counter.textContent = `${activeGalleryIndex + 1} de ${galleryImages.length}`;
     }
 
-    // Atualiza border dos thumbnails
-    document.querySelectorAll('#gallery-modal-overlay [onclick*="selectImage"]').forEach((el, i) => {
-      el.style.borderColor = i === activeGalleryIndex ? 'var(--accent, #4f46e5)' : 'transparent';
+    // Atualiza thumbnails
+    document.querySelectorAll('[id^="gallery-thumb-"]').forEach((el, i) => {
+      el.style.borderColor = i === activeGalleryIndex ? '#fff' : 'transparent';
+      el.style.opacity = i === activeGalleryIndex ? '1' : '0.6';
     });
   }
 

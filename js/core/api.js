@@ -26,11 +26,8 @@ const StoreAPI = {
     if (!isUUID) return null; 
 
     try {
-      const { data, error } = await window.sb.from('stores').select('*').eq('id', id).single();
-      if (error) { 
-        if (error.code !== 'PGRST116') console.error('StoreAPI.getById:', error); 
-        return null; 
-      }
+      const { data, error } = await window.sb.from('stores').select('*').eq('id', id).maybeSingle();
+      if (error) { console.error('StoreAPI.getById:', error); return null; }
       return data || null;
     } catch (e) { return null; }
   },
@@ -39,11 +36,8 @@ const StoreAPI = {
     if (!slug) return null;
     try {
       const { data, error } = await window.sb.from('stores')
-        .select('*').eq('slug', slug).single();
-      if (error) {
-        if (error.code !== 'PGRST116') console.error('StoreAPI.getBySlug:', error);
-        return null;
-      }
+        .select('*').eq('slug', slug).maybeSingle();
+      if (error) { console.error('StoreAPI.getBySlug:', error); return null; }
       return data || null;
     } catch (e) { return null; }
   },
