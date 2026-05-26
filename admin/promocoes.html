@@ -357,10 +357,10 @@
       const ext = file.name.split('.').pop();
       const path = `stores/${_store.id}/camp_${Date.now()}.${ext}`;
       
-      const { error } = await supabase.storage.from('lojas_assets').upload(path, file, { upsert: true });
+      const { error } = await window.sb.storage.from('lojas_assets').upload(path, file, { upsert: true });
       if (error) throw error;
       
-      const { data: { publicUrl } } = supabase.storage.from('lojas_assets').getPublicUrl(path);
+      const { data: { publicUrl } } = window.sb.storage.from('lojas_assets').getPublicUrl(path);
 
       if (type === 'desktop') {
         document.getElementById('desktop-url').value = publicUrl;
