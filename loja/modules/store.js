@@ -20,8 +20,11 @@ window.StoreContext = (() => {
 
     // Se não houver param na URL, tenta pegar do path (/loja/slug)
     if (!storeId && window.location.pathname.startsWith('/loja/')) {
-      const parts = window.location.pathname.split('/');
-      storeId = parts[parts.length - 1];
+      // Remove segmentos vazios (caso a URL termine com /) e pega o último segmento
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      if (parts.length) {
+        storeId = parts[parts.length - 1];
+      }
     }
 
     if (!storeId) throw new Error('Link da loja inválido. Verifique o link recebido.');
@@ -54,6 +57,17 @@ window.StoreContext = (() => {
       document.documentElement.style.setProperty('--brand', activeStore.color);
       document.documentElement.style.setProperty('--brand-dark', _darkenColor(activeStore.color));
       document.documentElement.style.setProperty('--brand-glow', activeStore.color + '22');
+    }
+
+    // 5.5 Aplicar Segmento (classe CSS para adaptações visuais)
+    const segment = activeStore.store_segment || 'market';
+    document.body.classList.add(`segment-${segment}`);
+    if (document.getElementById('main-content')) {
+      document.getElementById('main-content').classList.add(`segment-${segment}`);
+    }
+    const productsArea = document.getElementById('products-area');
+    if (productsArea) {
+      productsArea.classList.add(`segment-${segment}`);
     }
 
     // 6. Aplicar identidade visual (logo + branding)

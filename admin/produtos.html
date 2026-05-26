@@ -187,6 +187,31 @@
           <span>Pré-visualização da imagem</span>
         </div>
       </div>
+      <div class="form-group">
+        <label class="form-label">Descrição do Produto</label>
+        <textarea id="f-description" class="form-input" placeholder="Ex: Pão brioche, burger 180g, cheddar, bacon..." style="resize:vertical;min-height:80px;"></textarea>
+        <p style="font-size:0.7rem;color:var(--text-muted);margin-top:4px">Opcional. Máx 500 caracteres. Use para ingredientes, detalhes, etc.</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Imagens Adicionais (Frente, Costas, Detalhe)</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:6px;font-weight:500;">Imagem 2</label>
+            <input id="f-image-2" type="text" class="form-input" placeholder="https://..." oninput="previewImg2()" style="font-size:0.9rem;padding:8px;border:1px solid var(--border-color);border-radius:var(--radius);">
+            <div id="img-preview-2" class="img-preview" style="margin-top:8px;height:120px;font-size:0.85rem;">
+              <span>Preview</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:6px;font-weight:500;">Imagem 3</label>
+            <input id="f-image-3" type="text" class="form-input" placeholder="https://..." oninput="previewImg3()" style="font-size:0.9rem;padding:8px;border:1px solid var(--border-color);border-radius:var(--radius);">
+            <div id="img-preview-3" class="img-preview" style="margin-top:8px;height:120px;font-size:0.85rem;">
+              <span>Preview</span>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:0.7rem;color:var(--text-muted);margin-top:8px">Opcional. Links de imagem ou URLs. Excelente para FASHION (frente/costas/detalhe).</p>
+      </div>
       <div id="form-errors" style="display:none;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.25);border-radius:var(--radius);padding:12px 16px;font-size:0.85rem;color:var(--danger);"></div>
     </div>
     <div class="modal-footer">
@@ -200,6 +225,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/supabase.js"></script>
 <script src="/js/core/helpers.js"></script>
 <script src="/js/core/supabaseClient.js"></script>
 <script src="/js/core/api.js"></script>
@@ -232,11 +258,11 @@
     allProducts = await ProductsModule.getAll(storeId());
     const filtered = ProductsModule.filter(allProducts, { query: q, category: cat, status });
 
-    document.getElementById('product-count').textContent = \`\${filtered.length} produto(s) encontrado(s)\`;
+    document.getElementById('product-count').textContent = `${filtered.length} produto(s) encontrado(s)`;
 
     const grid = document.getElementById('products-grid');
     if (!filtered.length) {
-      grid.innerHTML = \`<div class="empty-state" style="grid-column:1/-1">\` + UIRender.emptyState('📦', 'Nenhum produto encontrado', 'Tente ajustar os filtros ou adicione seu primeiro produto.') + \`</div>\`;
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">` + UIRender.emptyState('📦', 'Nenhum produto encontrado', 'Tente ajustar os filtros ou adicione seu primeiro produto.') + `</div>`;
       return;
     }
     grid.innerHTML = filtered.map(p => UIRender.productAdminCard(p, {
@@ -274,16 +300,23 @@
       document.getElementById('f-unit').value        = p.unit || 'un';
       document.getElementById('f-active').value      = p.active ? '1' : '0';
       document.getElementById('f-image').value       = p.image || '';
+      document.getElementById('f-description').value = p.description || '';
+      document.getElementById('f-image-2').value     = p.image_url_2 || '';
+      document.getElementById('f-image-3').value     = p.image_url_3 || '';
       document.getElementById('f-image-file').value  = '';
       toggleImgSource(p.image && p.image.includes('supabase.co') ? 'upload' : 'link');
       previewImg();
+      previewImg2();
+      previewImg3();
     } else {
-      ['f-name','f-cat','f-price','f-promo-price','f-image'].forEach(id => document.getElementById(id).value = '');
+      ['f-name','f-cat','f-price','f-promo-price','f-image','f-description','f-image-2','f-image-3'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('f-image-file').value  = '';
       document.getElementById('f-unit').value   = 'un';
       document.getElementById('f-active').value = '1';
       toggleImgSource('link');
       document.getElementById('img-preview').innerHTML = '<span>Pré-visualização da imagem</span>';
+      document.getElementById('img-preview-2').innerHTML = '<span>Preview</span>';
+      document.getElementById('img-preview-3').innerHTML = '<span>Preview</span>';
     }
     UIComponents.openModal('modal-overlay');
   }
@@ -314,7 +347,7 @@
     const url = document.getElementById('f-image').value.trim();
     const div = document.getElementById('img-preview');
     div.innerHTML = url
-      ? \`<img src="\${escapeHTML(url)}" onerror="this.parentElement.innerHTML='<span>URL inválida</span>'">\`
+      ? `<img src="${escapeHTML(url)}" onerror="this.parentElement.innerHTML='<span>URL inválida</span>'">`
       : '<span>Pré-visualização da imagem</span>';
   }
 
@@ -325,15 +358,31 @@
 
     const err = StorageModule.validateFile(file);
     if (err) {
-      div.innerHTML = \`<span style="color:var(--danger)">\${escapeHTML(err)}</span>\`;
+      div.innerHTML = `<span style="color:var(--danger)">${escapeHTML(err)}</span>`;
       document.getElementById('f-image-file').value = '';
       showToast(err, 'error');
       return;
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => div.innerHTML = \`<img src="\${escapeHTML(e.target.result)}" alt="preview">\`;
+    reader.onload = (e) => div.innerHTML = `<img src="${escapeHTML(e.target.result)}" alt="preview">`;
     reader.readAsDataURL(file);
+  }
+
+  function previewImg2() {
+    const url = document.getElementById('f-image-2').value.trim();
+    const div = document.getElementById('img-preview-2');
+    div.innerHTML = url
+      ? `<img src="${escapeHTML(url)}" onerror="this.parentElement.innerHTML='<span>URL inválida</span>'" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">`
+      : '<span>Preview</span>';
+  }
+
+  function previewImg3() {
+    const url = document.getElementById('f-image-3').value.trim();
+    const div = document.getElementById('img-preview-3');
+    div.innerHTML = url
+      ? `<img src="${escapeHTML(url)}" onerror="this.parentElement.innerHTML='<span>URL inválida</span>'" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">`
+      : '<span>Preview</span>';
   }
 
   async function saveProduct() {
@@ -378,6 +427,9 @@
         unit:       document.getElementById('f-unit').value,
         active:     document.getElementById('f-active').value === '1',
         image:      imageUrl,
+        description: document.getElementById('f-description').value.trim(),
+        image_url_2: document.getElementById('f-image-2').value.trim() || null,
+        image_url_3: document.getElementById('f-image-3').value.trim() || null,
       };
 
       let errors = [];
@@ -402,7 +454,7 @@
 
       if (errors.length) {
         const errEl = document.getElementById('form-errors');
-        errEl.innerHTML = errors.map(e => \`• \${escapeHTML(e)}\`).join('<br>');
+        errEl.innerHTML = errors.map(e => `• ${escapeHTML(e)}`).join('<br>');
         errEl.style.display = 'block';
       }
     } catch (err) {

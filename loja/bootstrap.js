@@ -72,15 +72,28 @@ window.StoreBootstrap = (() => {
         { name: 'DeliveryModule', ref: window.DeliveryModule },
         { name: 'ProductCatalog', ref: window.ProductCatalog },
         { name: 'CartManager', ref: window.CartManager },
-        { name: 'Promotions', ref: window.Promotions }
+        { name: 'Promotions', ref: window.Promotions },
+        { name: 'CampaignsModule', ref: window.CampaignsModule },
+        { name: 'FashionModule', ref: window.FashionModule }
       ];
 
       const promises = modules
         .filter(m => m.ref && typeof m.ref.init === 'function')
-        .map(m => m.ref.init().catch(err => {
-            window.EventBus.log('Bootstrap', `Falha isolada no módulo ${m.name}`, err.message, true);
-            return null;
-        }));
+        .map(m => {
+          try {
+            const result = m.ref.init();
+            if (result && typeof result.catch === 'function') {
+              return result.catch(err => {
+                window.EventBus.log('Bootstrap', `Falha isolada no módulo ${m.name}`, err.message, true);
+                return null;
+              });
+            }
+            return Promise.resolve(result);
+          } catch(err) {
+            window.EventBus.log('Bootstrap', `Falha sincrona no módulo ${m.name}`, err.message, true);
+            return Promise.resolve(null);
+          }
+        });
 
       // 2. Inicia StoreContext (dependência central bloqueante). Ele fará os fetchs e emitirá STORE_LOADED
       if (!window.StoreContext) throw new Error('Módulo StoreContext não encontrado.');

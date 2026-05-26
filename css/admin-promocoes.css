@@ -1,0 +1,236 @@
+/* Admin Promoções — Visual Premium isolado */
+
+.promotions-hero {
+  display: grid;
+  gap: 20px;
+  padding: 28px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(99,102,241,0.08) 0%, rgba(255,255,255,0.92) 100%);
+  border: 1px solid rgba(99,102,241,0.15);
+  box-shadow: 0 16px 40px rgba(15,23,42,0.08);
+}
+
+.promo-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.promo-hero-copy .hero-label {
+  color: var(--brand);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.promo-hero-copy h1 {
+  font-size: clamp(1.75rem, 2.5vw, 2.6rem);
+  line-height: 1.05;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.promo-hero-copy p {
+  max-width: 680px;
+  color: var(--text-muted);
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.promo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.promo-actions .btn {
+  min-width: 158px;
+}
+
+.promo-actions .btn-outline {
+  border-color: rgba(99,102,241,0.35);
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.quick-action-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.quick-action-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99,102,241,0.35);
+  box-shadow: 0 18px 40px rgba(15,23,42,0.08);
+}
+
+.quick-action-card .action-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.quick-action-card .action-note {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.stat-card.promo-stat {
+  background: linear-gradient(180deg, rgba(99,102,241,0.06), rgba(255,255,255,0.95));
+  border-color: rgba(99,102,241,0.16);
+}
+
+.stat-icon.promo {
+  background: rgba(99,102,241,0.12);
+  color: var(--brand);
+}
+
+.campaigns-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 32px;
+}
+
+.campaigns-header h2 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.campaigns-header p {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.campaign-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.campaign-card {
+  border-radius: var(--radius-xl);
+  padding: 22px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.campaign-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px rgba(15,23,42,0.08);
+  border-color: rgba(99,102,241,0.2);
+}
+
+.campaign-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.campaign-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.status-badge {
+  white-space: nowrap;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.status-active { background: rgba(34,197,94,0.12); color: #047857; }
+.status-paused { background: rgba(245,158,11,0.14); color: #b45309; }
+.status-scheduled { background: rgba(59,130,246,0.12); color: #1d4ed8; }
+.status-ended { background: rgba(168,85,247,0.12); color: #7c3aed; }
+
+.campaign-meta {
+  display: grid;
+  gap: 12px;
+}
+
+.campaign-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.campaign-label {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.campaign-value {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.campaign-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.campaign-results {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.campaign-result-pill {
+  background: rgba(99,102,241,0.1);
+  color: var(--brand);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.page-content .page-section {
+  padding: 0;
+  margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+  .promotions-hero {
+    padding: 20px;
+  }
+
+  .campaigns-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .campaign-footer {
+    justify-content: flex-start;
+  }
+}

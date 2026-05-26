@@ -26,11 +26,8 @@ const StoreAPI = {
     if (!isUUID) return null; 
 
     try {
-      const { data, error } = await window.sb.from('stores').select('*').eq('id', id).single();
-      if (error) { 
-        if (error.code !== 'PGRST116') console.error('StoreAPI.getById:', error); 
-        return null; 
-      }
+      const { data, error } = await window.sb.from('stores').select('*').eq('id', id).maybeSingle();
+      if (error) { console.error('StoreAPI.getById:', error); return null; }
       return data || null;
     } catch (e) { return null; }
   },
@@ -39,11 +36,8 @@ const StoreAPI = {
     if (!slug) return null;
     try {
       const { data, error } = await window.sb.from('stores')
-        .select('*').eq('slug', slug).single();
-      if (error) {
-        if (error.code !== 'PGRST116') console.error('StoreAPI.getBySlug:', error);
-        return null;
-      }
+        .select('*').eq('slug', slug).maybeSingle();
+      if (error) { console.error('StoreAPI.getBySlug:', error); return null; }
       return data || null;
     } catch (e) { return null; }
   },
@@ -235,4 +229,51 @@ const DeliveryAPI = {
   }
 };
 
-window.EncartAPI = { StoreAPI, ProductAPI, OrderAPI, AsaasAPI, DeliveryAPI };
+const CampaignAPI = {
+  async getActiveByStore(storeId) {
+    if (!storeId) return [];
+    try {
+      const { data, error } = await window.sb.from('store_campaigns')
+        .select('*')
+        .eq('store_id', storeId)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (error) { console.error('CampaignAPI.getActiveByStore:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async getAllByStore(storeId) {
+    if (!storeId) return [];
+    try {
+      const { data, error } = await window.sb.from('store_campaigns')
+        .select('*')
+        .eq('store_id', storeId)
+        .order('sort_order', { ascending: true });
+      if (error) { console.error('CampaignAPI.getAllByStore:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async save(campaignData) {
+    if (!campaignData.store_id) throw new Error('store_id obrigatório');
+    try {
+      const { data, error } = await window.sb.from('store_campaigns')
+        .upsert([campaignData])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } catch (e) { throw e; }
+  },
+  async delete(campaignId) {
+    if (!campaignId) return false;
+    try {
+      const { error } = await window.sb.from('store_campaigns')
+        .delete()
+        .eq('id', campaignId);
+      if (error) { console.error('CampaignAPI.delete:', error); return false; }
+      return true;
+    } catch (e) { return false; }
+  }
+};
+
+window.EncartAPI = { StoreAPI, ProductAPI, OrderAPI, AsaasAPI, DeliveryAPI, CampaignAPI };

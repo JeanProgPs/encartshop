@@ -95,7 +95,7 @@ const UIComponents = (() => {
         <div>
           <div style="font-size:0.65rem;font-weight:700;color:#52525B;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;padding-left:14px;">Crescimento</div>
           ${navItem('marketing', 'megaphone', 'Marketing')}
-          ${navItem('promocoes', 'tag', 'Promoções')}
+          ${navItem('promocoes', 'tag', '<span id="sidebar-nav-campaigns-label">Campanhas</span>')}
           ${navItem('relatorios', 'bar-chart-3', 'Relatórios')}
         </div>
 
@@ -184,6 +184,12 @@ const UIComponents = (() => {
         if (avatarEl) {
           avatarEl.innerHTML = `<img src="${store.logo_url}" alt="${store.name}" style="width:100%;height:100%;object-fit:cover;">`;
         }
+      }
+
+      // Atualiza nomenclatura interna (Campanhas vs Outlet)
+      const campLabel = sidebar.querySelector('#sidebar-nav-campaigns-label');
+      if (campLabel) {
+        campLabel.textContent = store.store_segment === 'fashion' ? 'Outlet' : 'Campanhas';
       }
     }).catch(() => {/* silencioso */});
   }

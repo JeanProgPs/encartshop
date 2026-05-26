@@ -8,19 +8,21 @@ module.exports = async (req, res) => {
     return res.status(400).send('Slug is required');
   }
 
-  const SUPABASE_URL = 'https://mhlxxxzuyfllnauhewnb.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_DlDsDwmZCJxd4lIYh19Idg_7Ve-xAef';
+  const { SUPABASE_URL, SUPABASE_ANON_KEY: SUPABASE_KEY } = require('../js/core/supabase');
 
   try {
     // 1. Identifica se o parâmetro 'slug' é um UUID válido para determinar a coluna de busca
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
-    const queryParam = isUUID ? `id=eq.${slug}` : `slug=eq.${slug}`;
+    // Encode slug to be safe for REST query (handles chars like spaces, dots, etc.)
+    const safeValue = encodeURIComponent(slug);
+    const queryParam = isUUID ? `id=eq.${safeValue}` : `slug=eq.${safeValue}`;
 
     // 2. Busca dados da loja no Supabase via REST API (evita dependência pesada do SDK)
     const response = await fetch(`${SUPABASE_URL}/rest/v1/stores?${queryParam}&select=*`, {
       headers: {
         'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Accept': 'application/json'
       }
     });
 
@@ -42,7 +44,8 @@ module.exports = async (req, res) => {
       const prodResponse = await fetch(`${SUPABASE_URL}/rest/v1/products?store_id=eq.${store.id}&active=eq.true&order=name.asc&limit=12&select=*`, {
         headers: {
           'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Accept': 'application/json'
         }
       });
       const products = await prodResponse.json();

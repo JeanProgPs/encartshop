@@ -6,12 +6,17 @@
 window.ProductCatalog = (() => {
   let allProducts = [];
   let activeCategory = 'Todos';
+  let storeSegment = 'market'; // Default
 
   async function init() {
     EventBus.log('ProductCatalog', 'Aguardando StoreContext...');
     
     // Aguarda o contexto da loja ser carregado
     EventBus.on(EventBus.EVENTS.STORE_LOADED, async ({ store }) => {
+      // Captura o segmento da loja
+      storeSegment = store.store_segment || 'market';
+      EventBus.log('ProductCatalog', 'Segmento da loja definido', { segment: storeSegment });
+      
       EventBus.log('ProductCatalog', 'StoreContext recebido. Buscando produtos...');
       
       const area = document.getElementById('products-area');
@@ -110,7 +115,8 @@ window.ProductCatalog = (() => {
 
     if (hasPromo) {
       const promoProds = allProducts.filter(p => !!p.promo_price);
-      groups.push(_renderGroup('🔥 Ofertas', promoProds, true));
+      const promoTitle = storeSegment === 'fashion' ? 'OUTLET' : '🔥 Ofertas';
+      groups.push(_renderGroup(promoTitle, promoProds, true));
     }
 
     // Filtra produtos sem categoria ignorando os que possuem preço promocional (já listados em Ofertas)
@@ -140,7 +146,7 @@ window.ProductCatalog = (() => {
           <div class="category-group-line"></div>
         </div>
         <div class="product-grid">
-          ${products.map(p => UIRender.productStoreCard(p, _cartQty(p.id, cart))).join('')}
+          ${products.map(p => UIRender.productStoreCard(p, _cartQty(p.id, cart), storeSegment)).join('')}
         </div>
       </div>`;
   }

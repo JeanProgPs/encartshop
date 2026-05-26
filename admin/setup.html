@@ -148,6 +148,29 @@
         </div>
         <div class="color-preview-bar" id="color-preview-bar" style="background:#e94560;"></div>
       </div>
+      <!-- Segment Picker -->
+      <div class="form-group">
+        <label class="form-label">📦 Tipo de Loja</label>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px;">Escolha o tipo que melhor descreve seu negócio. Isso personalizará a exibição dos produtos.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="segment-option selected" data-segment="market" onclick="selectSegment('market', this)" style="background:rgba(0,0,0,0.2);border:2px solid var(--brand);border-radius:10px;padding:12px;cursor:pointer;text-align:center;transition:all 0.3s;">
+            <div style="font-size:1.4rem;margin-bottom:6px;">🏪</div>
+            <div style="font-size:0.9rem;font-weight:600;color:var(--text);">Mercado</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">Hortifruti, Conveniência</div>
+          </div>
+          <div class="segment-option" data-segment="food" onclick="selectSegment('food', this)" style="background:rgba(0,0,0,0.2);border:2px solid transparent;border-radius:10px;padding:12px;cursor:pointer;text-align:center;transition:all 0.3s;">
+            <div style="font-size:1.4rem;margin-bottom:6px;">🍔</div>
+            <div style="font-size:0.9rem;font-weight:600;color:var(--text);">Alimentação</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">Restaurante, Pizzaria</div>
+          </div>
+          <div class="segment-option" data-segment="fashion" onclick="selectSegment('fashion', this)" style="background:rgba(0,0,0,0.2);border:2px solid transparent;border-radius:10px;padding:12px;cursor:pointer;text-align:center;transition:all 0.3s;">
+            <div style="font-size:1.4rem;margin-bottom:6px;">👕</div>
+            <div style="font-size:0.9rem;font-weight:600;color:var(--text);">Moda</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">Roupas, Calçados</div>
+          </div>
+        </div>
+        <input type="hidden" id="s1-segment" value="market">
+      </div>
     </div>
     <div class="step-footer">
       <span></span>
@@ -316,6 +339,7 @@
 <div id="toast-container"></div>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/supabase.js"></script>
 <script src="/js/core/helpers.js"></script>
 <script src="/js/core/supabaseClient.js"></script>
 <script src="/js/core/api.js"></script>
@@ -408,6 +432,16 @@
     el.style.borderColor = 'var(--brand)';
   }
 
+  function selectSegment(segment, el) {
+    document.getElementById('s1-segment').value = segment;
+    document.querySelectorAll('.segment-option').forEach(s => {
+      s.classList.remove('selected');
+      s.style.borderColor = 'transparent';
+    });
+    el.classList.add('selected');
+    el.style.borderColor = 'var(--brand)';
+  }
+
   function validateStep(step) {
     if (step === 1 && !document.getElementById('s1-name').value.trim()) return 'Informe o nome do estabelecimento.';
     if (step === 2) {
@@ -474,6 +508,7 @@
         slogan:      document.getElementById('s1-slogan').value.trim(),
         address:     document.getElementById('s1-address').value.trim(),
         hours:       document.getElementById('s1-hours').value.trim(),
+        store_segment: document.getElementById('s1-segment').value || 'market',
         whatsapp:    document.getElementById('s2-whatsapp').value.trim(),
         banner_text: document.getElementById('s2-banner').value.trim() || `🔥 Bem-vindo à ${name}!`,
         delivery_fee: document.getElementById('s3-combine').checked ? -1 : (parseFloat(document.getElementById('s3-fee').value) || 0),
