@@ -239,7 +239,13 @@ const CampaignAPI = {
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
       if (error) { console.error('CampaignAPI.getActiveByStore:', error); return []; }
-      return data || [];
+      
+      const now = new Date().toISOString();
+      return (data || []).filter(c => {
+        const startOk = !c.starts_at || c.starts_at <= now;
+        const endOk = !c.ends_at || c.ends_at >= now;
+        return startOk && endOk;
+      });
     } catch (e) { return []; }
   },
   async getAllByStore(storeId) {
@@ -273,6 +279,24 @@ const CampaignAPI = {
       if (error) { console.error('CampaignAPI.delete:', error); return false; }
       return true;
     } catch (e) { return false; }
+  },
+  async registerView(campaignId) {
+    if (!campaignId) return;
+    try {
+      const { data } = await window.sb.from('store_campaigns').select('views_count').eq('id', campaignId).single();
+      if (data) {
+        await window.sb.from('store_campaigns').update({ views_count: (data.views_count || 0) + 1 }).eq('id', campaignId);
+      }
+    } catch (e) { console.warn('Failed to register view', e); }
+  },
+  async registerClick(campaignId) {
+    if (!campaignId) return;
+    try {
+      const { data } = await window.sb.from('store_campaigns').select('clicks_count').eq('id', campaignId).single();
+      if (data) {
+        await window.sb.from('store_campaigns').update({ clicks_count: (data.clicks_count || 0) + 1 }).eq('id', campaignId);
+      }
+    } catch (e) { console.warn('Failed to register click', e); }
   }
 };
 

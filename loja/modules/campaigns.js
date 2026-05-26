@@ -20,8 +20,9 @@ window.CampaignsModule = (() => {
           if (apiCampaigns && apiCampaigns.length > 0) {
             campaigns = apiCampaigns.map(c => ({
               ...c,
+              ...c,
               image_url: c.desktop_image,
-              filter: c.target_value
+              filter: c.target_type === 'category' ? c.target_value : ''
             }));
           }
         }
@@ -92,6 +93,44 @@ window.CampaignsModule = (() => {
     if (campaigns.length > 1) {
       _startRotation();
     }
+    
+    // Trigger observer for the first slide view tracking
+    setTimeout(_setupObserver, 100);
+  }
+
+  let viewObserver = null;
+  let carouselVisible = false;
+
+  function _setupObserver() {
+    const container = document.getElementById('campaign-carousel-container');
+    if (!container) return;
+    
+    if (viewObserver) viewObserver.disconnect();
+    
+    viewObserver = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        carouselVisible = true;
+        _registerView(currentIndex);
+      } else {
+        carouselVisible = false;
+      }
+    }, { threshold: 0.3 });
+    
+    viewObserver.observe(container);
+  }
+
+  function _registerView(index) {
+    if (!carouselVisible) return;
+    const camp = campaigns[index];
+    if (camp && camp.id) {
+      const viewKey = `camp_view_${camp.id}`;
+      if (!sessionStorage.getItem(viewKey)) {
+        sessionStorage.setItem(viewKey, 'true');
+        if (window.EncartAPI && window.EncartAPI.CampaignAPI && window.EncartAPI.CampaignAPI.registerView) {
+          window.EncartAPI.CampaignAPI.registerView(camp.id);
+        }
+      }
+    }
   }
 
   function _startRotation() {
@@ -114,16 +153,32 @@ window.CampaignsModule = (() => {
     });
     // Restart interval to prevent quick jump if user clicked
     if (campaigns.length > 1) _startRotation();
+    
+    _registerView(index);
   }
 
   function handleBannerClick(index) {
     const camp = campaigns[index];
-    if (camp && camp.filter && camp.filter.trim() !== '') {
-      EventBus.emit(EventBus.EVENTS.CATEGORY_CHANGED, { category: camp.filter.trim() });
-      const productsArea = document.getElementById('products-area');
-      if (productsArea) {
-        const offset = productsArea.getBoundingClientRect().top + window.scrollY - 120;
-        window.scrollTo({ top: offset, behavior: 'smooth' });
+    if (camp) {
+      if (camp.id) {
+        const clickKey = `camp_click_${camp.id}`;
+        if (!sessionStorage.getItem(clickKey)) {
+          sessionStorage.setItem(clickKey, 'true');
+          if (window.EncartAPI && window.EncartAPI.CampaignAPI && window.EncartAPI.CampaignAPI.registerClick) {
+            window.EncartAPI.CampaignAPI.registerClick(camp.id);
+          }
+        }
+      }
+      
+      if (camp.target_type === 'custom_url' && camp.target_value) {
+        window.open(camp.target_value, '_blank');
+      } else if (camp.filter && camp.filter.trim() !== '') {
+        EventBus.emit(EventBus.EVENTS.CATEGORY_CHANGED, { category: camp.filter.trim() });
+        const productsArea = document.getElementById('products-area');
+        if (productsArea) {
+          const offset = productsArea.getBoundingClientRect().top + window.scrollY - 120;
+          window.scrollTo({ top: offset, behavior: 'smooth' });
+        }
       }
     }
   }
