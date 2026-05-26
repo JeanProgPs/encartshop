@@ -930,3 +930,147 @@ html, body { overflow-x: hidden; max-width: 100vw; }
 .empty-state-icon { font-size: 3rem; margin-bottom: 16px; }
 .empty-state h3 { font-size: 1.1rem; margin-bottom: 8px; color: var(--text-light); }
 .empty-state p { font-size: 0.9rem; max-width: 320px; margin: 0 auto; }
+
+/* ============================================================
+   EncartShop — Adaptação por Segmento (MARKET / FOOD / FASHION)
+   ============================================================ */
+
+/* ── MARKET (padrão: grid compacto) ──────────────────────────── */
+.segment-market .product-grid {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+.segment-market .product-card {
+  /* Manter compacto para market */
+}
+.segment-market .product-info {
+  padding: 10px;
+}
+.segment-market .product-name {
+  font-size: 0.8rem;
+  -webkit-line-clamp: 1;
+}
+
+/* ── FOOD (cards maiores, descrição visível) ──────────────────── */
+.segment-food .product-grid {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+.segment-food .product-card {
+  border-radius: var(--radius-lg);
+  /* Sombra um pouco mais destacada */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.segment-food .product-card:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+.segment-food .product-info {
+  padding: 12px;
+}
+.segment-food .product-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.segment-food .product-description {
+  display: block !important;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+/* ── FASHION (grid elegante com espaço, suporte à galeria) ─────── */
+.segment-fashion .product-grid {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  /* Mais espaço entre produtos */
+}
+.segment-fashion .product-card {
+  border: none;
+  /* Remover borda para look mais clean */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border-radius: var(--radius-lg);
+  /* Transição suave */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.segment-fashion .product-card:hover {
+  box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+  transform: translateY(-6px);
+}
+.segment-fashion .product-info {
+  padding: 14px;
+}
+.segment-fashion .product-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  /* Clean look */
+  letter-spacing: 0.02em;
+}
+.segment-fashion .product-description {
+  display: block !important;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-style: italic;
+}
+
+/* ── Product Description (usado em FOOD e FASHION) ──────────────── */
+.product-description {
+  display: none;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+  margin: 6px 0;
+}
+
+/* ── Gallery Indicator (para FASHION) ──────────────────────────── */
+.gallery-indicator {
+  position: absolute !important;
+  bottom: 8px !important;
+  right: 8px !important;
+  background: rgba(0,0,0,0.6) !important;
+  color: #fff !important;
+  font-size: 0.7rem !important;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+  font-weight: 600 !important;
+}
+
+/* ── Responsive adaptações por segmento ────────────────────────── */
+@media (max-width: 768px) {
+  .segment-food .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  
+  .segment-fashion .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .segment-market .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .segment-food .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .segment-fashion .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .segment-fashion .product-info {
+    padding: 10px;
+  }
+
+  .segment-fashion .product-name {
+    font-size: 0.85rem;
+  }
+}

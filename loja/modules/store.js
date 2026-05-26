@@ -56,6 +56,17 @@ window.StoreContext = (() => {
       document.documentElement.style.setProperty('--brand-glow', activeStore.color + '22');
     }
 
+    // 5.5 Aplicar Segmento (classe CSS para adaptações visuais)
+    const segment = activeStore.store_segment || 'market';
+    document.body.classList.add(`segment-${segment}`);
+    if (document.getElementById('main-content')) {
+      document.getElementById('main-content').classList.add(`segment-${segment}`);
+    }
+    const productsArea = document.getElementById('products-area');
+    if (productsArea) {
+      productsArea.classList.add(`segment-${segment}`);
+    }
+
     // 6. Aplicar identidade visual (logo + branding)
     applyBranding(activeStore);
 

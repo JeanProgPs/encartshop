@@ -22,7 +22,7 @@ CREATE POLICY "storage_products_insert_own_store"
   WITH CHECK (
     bucket_id = 'products'
     AND auth.role() = 'authenticated'
-    AND (text_to_array(name, '/'::text))[1] = (
+    AND (string_to_array(name, '/'::text))[1] = (
       SELECT id::text FROM stores WHERE user_id = auth.uid() LIMIT 1
     )
   );
@@ -33,7 +33,7 @@ CREATE POLICY "storage_products_update_own_store"
   USING (
     bucket_id = 'products'
     AND auth.role() = 'authenticated'
-    AND (text_to_array(name, '/'::text))[1] = (
+    AND (string_to_array(name, '/'::text))[1] = (
       SELECT id::text FROM stores WHERE user_id = auth.uid() LIMIT 1
     )
   );
@@ -44,7 +44,7 @@ CREATE POLICY "storage_products_delete_own_store"
   USING (
     bucket_id = 'products'
     AND auth.role() = 'authenticated'
-    AND (text_to_array(name, '/'::text))[1] = (
+    AND (string_to_array(name, '/'::text))[1] = (
       SELECT id::text FROM stores WHERE user_id = auth.uid() LIMIT 1
     )
   );
@@ -67,7 +67,7 @@ CREATE POLICY "logos_auth_insert_own"
   WITH CHECK (
     bucket_id = 'logos'
     AND auth.role() = 'authenticated'
-    AND (text_to_array(name, '/'::text))[1] = (
+    AND (string_to_array(name, '/'::text))[1] = (
       SELECT id::text FROM stores WHERE user_id = auth.uid() LIMIT 1
     )
   );
@@ -78,7 +78,7 @@ CREATE POLICY "logos_auth_update_own"
   USING (
     bucket_id = 'logos'
     AND auth.role() = 'authenticated'
-    AND (text_to_array(name, '/'::text))[1] = (
+    AND (string_to_array(name, '/'::text))[1] = (
       SELECT id::text FROM stores WHERE user_id = auth.uid() LIMIT 1
     )
   );
@@ -89,7 +89,7 @@ CREATE POLICY "logos_auth_delete_own"
   USING (
     bucket_id = 'logos'
     AND auth.role() = 'authenticated'
-    AND (text_to_array(name, '/'::text))[1] = (
+    AND (string_to_array(name, '/'::text))[1] = (
       SELECT id::text FROM stores WHERE user_id = auth.uid() LIMIT 1
     )
   );
