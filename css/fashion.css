@@ -438,12 +438,16 @@ body.segment-fashion {
 
 /* Mobile */
 @media (max-width: 600px) {
+  .campaign-carousel-container {
+    max-height: 240px;
+  }
   .campaign-slide img {
-    height: 300px;
+    height: 240px;
     aspect-ratio: auto;
     object-position: center;
   }
   .campaign-logo-img {
-    height: 36px;
+    height: 32px;
+    max-width: 120px;
   }
 }
