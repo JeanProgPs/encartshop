@@ -65,16 +65,8 @@ window.CampaignsModule = (() => {
 
     heroArea.style.display = 'block';
 
-    const hasLogo = activeStore.logo_url ? true : false;
-    const logoHtml = hasLogo ? `
-      <div class="campaign-logo-overlay">
-        <img src="${escapeHTML(activeStore.logo_url)}" alt="Logo da Loja" class="campaign-logo-img">
-      </div>
-    ` : '';
-
     heroArea.innerHTML = `
       <div class="campaign-carousel-container" id="campaign-carousel-container">
-        ${logoHtml}
         <div class="campaign-track" id="campaign-track">
           ${campaigns.map((camp, i) => `
             <div class="campaign-slide" data-index="${i}" onclick="CampaignsModule.handleBannerClick(${i})">

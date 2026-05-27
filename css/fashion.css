@@ -388,27 +388,7 @@ body.segment-fashion {
   display: block;
 }
 
-/* Logo sobreposta ao carrossel */
-.campaign-logo-overlay {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.campaign-logo-img {
-  height: 48px;
-  max-width: 160px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
-  background: rgba(255,255,255,0.9);
-  padding: 6px 12px;
-  border-radius: 8px;
-}
+/* Logo sobreposta ao carrossel — REMOVIDA */
 
 /* Dots de navegação */
 .campaign-dots {
@@ -445,9 +425,5 @@ body.segment-fashion {
     height: 240px;
     aspect-ratio: auto;
     object-position: center;
-  }
-  .campaign-logo-img {
-    height: 32px;
-    max-width: 120px;
   }
 }
