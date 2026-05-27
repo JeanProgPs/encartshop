@@ -124,7 +124,9 @@ window.CartManager = (() => {
         `• ${i.qty}${i.unit === 'kg' ? 'kg' : 'x'} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`
       ).join('\n');
 
-      const msg = `🛒 *Novo Pedido — ${store.name}*\n\n*Ref:* #${orderRef}\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n${deliveryMsg}\n*Subtotal:* ${UIRender.fmtPrice(subtotal)}\n*Total:* ${UIRender.fmtPrice(finalTotal)}\n\n🔗 *Gerenciar no Painel:* ${window.location.origin}/admin/pedidos.html?ref=${orderRef}\n\n_Enviado via EncartShop_`;
+      const logoLink = store.logo_url ? `\n🖼 *Sua Loja:* ${store.logo_url}\n` : '';
+
+      const msg = `🛒 *Novo Pedido — ${store.name}*\n\n*Ref:* #${orderRef}\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n${deliveryMsg}\n*Subtotal:* ${UIRender.fmtPrice(subtotal)}\n*Total:* ${UIRender.fmtPrice(finalTotal)}\n${logoLink}\n🔗 *Gerenciar no Painel:* ${window.location.origin}/admin/pedidos.html?ref=${orderRef}\n\n_Enviado via EncartShop_`;
 
       EncartAPI.OrderAPI.create(store.id, {
         customer_name: finalCustomerName,

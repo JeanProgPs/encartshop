@@ -83,8 +83,10 @@ window.CampaignsModule = (() => {
           `).join('')}
         </div>
         ${campaigns.length > 1 ? `
+          <button class="campaign-nav-btn prev" onclick="event.stopPropagation(); CampaignsModule.prevSlide()">&#10094;</button>
+          <button class="campaign-nav-btn next" onclick="event.stopPropagation(); CampaignsModule.nextSlide()">&#10095;</button>
           <div class="campaign-dots">
-            ${campaigns.map((_, i) => `<span class="campaign-dot ${i === 0 ? 'active' : ''}" onclick="CampaignsModule.goToSlide(${i})"></span>`).join('')}
+            ${campaigns.map((_, i) => `<span class="campaign-dot ${i === 0 ? 'active' : ''}" onclick="event.stopPropagation(); CampaignsModule.goToSlide(${i})"></span>`).join('')}
           </div>
         ` : ''}
       </div>
@@ -157,6 +159,16 @@ window.CampaignsModule = (() => {
     _registerView(index);
   }
 
+  function prevSlide() {
+    if (campaigns.length <= 1) return;
+    goToSlide((currentIndex - 1 + campaigns.length) % campaigns.length);
+  }
+
+  function nextSlide() {
+    if (campaigns.length <= 1) return;
+    goToSlide((currentIndex + 1) % campaigns.length);
+  }
+
   function handleBannerClick(index) {
     const camp = campaigns[index];
     if (camp) {
@@ -183,5 +195,5 @@ window.CampaignsModule = (() => {
     }
   }
 
-  return { init, handleBannerClick, goToSlide };
+  return { init, handleBannerClick, goToSlide, prevSlide, nextSlide };
 })();
