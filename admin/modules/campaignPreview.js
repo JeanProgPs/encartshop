@@ -49,7 +49,7 @@ window.CampaignPreview = (() => {
     // Desktop: largura máxima para preview; Mobile: tamanho reduzido e responsivo
     const widthClass = mode === 'desktop'
       ? 'w-full max-w-[800px] h-[300px] md:h-[400px] rounded-lg'
-      : 'w-full max-w-[360px] h-[180px] sm:h-[240px] rounded-2xl border-8 border-gray-800 shadow-2xl';
+      : 'w-full max-w-[360px] h-[160px] sm:h-[200px] rounded-2xl border-8 border-gray-800 shadow-2xl';
     
     let overlayHtml = '';
     let contentHtml = '';
