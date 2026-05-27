@@ -364,7 +364,6 @@ body.segment-fashion {
   width: 100%;
   overflow: hidden;
   background: #f0f0f0;
-  max-height: 500px;
 }
 
 .campaign-track {
@@ -382,9 +381,10 @@ body.segment-fashion {
 
 .campaign-slide img {
   width: 100%;
-  height: 480px;
+  height: auto;
+  aspect-ratio: 1920 / 700;
   object-fit: cover;
-  object-position: top center;
+  object-position: center;
   display: block;
 }
 
@@ -439,7 +439,8 @@ body.segment-fashion {
 /* Mobile */
 @media (max-width: 600px) {
   .campaign-slide img {
-    height: 240px;
+    height: 300px;
+    aspect-ratio: auto;
     object-position: center;
   }
   .campaign-logo-img {
