@@ -20,8 +20,9 @@ window.CampaignsModule = (() => {
           if (apiCampaigns && apiCampaigns.length > 0) {
             campaigns = apiCampaigns.map(c => ({
               ...c,
+              ...c,
               image_url: c.desktop_image,
-              filter: c.target_value
+              filter: c.target_type === 'category' ? c.target_value : ''
             }));
           }
         }
@@ -64,16 +65,8 @@ window.CampaignsModule = (() => {
 
     heroArea.style.display = 'block';
 
-    const hasLogo = activeStore.logo_url ? true : false;
-    const logoHtml = hasLogo ? `
-      <div class="campaign-logo-overlay">
-        <img src="${escapeHTML(activeStore.logo_url)}" alt="Logo da Loja" class="campaign-logo-img">
-      </div>
-    ` : '';
-
     heroArea.innerHTML = `
       <div class="campaign-carousel-container" id="campaign-carousel-container">
-        ${logoHtml}
         <div class="campaign-track" id="campaign-track">
           ${campaigns.map((camp, i) => `
             <div class="campaign-slide" data-index="${i}" onclick="CampaignsModule.handleBannerClick(${i})">
@@ -82,8 +75,10 @@ window.CampaignsModule = (() => {
           `).join('')}
         </div>
         ${campaigns.length > 1 ? `
+          <button class="campaign-nav-btn prev" onclick="event.stopPropagation(); CampaignsModule.prevSlide()">&#10094;</button>
+          <button class="campaign-nav-btn next" onclick="event.stopPropagation(); CampaignsModule.nextSlide()">&#10095;</button>
           <div class="campaign-dots">
-            ${campaigns.map((_, i) => `<span class="campaign-dot ${i === 0 ? 'active' : ''}" onclick="CampaignsModule.goToSlide(${i})"></span>`).join('')}
+            ${campaigns.map((_, i) => `<span class="campaign-dot ${i === 0 ? 'active' : ''}" onclick="event.stopPropagation(); CampaignsModule.goToSlide(${i})"></span>`).join('')}
           </div>
         ` : ''}
       </div>
@@ -91,6 +86,44 @@ window.CampaignsModule = (() => {
 
     if (campaigns.length > 1) {
       _startRotation();
+    }
+    
+    // Trigger observer for the first slide view tracking
+    setTimeout(_setupObserver, 100);
+  }
+
+  let viewObserver = null;
+  let carouselVisible = false;
+
+  function _setupObserver() {
+    const container = document.getElementById('campaign-carousel-container');
+    if (!container) return;
+    
+    if (viewObserver) viewObserver.disconnect();
+    
+    viewObserver = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        carouselVisible = true;
+        _registerView(currentIndex);
+      } else {
+        carouselVisible = false;
+      }
+    }, { threshold: 0.3 });
+    
+    viewObserver.observe(container);
+  }
+
+  function _registerView(index) {
+    if (!carouselVisible) return;
+    const camp = campaigns[index];
+    if (camp && camp.id) {
+      const viewKey = `camp_view_${camp.id}`;
+      if (!sessionStorage.getItem(viewKey)) {
+        sessionStorage.setItem(viewKey, 'true');
+        if (window.EncartAPI && window.EncartAPI.CampaignAPI && window.EncartAPI.CampaignAPI.registerView) {
+          window.EncartAPI.CampaignAPI.registerView(camp.id);
+        }
+      }
     }
   }
 
@@ -114,19 +147,45 @@ window.CampaignsModule = (() => {
     });
     // Restart interval to prevent quick jump if user clicked
     if (campaigns.length > 1) _startRotation();
+    
+    _registerView(index);
+  }
+
+  function prevSlide() {
+    if (campaigns.length <= 1) return;
+    goToSlide((currentIndex - 1 + campaigns.length) % campaigns.length);
+  }
+
+  function nextSlide() {
+    if (campaigns.length <= 1) return;
+    goToSlide((currentIndex + 1) % campaigns.length);
   }
 
   function handleBannerClick(index) {
     const camp = campaigns[index];
-    if (camp && camp.filter && camp.filter.trim() !== '') {
-      EventBus.emit(EventBus.EVENTS.CATEGORY_CHANGED, { category: camp.filter.trim() });
-      const productsArea = document.getElementById('products-area');
-      if (productsArea) {
-        const offset = productsArea.getBoundingClientRect().top + window.scrollY - 120;
-        window.scrollTo({ top: offset, behavior: 'smooth' });
+    if (camp) {
+      if (camp.id) {
+        const clickKey = `camp_click_${camp.id}`;
+        if (!sessionStorage.getItem(clickKey)) {
+          sessionStorage.setItem(clickKey, 'true');
+          if (window.EncartAPI && window.EncartAPI.CampaignAPI && window.EncartAPI.CampaignAPI.registerClick) {
+            window.EncartAPI.CampaignAPI.registerClick(camp.id);
+          }
+        }
+      }
+      
+      if (camp.target_type === 'custom_url' && camp.target_value) {
+        window.open(camp.target_value, '_blank');
+      } else if (camp.filter && camp.filter.trim() !== '') {
+        EventBus.emit(EventBus.EVENTS.CATEGORY_CHANGED, { category: camp.filter.trim() });
+        const productsArea = document.getElementById('products-area');
+        if (productsArea) {
+          const offset = productsArea.getBoundingClientRect().top + window.scrollY - 120;
+          window.scrollTo({ top: offset, behavior: 'smooth' });
+        }
       }
     }
   }
 
-  return { init, handleBannerClick, goToSlide };
+  return { init, handleBannerClick, goToSlide, prevSlide, nextSlide };
 })();
