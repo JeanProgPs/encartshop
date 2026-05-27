@@ -62,10 +62,11 @@ const UIComponents = (() => {
       transition: var(--transition);
     `;
 
-    const navItem = (id, icon, label) => `
-      <a href="${id}.html" class="nav-item ${activeItem === id ? 'active' : ''}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;color:${activeItem === id ? '#FFFFFF' : '#A1A1AA'};font-size:0.9rem;font-weight:500;transition:all 0.2s;text-decoration:none;margin-bottom:4px;background:${activeItem === id ? 'rgba(255,255,255,0.08)' : 'transparent'};">
+    const navItem = (id, icon, label, disabled = false) => `
+      <a href="${disabled ? '#' : id + '.html'}" ${disabled ? 'onclick="event.preventDefault(); window.showToast(\\\'Recurso em breve\\\', \\\'info\\\')"' : ''} class="nav-item ${activeItem === id ? 'active' : ''} ${disabled ? 'disabled-nav' : ''}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;color:${activeItem === id ? '#FFFFFF' : '#A1A1AA'};font-size:0.9rem;font-weight:500;transition:all 0.2s;text-decoration:none;margin-bottom:4px;background:${activeItem === id ? 'rgba(255,255,255,0.08)' : 'transparent'};${disabled ? 'opacity:0.4;cursor:not-allowed;' : ''}">
         <i data-lucide="${icon}" style="width:18px;height:18px;stroke-width:2.2;"></i>
         <span>${label}</span>
+        ${disabled ? '<span style="margin-left:auto;font-size:0.6rem;background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;text-transform:uppercase;">Breve</span>' : ''}
       </a>
     `;
 
@@ -89,20 +90,34 @@ const UIComponents = (() => {
           ${navItem('dashboard', 'layout-dashboard', 'Dashboard')}
           ${navItem('pedidos', 'shopping-cart', 'Pedidos')}
           ${navItem('produtos', 'package', 'Produtos')}
-          ${navItem('clientes', 'users', 'Clientes')}
+          ${navItem('clientes', 'users', 'Clientes', true)}
         </div>
 
         <div>
           <div style="font-size:0.65rem;font-weight:700;color:#52525B;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;padding-left:14px;">Crescimento</div>
-          ${navItem('marketing', 'megaphone', 'Marketing')}
+          ${navItem('marketing', 'megaphone', 'Marketing', true)}
           ${navItem('promocoes', 'tag', '<span id="sidebar-nav-campaigns-label">Campanhas</span>')}
-          ${navItem('relatorios', 'bar-chart-3', 'Relatórios')}
+          ${navItem('relatorios', 'bar-chart-3', 'Relatórios', true)}
         </div>
 
         <div>
           <div style="font-size:0.65rem;font-weight:700;color:#52525B;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;padding-left:14px;">Gestão</div>
-          ${navItem('financeiro', 'wallet', 'Financeiro')}
+          ${navItem('financeiro', 'wallet', 'Financeiro', true)}
           ${navItem('configuracoes', 'settings', 'Configurações')}
+        </div>
+        <!-- IA Comercial Upsell -->
+        <div style="margin-top:8px;">
+          <div onclick="window.showToast('Em breve: IA Comercial para automatizar respostas e aumentar suas vendas!', 'info')" style="background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(59,130,246,0.15));border:1px solid rgba(139,92,246,0.35);border-radius:10px;padding:12px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='linear-gradient(135deg,rgba(139,92,246,0.3),rgba(59,130,246,0.25))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(139,92,246,0.2),rgba(59,130,246,0.15))'">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <span style="font-size:1rem;">🤖</span>
+              <span style="font-size:0.75rem;font-weight:700;color:#a78bfa;">IA Comercial</span>
+              <span style="margin-left:auto;font-size:0.55rem;background:rgba(139,92,246,0.3);color:#c4b5fd;padding:2px 6px;border-radius:4px;text-transform:uppercase;font-weight:700;">Breve</span>
+            </div>
+            <p style="font-size:0.68rem;color:#8b8fa8;line-height:1.4;margin:0;">Automatize respostas e aumente suas vendas com IA.</p>
+            <div style="margin-top:8px;font-size:0.7rem;font-weight:600;color:#a78bfa;display:flex;align-items:center;gap:4px;">
+              <i data-lucide="lock" style="width:12px;height:12px;"></i> Desbloquear
+            </div>
+          </div>
         </div>
       </nav>
 
@@ -155,7 +170,7 @@ const UIComponents = (() => {
     }
 
     // ── Hover Sidebar nav items fix ───────────────────────────
-    const navs = sidebar.querySelectorAll('.nav-item:not(.active)');
+    const navs = sidebar.querySelectorAll('.nav-item:not(.active):not(.disabled-nav)');
     navs.forEach(n => {
       n.addEventListener('mouseenter', () => { n.style.color = '#FFFFFF'; n.style.background = 'rgba(255,255,255,0.04)'; });
       n.addEventListener('mouseleave', () => { n.style.color = '#A1A1AA'; n.style.background = 'transparent'; });
