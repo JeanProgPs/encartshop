@@ -104,22 +104,8 @@ const UIComponents = (() => {
           <div style="font-size:0.65rem;font-weight:700;color:#52525B;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;padding-left:14px;">Gestão</div>
           ${navItem('financeiro', 'wallet', 'Financeiro', true)}
           ${navItem('configuracoes', 'settings', 'Configurações')}
-        </div>
-        <!-- IA Comercial Upsell -->
-        <div style="margin-top:8px;">
-          <div onclick="window.showToast('Em breve: IA Comercial para automatizar respostas e aumentar suas vendas!', 'info')" style="background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(59,130,246,0.15));border:1px solid rgba(139,92,246,0.35);border-radius:10px;padding:12px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='linear-gradient(135deg,rgba(139,92,246,0.3),rgba(59,130,246,0.25))'" onmouseout="this.style.background='linear-gradient(135deg,rgba(139,92,246,0.2),rgba(59,130,246,0.15))'">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-              <span style="font-size:1rem;">🤖</span>
-              <span style="font-size:0.75rem;font-weight:700;color:#a78bfa;">IA Comercial</span>
-              <span style="margin-left:auto;font-size:0.55rem;background:rgba(139,92,246,0.3);color:#c4b5fd;padding:2px 6px;border-radius:4px;text-transform:uppercase;font-weight:700;">Breve</span>
-            </div>
-            <p style="font-size:0.68rem;color:#8b8fa8;line-height:1.4;margin:0;">Automatize respostas e aumente suas vendas com IA.</p>
-            <div style="margin-top:8px;font-size:0.7rem;font-weight:600;color:#a78bfa;display:flex;align-items:center;gap:4px;">
-              <i data-lucide="lock" style="width:12px;height:12px;"></i> Desbloquear
-            </div>
-          </div>
-        </div>
       </nav>
+
 
       <div class="sidebar-footer" style="padding:16px;border-top:1px solid rgba(255,255,255,0.05);background:rgba(0,0,0,0.2);">
         <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;transition:var(--transition);cursor:pointer;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.04)'">
