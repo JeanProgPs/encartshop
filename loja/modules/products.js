@@ -6,6 +6,7 @@
 window.ProductCatalog = (() => {
   let allProducts = [];
   let activeCategory = 'Todos';
+  let searchQuery = '';
   let storeSegment = 'market'; // Default
 
   async function init() {
@@ -48,9 +49,17 @@ window.ProductCatalog = (() => {
     EventBus.on(EventBus.EVENTS.CATEGORY_CHANGED, ({ category }) => {
       EventBus.log('Category', 'Categoria alterada', { from: activeCategory, to: category });
       activeCategory = category;
+      searchQuery = '';
       EventBus.log('Filter', 'Aplicando filtro no catálogo', { category });
       renderProducts();
       document.getElementById('products-area')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // Escuta troca de termo de busca
+    EventBus.on(EventBus.EVENTS.SEARCH_CHANGED, ({ query }) => {
+      EventBus.log('Search', 'Busca alterada', { query });
+      searchQuery = query;
+      renderProducts();
     });
 
     // Escuta atualização do carrinho para atualizar QTY no grid
@@ -73,6 +82,30 @@ window.ProductCatalog = (() => {
           <div style="font-size:3rem;margin-bottom:12px">🛍️</div>
           <p style="font-size:0.9rem">Nenhum produto disponível no momento.</p>
         </div>`;
+      return;
+    }
+
+    // Se houver busca ativa, filtra globalmente
+    if (searchQuery && searchQuery.trim() !== '') {
+      const queryNormal = searchQuery.toLowerCase().trim();
+      const filtered = allProducts.filter(p => 
+        (p.name || '').toLowerCase().includes(queryNormal) || 
+        (p.description || '').toLowerCase().includes(queryNormal) ||
+        (p.category || '').toLowerCase().includes(queryNormal)
+      );
+
+      EventBus.log('RenderMode', `Busca ativa: "${searchQuery}"`, { count: filtered.length });
+      
+      if (!filtered.length) {
+        area.innerHTML = `
+          <div style="text-align:center;padding:60px 24px;color:var(--text-muted);">
+            <div style="font-size:3rem;margin-bottom:12px">🔍</div>
+            <h4 style="margin:0 0 8px 0;font-size:1.1rem;color:var(--text);font-weight:700;">Nenhum produto encontrado</h4>
+            <p style="font-size:0.9rem;opacity:0.8;margin:0">Não encontramos resultados para "<strong>${escapeHTML(searchQuery)}</strong>".</p>
+          </div>`;
+        return;
+      }
+      area.innerHTML = _renderGroup(`Resultados para "${searchQuery}"`, filtered, false);
       return;
     }
 
