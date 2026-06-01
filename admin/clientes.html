@@ -493,8 +493,8 @@
   // ── Stats ─────────────────────────────────────────────────────
   function renderStats(customers) {
     const total    = customers.length;
-    const spent    = customers.reduce((s, c) => s + (c.total_spent || 0), 0);
-    const orders   = customers.reduce((s, c) => s + (c.total_orders || 0), 0);
+    const spent    = customers.reduce((s, c) => s + (Number(c.total_gasto) || 0), 0);
+    const orders   = customers.reduce((s, c) => s + (Number(c.total_pedidos) || 0), 0);
     const ticket   = orders > 0 ? spent / orders : 0;
 
     const badge = document.getElementById('customers-count-badge');
@@ -523,9 +523,9 @@
     const q = searchQuery.toLowerCase().trim();
     if (q) {
       filtered = allCustomers.filter(c =>
-        (c.name  || '').toLowerCase().includes(q) ||
-        (c.phone || '').replace(/\D/g,'').includes(q.replace(/\D/g,'')) ||
-        (c.phone || '').toLowerCase().includes(q)
+        (c.nome  || '').toLowerCase().includes(q) ||
+        (c.telefone || '').replace(/\D/g,'').includes(q.replace(/\D/g,'')) ||
+        (c.telefone || '').toLowerCase().includes(q)
       );
     } else {
       filtered = [...allCustomers];
