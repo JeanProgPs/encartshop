@@ -374,10 +374,10 @@
             <input id="search-input" type="text" class="search-input" placeholder="Buscar por nome ou WhatsApp..." autocomplete="off">
           </div>
           <select id="sort-select" class="sort-select">
-            <option value="last_order_at">Mais Recentes</option>
-            <option value="total_spent">Maior Valor Gasto</option>
-            <option value="total_orders">Mais Pedidos</option>
-            <option value="name">Nome A-Z</option>
+            <option value="ultimo_pedido">Mais Recentes</option>
+            <option value="total_gasto">Maior Valor Gasto</option>
+            <option value="total_pedidos">Mais Pedidos</option>
+            <option value="nome">Nome A-Z</option>
           </select>
         </div>
       </div>
@@ -451,7 +451,7 @@
   let allCustomers   = [];
   let filtered       = [];
   let currentPage    = 1;
-  let currentSort    = 'last_order_at';
+  let currentSort    = 'ultimo_pedido';
   let searchQuery    = '';
   let searchTimer    = null;
   let storeId        = null;
@@ -476,7 +476,7 @@
   // ── Load ─────────────────────────────────────────────────────
   async function loadCustomers() {
     try {
-      const sortAscending = (currentSort === 'name');
+      const sortAscending = (currentSort === 'nome');
       allCustomers = await CustomersModule.getAll(storeId, {
         limit: 500, offset: 0,
         orderBy: currentSort, ascending: sortAscending
@@ -538,7 +538,7 @@
   // ── Sort ──────────────────────────────────────────────────────
   function applySort(sortKey) {
     currentSort = sortKey;
-    const asc = sortKey === 'name';
+    const asc = sortKey === 'nome';
     allCustomers.sort((a, b) => {
       const av = a[sortKey] ?? (asc ? 'zzz' : 0);
       const bv = b[sortKey] ?? (asc ? 'zzz' : 0);
