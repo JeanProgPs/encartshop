@@ -419,10 +419,10 @@ body.segment-fashion {
 /* Mobile */
 @media (max-width: 600px) {
   .campaign-carousel-container {
-    max-height: 240px;
+    max-height: 180px;
   }
   .campaign-slide img {
-    height: 240px;
+    height: 180px;
     aspect-ratio: auto;
     object-position: center;
   }

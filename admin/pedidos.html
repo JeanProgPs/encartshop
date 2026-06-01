@@ -13,21 +13,21 @@
       theme: {
         extend: {
           colors: {
-            bgPrimary: 'var(--bg-primary)',
-            bgSecondary: 'var(--bg-secondary)',
-            cardBg: 'var(--card-bg)',
-            borderColor: 'var(--border-color)',
-            textPrimary: 'var(--text-primary)',
-            textSecondary: 'var(--text-secondary)',
-            accent: 'var(--accent)',
-            success: 'var(--success)',
-            warning: 'var(--warning)',
-            danger: 'var(--danger)',
+            bgPrimary:    'var(--bg-primary)',
+            bgSecondary:  'var(--bg-secondary)',
+            cardBg:       'var(--card-bg)',
+            borderColor:  'var(--border-color)',
+            textPrimary:  'var(--text-primary)',
+            textSecondary:'var(--text-secondary)',
+            accent:       'var(--accent)',
+            success:      'var(--success)',
+            warning:      'var(--warning)',
+            danger:       'var(--danger)',
           },
           fontFamily: { sans: ['Inter', 'sans-serif'] },
           boxShadow: {
-            'card': '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.03)',
-            'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.02)',
+            'card':      '0 1px 3px 0 rgba(0,0,0,0.05), 0 1px 2px -1px rgba(0,0,0,0.03)',
+            'card-hover':'0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.02)',
           }
         }
       }
@@ -37,24 +37,28 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
-    .filter-bar { display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;align-items:center; }
+    .filter-bar { display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center; }
     .filter-tab { padding:8px 16px;border-radius:99px;font-size:0.82rem;font-weight:600;cursor:pointer;transition:var(--transition);border:1.5px solid var(--border-color);background:var(--bg-primary);color:var(--text-secondary); }
     .filter-tab:hover  { border-color:var(--text-primary);color:var(--text-primary); }
     .filter-tab.active { background:var(--text-primary);border-color:var(--text-primary);color:#fff; }
     .filter-tab .count { display:inline-block;background:rgba(255,255,255,0.2);border-radius:99px;padding:1px 7px;font-size:0.72rem;margin-left:6px; }
 
     @keyframes order-glow {
-      0% { border-color: var(--accent); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.1); }
-      50% { border-color: var(--success); box-shadow: 0 0 15px 4px rgba(16, 185, 129, 0.2); }
-      100% { border-color: var(--border-color); box-shadow: 0 0 0 0 transparent; }
+      0%   { border-color:var(--accent);  box-shadow:0 0 0 0 rgba(0,0,0,0.1); }
+      50%  { border-color:var(--success); box-shadow:0 0 15px 4px rgba(16,185,129,0.2); }
+      100% { border-color:var(--border-color); box-shadow:0 0 0 0 transparent; }
     }
-    .order-highlight { animation: order-glow 3s ease-in-out; border-width: 1.5px !important; }
-    
-    .fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(10px); }
-    @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
-    
-    .hover-scale { transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease; }
-    .hover-scale:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .order-highlight { animation:order-glow 3s ease-in-out; border-width:1.5px !important; }
+
+    .fade-in-up { animation:fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards; opacity:0; transform:translateY(10px); }
+    @keyframes fadeInUp { to { opacity:1; transform:translateY(0); } }
+
+    .hover-scale { transition:transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s ease; }
+    .hover-scale:hover { transform:translateY(-2px); box-shadow:var(--shadow-lg); }
+
+    /* Search bar */
+    #order-search-input:focus,
+    #order-date-input:focus { border-color:var(--accent); outline:none; }
   </style>
 </head>
 <body data-page="pedidos" class="bg-bgPrimary text-textPrimary antialiased selection:bg-accent selection:text-white">
@@ -76,8 +80,9 @@
       </div>
     </header>
 
-    <div class="flex-1 p-4 md:p-8 flex flex-col gap-6 max-w-[1000px] w-full mx-auto fade-in-up">
-      
+    <div class="flex-1 p-4 md:p-8 flex flex-col gap-4 max-w-[1000px] w-full mx-auto fade-in-up">
+
+      <!-- Filtros de status -->
       <div class="filter-bar" id="filter-bar">
         <button class="filter-tab active" data-filter="all" onclick="setFilter('all',this)">
           Todos <span class="count" id="cnt-all">0</span>
@@ -99,7 +104,38 @@
         </button>
       </div>
 
-      <div id="orders-list" class="flex flex-col"></div>
+      <!-- Barra de Busca e Data -->
+      <div class="flex flex-col sm:flex-row gap-3 bg-cardBg border border-borderColor rounded-xl p-4">
+        <!-- Busca por nome / número -->
+        <div class="flex-1 relative flex items-center">
+          <i data-lucide="search" class="w-4 h-4 text-textSecondary absolute left-3 pointer-events-none"></i>
+          <input
+            type="text"
+            id="order-search-input"
+            autocomplete="off"
+            placeholder="Buscar por cliente ou número do pedido..."
+            class="w-full bg-bgPrimary border border-borderColor rounded-lg pl-9 pr-4 py-2 text-sm text-textPrimary transition-colors">
+        </div>
+        <!-- Filtro por data -->
+        <div class="relative flex items-center">
+          <i data-lucide="calendar" class="w-4 h-4 text-textSecondary absolute left-3 pointer-events-none"></i>
+          <input
+            type="date"
+            id="order-date-input"
+            class="bg-bgPrimary border border-borderColor rounded-lg pl-9 pr-4 py-2 text-sm text-textPrimary transition-colors min-w-[170px]">
+        </div>
+        <!-- Limpar filtros (sempre visível, desabilitado quando sem filtro) -->
+        <button
+          id="clear-filters-btn"
+          onclick="clearSearchFilters()"
+          disabled
+          class="flex items-center gap-2 px-4 py-2 bg-bgPrimary border border-borderColor text-textSecondary rounded-lg text-sm font-medium transition-colors opacity-40 cursor-not-allowed hover:bg-borderColor">
+          <i data-lucide="x-circle" class="w-4 h-4"></i>
+          Limpar filtros
+        </button>
+      </div>
+
+      <div id="orders-list" class="flex flex-col gap-4"></div>
     </div>
   </main>
 </div>
@@ -123,56 +159,102 @@
 <script src="/js/admin-common.js"></script>
 <script>
   lucide.createIcons();
-  let currentFilter = 'all';
-  let allOrders     = [];
-  const storeId     = () => AuthService.getActiveStoreId();
 
+  let currentFilter  = 'all';
+  let allOrders      = [];
+  let searchText     = '';
+  let searchDate     = '';
+  let listenersReady = false;
+
+  const storeId = () => AuthService.getActiveStoreId();
+
+  // ── Listeners de busca (inicializados APÓS carga dos pedidos) ──────────
+  function initSearchListeners() {
+    if (listenersReady) return;
+    listenersReady = true;
+
+    document.getElementById('order-search-input').addEventListener('input', (e) => {
+      searchText = e.target.value.toLowerCase().trim();
+      updateClearBtn();
+      renderOrderList();
+    });
+
+    document.getElementById('order-date-input').addEventListener('change', (e) => {
+      searchDate = e.target.value;
+      updateClearBtn();
+      renderOrderList();
+    });
+  }
+
+  function updateClearBtn() {
+    const btn = document.getElementById('clear-filters-btn');
+    if (!btn) return;
+    const active = !!(searchText || searchDate);
+    btn.disabled = !active;
+    btn.classList.toggle('opacity-40',         !active);
+    btn.classList.toggle('cursor-not-allowed', !active);
+  }
+
+  window.clearSearchFilters = function() {
+    searchText = '';
+    searchDate = '';
+    const si = document.getElementById('order-search-input');
+    const di = document.getElementById('order-date-input');
+    if (si) si.value = '';
+    if (di) di.value = '';
+    updateClearBtn();
+    renderOrderList();
+  };
+
+  // ── Init ───────────────────────────────────────────────────────────────
   async function initAdmin() {
-    document.getElementById('orders-list').innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:16px;">
-        ${Array.from({length:3}).map((_,i) => `
-          <div class="h-32 bg-cardBg border border-borderColor rounded-xl animate-pulse"></div>`).join('')}
-      </div>`;
+    document.getElementById('orders-list').innerHTML =
+      Array.from({length: 3}).map(() =>
+        `<div class="h-32 bg-cardBg border border-borderColor rounded-xl animate-pulse"></div>`
+      ).join('');
+
     try {
       await renderOrders();
-      
-      const urlParams = new URLSearchParams(window.location.search);
-      const searchRef = urlParams.get('ref');
+
+      // Só liga listeners depois que os pedidos já estão carregados
+      initSearchListeners();
+
+      // Verifica ?ref= na URL para destacar pedido específico
+      const searchRef = new URLSearchParams(window.location.search).get('ref');
       if (searchRef) {
-        const refUpper = searchRef.toUpperCase();
+        const refUpper     = searchRef.toUpperCase();
         const matchedOrder = allOrders.find(o => {
           const nameMatch = o.customer_name && o.customer_name.toUpperCase().includes(`#${refUpper}`);
-          const idMatch = o.id && String(o.id).toUpperCase().endsWith(refUpper);
+          const idMatch   = o.id && String(o.id).toUpperCase().endsWith(refUpper);
           return nameMatch || idMatch;
         });
 
         if (matchedOrder) {
           currentFilter = 'all';
           document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-          const allTab = document.querySelector('.filter-tab[data-filter="all"]');
-          if (allTab) allTab.classList.add('active');
-          
+          document.querySelector('.filter-tab[data-filter="all"]')?.classList.add('active');
           renderOrderList();
-
           setTimeout(() => {
             const card = document.getElementById(`order-${matchedOrder.id}`);
             if (card) {
               card.scrollIntoView({ behavior: 'smooth', block: 'center' });
               card.classList.add('order-highlight');
-              if (window.showToast) showToast(`Pedido #${searchRef} localizado e destacado!`, 'success');
+              if (window.showToast) showToast(`Pedido #${searchRef} localizado!`, 'success');
             }
           }, 400);
         } else {
-          if (window.showToast) showToast(`Pedido com a referência #${searchRef} não foi encontrado.`, 'warning');
+          if (window.showToast) showToast(`Pedido #${searchRef} não encontrado.`, 'warning');
         }
       }
-    } catch(err) {
+    } catch (err) {
       console.error('[Pedidos] Erro ao carregar:', err);
-      document.getElementById('orders-list').innerHTML = UIRender.emptyState('⚠️', 'Erro ao carregar pedidos', 'Tente recarregar a página.');
+      document.getElementById('orders-list').innerHTML =
+        UIRender.emptyState('⚠️', 'Erro ao carregar pedidos', 'Tente recarregar a página.');
       if (window.showToast) showToast('Erro ao carregar pedidos.', 'error');
     }
   }
 
+  // ── Filtro de status ───────────────────────────────────────────────────
   function setFilter(f, btn) {
     currentFilter = f;
     document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
@@ -180,6 +262,7 @@
     renderOrderList();
   }
 
+  // ── Busca e renderização ───────────────────────────────────────────────
   async function renderOrders() {
     allOrders = await OrdersModule.getAll(storeId());
     updateCounts();
@@ -188,12 +271,12 @@
 
   function updateCounts() {
     const counts = OrdersModule.countByStatus(allOrders);
-    document.getElementById('cnt-all').textContent       = counts.all       || 0;
-    document.getElementById('cnt-novo').textContent      = counts.novo      || 0;
-    document.getElementById('cnt-confirmado').textContent= counts.confirmado|| 0;
-    document.getElementById('cnt-em_entrega').textContent= counts.em_entrega|| 0;
-    document.getElementById('cnt-finalizado').textContent= counts.finalizado || 0;
-    document.getElementById('cnt-cancelado').textContent = counts.cancelado  || 0;
+    document.getElementById('cnt-all').textContent        = counts.all        || 0;
+    document.getElementById('cnt-novo').textContent       = counts.novo       || 0;
+    document.getElementById('cnt-confirmado').textContent = counts.confirmado  || 0;
+    document.getElementById('cnt-em_entrega').textContent = counts.em_entrega  || 0;
+    document.getElementById('cnt-finalizado').textContent = counts.finalizado  || 0;
+    document.getElementById('cnt-cancelado').textContent  = counts.cancelado   || 0;
 
     const badge = document.getElementById('new-orders-badge');
     if (counts.novo > 0) { badge.textContent = `${counts.novo} novo(s)`; badge.style.display = ''; }
@@ -201,16 +284,42 @@
   }
 
   function renderOrderList() {
-    const filtered = OrdersModule.filter(allOrders, currentFilter);
     const list = document.getElementById('orders-list');
+    if (!list) return;
+
+    // 1. Filtra por status
+    let filtered = OrdersModule.filter(allOrders, currentFilter);
+
+    // 2. Filtra por texto (nome ou ID do pedido)
+    if (searchText) {
+      filtered = filtered.filter(o => {
+        const nameMatch = o.customer_name && o.customer_name.toLowerCase().includes(searchText);
+        const numMatch  = o.id && String(o.id).toLowerCase().includes(searchText);
+        return nameMatch || numMatch;
+      });
+    }
+
+    // 3. Filtra por data
+    if (searchDate) {
+      filtered = filtered.filter(o => {
+        if (!o.created_at) return false;
+        return o.created_at.split('T')[0] === searchDate;
+      });
+    }
+
     if (!filtered.length) {
-      list.innerHTML = UIRender.emptyState('🛒', 'Nenhum pedido', 'Os pedidos aparecerão aqui assim que os clientes finalizarem pelo WhatsApp.');
+      const hasFilter = searchText || searchDate;
+      list.innerHTML = hasFilter
+        ? UIRender.emptyState('🔍', 'Nenhum pedido encontrado', 'Tente ajustar os termos de busca ou limpar os filtros.')
+        : UIRender.emptyState('🛒', 'Nenhum pedido', 'Os pedidos aparecerão aqui assim que os clientes finalizarem pelo WhatsApp.');
       return;
     }
+
     list.innerHTML = filtered.map(o => UIRender.orderAdminCard(o)).join('');
     setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
   }
 
+  // ── Ações ──────────────────────────────────────────────────────────────
   async function handleOrderStatus(btn) {
     const orderId       = btn.dataset.orderId;
     const currentStatus = btn.dataset.currentStatus;
@@ -231,6 +340,68 @@
     await renderOrders();
     showToast('Pedido excluído.', 'info');
   }
+
+  // ── Impressão de cupom ─────────────────────────────────────────────────
+  window.handlePrintOrder = function(id) {
+    const o = allOrders.find(order => order.id === id);
+    if (!o) return;
+
+    const printWindow = window.open('', '_blank', 'width=600,height=800');
+    if (!printWindow) {
+      showToast('Permita popups para imprimir o pedido.', 'warning');
+      return;
+    }
+
+    const itemsHtml = (o.items || []).map(item => `
+      <tr>
+        <td style="padding:6px 0;font-size:14px;">${item.qty || item.quantity}x ${item.name}</td>
+        <td style="padding:6px 0;text-align:right;font-size:14px;">${UIRender.fmtPrice(item.price * (item.qty || item.quantity))}</td>
+      </tr>`).join('');
+
+    const dateStr     = new Date(o.created_at).toLocaleString('pt-BR');
+    const isCombine   = o.delivery_fee === -1;
+    const deliveryFee = isCombine ? 0 : (Number(o.delivery_fee) || 0);
+    const subtotal    = (o.items || []).reduce((s, i) => s + i.price * (i.qty || i.quantity), 0);
+    const total       = subtotal + deliveryFee;
+
+    printWindow.document.write(`<!DOCTYPE html><html><head>
+      <title>Pedido #${String(o.id).slice(-5).toUpperCase()}</title>
+      <style>
+        body{font-family:'Courier New',Courier,monospace;margin:20px;color:#000;background:#fff;}
+        .receipt{max-width:400px;margin:0 auto;}
+        .header{text-align:center;margin-bottom:20px;border-bottom:1px dashed #000;padding-bottom:10px;}
+        .title{font-size:18px;font-weight:bold;margin:5px 0;}
+        .info{font-size:12px;margin:3px 0;}
+        table{width:100%;border-collapse:collapse;margin:15px 0;border-bottom:1px dashed #000;}
+        th{padding-bottom:5px;font-size:12px;}th:first-child{text-align:left;}th:last-child{text-align:right;}
+        .totals{font-size:14px;margin-top:10px;}
+        .total-row{display:flex;justify-content:space-between;margin:4px 0;}
+        .total-bold{font-weight:bold;border-top:1px dashed #000;padding-top:6px;font-size:16px;}
+        .footer{text-align:center;margin-top:30px;font-size:11px;border-top:1px dashed #000;padding-top:10px;}
+        @media print{body{margin:0;}.receipt{max-width:100%;}}
+      </style></head><body>
+      <div class="receipt">
+        <div class="header">
+          <div class="title">EncartShop</div>
+          <div class="info">PEDIDO #${String(o.id).slice(-5).toUpperCase()}</div>
+          <div class="info">Data: ${dateStr}</div>
+        </div>
+        <div class="info"><strong>Cliente:</strong> ${o.customer_name || 'Não informado'}</div>
+        <table>
+          <thead><tr><th>Item</th><th>Total</th></tr></thead>
+          <tbody>${itemsHtml}</tbody>
+        </table>
+        <div class="totals">
+          <div class="total-row"><span>Subtotal:</span><span>${UIRender.fmtPrice(subtotal)}</span></div>
+          <div class="total-row"><span>Entrega:</span><span>${isCombine ? 'A combinar' : UIRender.fmtPrice(deliveryFee)}</span></div>
+          <div class="total-row total-bold"><span>TOTAL:</span><span>${UIRender.fmtPrice(total)}</span></div>
+        </div>
+        <div class="footer">Obrigado pela preferência!</div>
+      </div>
+      <script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<\/script>
+    </body></html>`);
+    printWindow.document.close();
+  };
 
   initAdmin();
 </script>

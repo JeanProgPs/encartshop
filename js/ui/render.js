@@ -187,9 +187,14 @@ const UIRender = (() => {
           <div class="flex items-center gap-2">
             ${actionButtons}
           </div>
-          <button class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-danger/10 text-textSecondary hover:text-danger transition-colors ml-auto" onclick="handleDeleteOrder('${o.id}')" title="Excluir Pedido">
-            <i data-lucide="trash-2" class="w-4 h-4"></i>
-          </button>
+          <div class="flex items-center gap-2 ml-auto">
+            <button class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-accent/10 text-textSecondary hover:text-accent transition-colors" onclick="handlePrintOrder('${o.id}')" title="Imprimir Pedido">
+              <i data-lucide="printer" class="w-4 h-4"></i>
+            </button>
+            <button class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-danger/10 text-textSecondary hover:text-danger transition-colors" onclick="handleDeleteOrder('${o.id}')" title="Excluir Pedido">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
         </div>
       </div>
     `;

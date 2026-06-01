@@ -126,6 +126,7 @@ const OrderAPI = {
   async create(storeId, orderData) {
     if (!storeId) throw new Error('store_id obrigatório');
     try {
+      // customer_phone e customer_address são opcionais — o trigger no banco cria/atualiza o cliente automaticamente
       const { error } = await window.sb.from('orders').insert([{ ...orderData, store_id: storeId }]);
       if (error) throw error;
       return true;
@@ -300,4 +301,63 @@ const CampaignAPI = {
   }
 };
 
-window.EncartAPI = { StoreAPI, ProductAPI, OrderAPI, AsaasAPI, DeliveryAPI, CampaignAPI };
+const CustomerAPI = {
+  async getByStore(storeId, { limit = 50, offset = 0, orderBy = 'ultimo_pedido', ascending = false } = {}) {
+    if (!storeId) return [];
+    try {
+      const { data, error } = await window.sb.from('clientes')
+        .select('*')
+        .eq('store_id', storeId)
+        .order(orderBy, { ascending })
+        .range(offset, offset + limit - 1);
+      if (error) { console.error('CustomerAPI.getByStore:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async getById(id) {
+    if (!id) return null;
+    try {
+      const { data, error } = await window.sb.from('clientes').select('*').eq('id', id).maybeSingle();
+      if (error) { console.error('CustomerAPI.getById:', error); return null; }
+      return data || null;
+    } catch (e) { return null; }
+  },
+  async getOrdersByCustomer(customerId, storeId) {
+    if (!customerId || !storeId) return [];
+    try {
+      const { data, error } = await window.sb.from('orders')
+        .select('*')
+        .eq('cliente_id', customerId)
+        .eq('store_id', storeId)
+        .order('created_at', { ascending: false });
+      if (error) { console.error('CustomerAPI.getOrdersByCustomer:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async search(storeId, query) {
+    if (!storeId || !query) return [];
+    try {
+      const q = query.trim();
+      const { data, error } = await window.sb.from('clientes')
+        .select('*')
+        .eq('store_id', storeId)
+        .or(`nome.ilike.%${q}%,telefone.ilike.%${q}%`)
+        .order('ultimo_pedido', { ascending: false })
+        .limit(50);
+      if (error) { console.error('CustomerAPI.search:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async countByStore(storeId) {
+    if (!storeId) return 0;
+    try {
+      const { count, error } = await window.sb.from('clientes')
+        .select('*', { count: 'exact', head: true })
+        .eq('store_id', storeId);
+      if (error) return 0;
+      return count || 0;
+    } catch (e) { return 0; }
+  }
+};
+
+window.EncartAPI = { StoreAPI, ProductAPI, OrderAPI, AsaasAPI, DeliveryAPI, CampaignAPI, CustomerAPI };

@@ -34,7 +34,36 @@ window.StoreUI = (() => {
           if (btn.dataset.cat === category) btn.classList.add('active');
         });
       }
+      
+      // Limpa busca ao mudar categoria
+      const sInput = document.getElementById('store-search-input');
+      const sClear = document.getElementById('search-clear-btn');
+      if (sInput && sInput.value) {
+        sInput.value = '';
+        if (sClear) sClear.classList.add('hidden');
+      }
     });
+
+    // Configura eventos da busca
+    const searchInput = document.getElementById('store-search-input');
+    const searchClear = document.getElementById('search-clear-btn');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        const val = e.target.value;
+        if (searchClear) {
+          searchClear.classList.toggle('hidden', val.length === 0);
+        }
+        EventBus.emit(EventBus.EVENTS.SEARCH_CHANGED, { query: val });
+      });
+    }
+    if (searchClear && searchInput) {
+      searchClear.addEventListener('click', () => {
+        searchInput.value = '';
+        searchClear.classList.add('hidden');
+        searchInput.focus();
+        EventBus.emit(EventBus.EVENTS.SEARCH_CHANGED, { query: '' });
+      });
+    }
 
     // 4. Quando o Carrinho for atualizado -> Redesenha Modal, Bolha e Header
     EventBus.on(EventBus.EVENTS.CART_UPDATED, ({ cart }) => {

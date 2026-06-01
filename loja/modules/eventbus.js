@@ -11,6 +11,7 @@ window.EventBus = (() => {
     CART_UPDATED: 'loja:cart_updated',
     CART_TOGGLE: 'loja:cart_toggle',
     CHECKOUT_START: 'loja:checkout_start',
+    SEARCH_CHANGED: 'loja:search_changed',
     ERROR: 'loja:error'
   };
 
