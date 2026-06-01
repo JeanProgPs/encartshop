@@ -90,7 +90,7 @@ const UIComponents = (() => {
           ${navItem('dashboard', 'layout-dashboard', 'Dashboard')}
           ${navItem('pedidos', 'shopping-cart', 'Pedidos')}
           ${navItem('produtos', 'package', 'Produtos')}
-          ${navItem('clientes', 'users', 'Clientes', true)}
+          ${navItem('clientes', 'users', 'Clientes')}
         </div>
 
         <div>

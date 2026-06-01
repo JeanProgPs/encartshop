@@ -81,6 +81,11 @@ window.CartManager = (() => {
       return; 
     }
 
+    // ── Campos opcionais de identificação do cliente ──────────────────────
+    // Não obrigatórios. Se preenchidos, enriquecem a mensagem e salvam o cliente.
+    const phoneRaw   = document.getElementById('customer-whatsapp')?.value?.trim() || '';
+    const addressRaw = document.getElementById('customer-address')?.value?.trim() || '';
+
     // ── DeliveryModule PRO Integration ──
     let deliveryMsg = '';
     let finalTotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
@@ -126,14 +131,25 @@ window.CartManager = (() => {
 
       const logoLink = store.logo_url ? `\n🖼 *Sua Loja:* ${store.logo_url}\n` : '';
 
-      const msg = `🛒 *Novo Pedido — ${store.name}*\n\n*Ref:* #${orderRef}\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n${deliveryMsg}\n*Subtotal:* ${UIRender.fmtPrice(subtotal)}\n*Total:* ${UIRender.fmtPrice(finalTotal)}\n${logoLink}\n🔗 *Gerenciar no Painel:* ${window.location.origin}/admin/pedidos.html?ref=${orderRef}\n\n_Enviado via EncartShop_`;
+      // Linhas opcionais na mensagem do WhatsApp (só aparecem se preenchidas)
+      const phoneMsg   = phoneRaw   ? `\n*WhatsApp:* ${phoneRaw}`   : '';
+      const addressMsg = addressRaw ? `\n*Endereço:* ${addressRaw}` : '';
 
-      EncartAPI.OrderAPI.create(store.id, {
+      const msg = `🛒 *Novo Pedido — ${store.name}*\n\n*Ref:* #${orderRef}\n*Cliente:* ${name}${phoneMsg}${addressMsg}\n\n*Itens:*\n${itemsText}\n${deliveryMsg}\n*Subtotal:* ${UIRender.fmtPrice(subtotal)}\n*Total:* ${UIRender.fmtPrice(finalTotal)}\n${logoLink}\n🔗 *Gerenciar no Painel:* ${window.location.origin}/admin/pedidos.html?ref=${orderRef}\n\n_Enviado via EncartShop_`;
+
+      // Monta dados do pedido — campos opcionais só enviados se preenchidos
+      // O trigger no banco (trg_upsert_customer) cria/atualiza o cliente automaticamente
+      const orderPayload = {
         customer_name: finalCustomerName,
         items: cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price, unit: i.unit })),
         total: finalTotal,
         status: 'novo'
-      }).catch(e => EventBus.log('CartManager', 'Pedido não salvo na base', e.message, true));
+      };
+      if (phoneRaw)   orderPayload.customer_phone   = phoneRaw;
+      if (addressRaw) orderPayload.customer_address = addressRaw;
+
+      EncartAPI.OrderAPI.create(store.id, orderPayload)
+        .catch(e => EventBus.log('CartManager', 'Pedido não salvo na base', e.message, true));
 
       cart = []; 
       _saveCart(); 

@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clientes — EncartShop</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+
+  <link rel="stylesheet" href="/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bgPrimary:    'var(--bg-primary)',
+            bgSecondary:  'var(--bg-secondary)',
+            cardBg:       'var(--card-bg)',
+            borderColor:  'var(--border-color)',
+            textPrimary:  'var(--text-primary)',
+            textSecondary:'var(--text-secondary)',
+            accent:       'var(--accent)',
+            success:      'var(--success)',
+            warning:      'var(--warning)',
+            danger:       'var(--danger)',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── Animations ────────────────────────────────────────────── */
+    .fade-in-up {
+      animation: fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
+      opacity: 0; transform: translateY(10px);
+    }
+    @keyframes fadeInUp { to { opacity:1; transform:translateY(0); } }
+
+    /* ── Search & Sort Bar ─────────────────────────────────────── */
+    .search-bar {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    }
+    .search-input-wrap {
+      flex: 1; min-width: 200px; position: relative; display: flex; align-items: center;
+    }
+    .search-input-wrap svg {
+      position: absolute; left: 12px; color: var(--text-secondary); pointer-events: none;
+    }
+    .search-input {
+      width: 100%; padding: 10px 14px 10px 38px;
+      background: var(--bg-primary); border: 1px solid var(--border-color);
+      border-radius: 10px; font-size: 0.875rem; color: var(--text-primary);
+      font-family: inherit; transition: border-color 0.2s;
+    }
+    .search-input:focus { outline: none; border-color: var(--accent); }
+
+    .sort-select {
+      padding: 10px 14px; background: var(--bg-primary);
+      border: 1px solid var(--border-color); border-radius: 10px;
+      font-size: 0.875rem; color: var(--text-primary); font-family: inherit;
+      cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23888' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+      padding-right: 36px;
+    }
+    .sort-select:focus { outline: none; border-color: var(--accent); }
+
+    /* ── Stats Cards ───────────────────────────────────────────── */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    }
+    .stat-card {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: 14px; padding: 16px 20px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .stat-card-label { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+    .stat-card-value { font-size: 1.6rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
+    .stat-card-value.accent { color: var(--accent); }
+
+    /* ── Customer Table (desktop) ──────────────────────────────── */
+    .customers-table-wrap {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: 14px; overflow: hidden;
+    }
+    table.customers-table { width: 100%; border-collapse: collapse; }
+    .customers-table thead th {
+      padding: 12px 16px; text-align: left;
+      font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      background: var(--bg-primary); border-bottom: 1px solid var(--border-color);
+    }
+    .customers-table thead th.text-center { text-align: center; }
+    .customers-table thead th.text-right  { text-align: right; }
+    .customer-row {
+      cursor: pointer; transition: background 0.15s;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .customer-row:last-child { border-bottom: none; }
+    .customer-row:hover { background: rgba(255,255,255,0.03); }
+    .customers-table td {
+      padding: 14px 16px; font-size: 0.875rem; color: var(--text-primary);
+      vertical-align: middle;
+    }
+    .customers-table td.text-center { text-align: center; }
+    .customers-table td.text-right  { text-align: right; }
+    .customers-table td.text-muted  { color: var(--text-secondary); font-size: 0.82rem; }
+    .customers-table td.font-mono   { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+    .customer-cell { display: flex; align-items: center; gap: 12px; }
+    .customer-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 800; color: #fff; flex-shrink: 0;
+    }
+    .customer-avatar.lg { width: 44px; height: 44px; font-size: 1rem; }
+    .customer-avatar.xl { width: 64px; height: 64px; font-size: 1.4rem; border-radius: 50%; }
+
+    .customer-info .customer-name { font-size: 0.875rem; font-weight: 600; }
+    .customer-info .customer-phone { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
+
+    .customer-phone-pill {
+      display: inline-block; font-size: 0.78rem; color: var(--text-secondary);
+      background: var(--bg-primary); border: 1px solid var(--border-color);
+      border-radius: 999px; padding: 3px 10px;
+    }
+    .orders-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 28px; height: 24px; border-radius: 999px;
+      background: rgba(99,102,241,0.12); color: #818cf8;
+      font-size: 0.78rem; font-weight: 800; padding: 0 8px;
+    }
+
+    .btn-detail {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: var(--bg-primary); border: 1px solid var(--border-color);
+      color: var(--text-secondary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .btn-detail:hover { border-color: var(--accent); color: var(--accent); background: rgba(99,102,241,0.08); }
+
+    /* ── Customer Cards (mobile) ───────────────────────────────── */
+    .customers-cards { display: flex; flex-direction: column; gap: 10px; }
+    .customer-card {
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      border-radius: 14px; padding: 16px; cursor: pointer;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .customer-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .customer-card:active { transform: scale(0.99); }
+    .customer-card-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+    }
+    .customer-card-info { flex: 1; min-width: 0; }
+    .customer-card-info .customer-name {
+      font-size: 0.9rem; font-weight: 700; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .customer-card-info .customer-phone { font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px; }
+    .card-arrow { color: var(--text-secondary); flex-shrink: 0; }
+
+    .customer-card-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 8px; padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+    .stat-item { display: flex; flex-direction: column; gap: 2px; }
+    .stat-label { font-size: 0.68rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-value { font-size: 0.875rem; font-weight: 700; color: var(--text-primary); }
+    .stat-value.accent { color: var(--accent); }
+
+    /* ── Pagination ────────────────────────────────────────────── */
+    .pagination {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 16px 0;
+    }
+    .page-btn {
+      min-width: 36px; height: 36px; border-radius: 8px; padding: 0 10px;
+      background: var(--card-bg); border: 1px solid var(--border-color);
+      color: var(--text-primary); font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .page-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .page-info { font-size: 0.8rem; color: var(--text-secondary); padding: 0 8px; }
+
+    /* ── Detail Overlay ────────────────────────────────────────── */
+    #detail-overlay {
+      position: fixed; inset: 0; z-index: 9000;
+      background: rgba(10,10,10,0.6); backdrop-filter: blur(6px);
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    #detail-overlay.open { opacity: 1; pointer-events: all; }
+
+    #detail-panel {
+      background: var(--card-bg); width: 100%; max-width: 540px;
+      max-height: 90vh; overflow-y: auto;
+      border-radius: 24px 24px 0 0;
+      transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.34,1.2,0.64,1);
+      padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    }
+    #detail-overlay.open #detail-panel { transform: translateY(0); }
+
+    .detail-header {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--card-bg); padding: 16px 20px 0;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 20px;
+    }
+    .detail-close {
+      display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--bg-primary); border: 1px solid var(--border-color);
+      color: var(--text-secondary); cursor: pointer; margin-bottom: 16px;
+      transition: all 0.15s;
+    }
+    .detail-close:hover { border-color: var(--danger); color: var(--danger); }
+
+    .detail-hero { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0 0 4px; }
+    .detail-name { font-size: 1.2rem; font-weight: 800; text-align: center; }
+    .detail-phone-link {
+      display: flex; align-items: center; gap: 6px;
+      color: #22c55e; font-size: 0.875rem; font-weight: 600;
+      text-decoration: none; padding: 6px 14px;
+      background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 999px; transition: all 0.15s;
+    }
+    .detail-phone-link:hover { background: rgba(34,197,94,0.18); }
+
+    .detail-stats-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .detail-stat {
+      background: var(--card-bg); padding: 18px 12px; text-align: center;
+    }
+    .detail-stat-value { font-size: 1.2rem; font-weight: 800; color: var(--text-primary); }
+    .detail-stat-value.accent { color: var(--accent); }
+    .detail-stat-label { font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+
+    .detail-section { padding: 20px 20px 0; }
+    .detail-section-title {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.78rem; font-weight: 700; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;
+    }
+    .detail-address {
+      font-size: 0.875rem; color: var(--text-primary);
+      padding: 12px 14px; background: var(--bg-primary);
+      border: 1px solid var(--border-color); border-radius: 10px;
+    }
+
+    .order-history-list { display: flex; flex-direction: column; gap: 8px; }
+    .order-history-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; background: var(--bg-primary);
+      border: 1px solid var(--border-color); border-radius: 10px;
+      transition: border-color 0.15s;
+    }
+    .order-history-item:hover { border-color: var(--accent); }
+    .order-history-left { display: flex; flex-direction: column; gap: 2px; }
+    .order-ref { font-size: 0.875rem; font-weight: 700; font-family: monospace; color: var(--text-primary); }
+    .order-date { font-size: 0.75rem; color: var(--text-secondary); }
+    .order-history-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .order-total { font-size: 0.9rem; font-weight: 800; color: var(--text-primary); }
+    .order-status {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; padding: 2px 8px; border-radius: 999px; border: 1px solid;
+    }
+    .status-novo       { background: rgba(245,158,11,0.12); color: #f59e0b; border-color: rgba(245,158,11,0.25); }
+    .status-confirmado { background: rgba(59,130,246,0.12); color: #3b82f6; border-color: rgba(59,130,246,0.25); }
+    .status-entrega    { background: rgba(99,102,241,0.12); color: #818cf8; border-color: rgba(99,102,241,0.25); }
+    .status-finalizado { background: rgba(16,185,129,0.12); color: #10b981; border-color: rgba(16,185,129,0.25); }
+    .status-cancelado  { background: rgba(239,68,68,0.12);  color: #ef4444; border-color: rgba(239,68,68,0.25); }
+
+    .detail-loading, .detail-error, .detail-empty {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 200px; font-size: 0.875rem; color: var(--text-secondary);
+    }
+    .spinner {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 3px solid var(--border-color); border-top-color: var(--accent);
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Empty State ───────────────────────────────────────────── */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 12px; padding: 64px 24px;
+      color: var(--text-secondary); text-align: center;
+    }
+    .empty-state-icon {
+      width: 56px; height: 56px; border-radius: 16px;
+      background: var(--bg-primary); display: flex; align-items: center; justify-content: center;
+      color: var(--text-secondary);
+    }
+    .empty-state h3 { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+    .empty-state p  { font-size: 0.85rem; margin: 0; max-width: 300px; line-height: 1.6; }
+
+    /* ── Responsive ────────────────────────────────────────────── */
+    @media (min-width: 640px) {
+      #detail-panel { border-radius: 24px 24px 0 0; }
+    }
+    @media (max-width: 768px) {
+      .stats-row { grid-template-columns: repeat(3, 1fr); }
+      .stat-card { padding: 12px 14px; }
+      .stat-card-value { font-size: 1.2rem; }
+    }
+    @media (max-width: 480px) {
+      .stats-row { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* Desktop: esconde cards / Mobile: esconde tabela */
+    .view-desktop { display: block; }
+    .view-mobile  { display: none; }
+    @media (max-width: 640px) {
+      .view-desktop { display: none; }
+      .view-mobile  { display: block; }
+      .search-bar   { flex-direction: column; gap: 8px; }
+      .search-input-wrap, .sort-select { width: 100%; }
+    }
+
+    /* hide cols on mobile table (fallback) */
+    @media (max-width: 640px) {
+      .hide-mobile { display: none; }
+    }
+
+    /* Skeleton pulse */
+    .skeleton {
+      background: var(--border-color);
+      border-radius: 8px; animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
+  </style>
+</head>
+<body data-page="clientes" class="bg-bgPrimary text-textPrimary antialiased">
+
+<div class="admin-layout flex min-h-screen">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content flex-1 ml-0 md:ml-[256px] flex flex-col min-h-screen transition-all duration-300">
+
+    <header class="h-[64px] bg-cardBg/80 backdrop-blur-md border-b border-borderColor sticky top-0 z-50 px-4 md:px-8 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <h2 class="text-sm font-semibold text-textPrimary leading-tight hidden md:block">Clientes</h2>
+        <span id="customers-count-badge" class="hidden px-2.5 py-0.5 text-xs font-bold bg-accent/10 text-accent border border-accent/20 rounded-full"></span>
+      </div>
+    </header>
+
+    <div class="flex-1 p-4 md:p-8 flex flex-col gap-5 max-w-[1000px] w-full mx-auto fade-in-up">
+
+      <!-- Stats Row -->
+      <div class="stats-row" id="stats-row">
+        <div class="stat-card"><div class="skeleton h-4 w-16 mb-2"></div><div class="skeleton h-8 w-24"></div></div>
+        <div class="stat-card"><div class="skeleton h-4 w-16 mb-2"></div><div class="skeleton h-8 w-24"></div></div>
+        <div class="stat-card"><div class="skeleton h-4 w-16 mb-2"></div><div class="skeleton h-8 w-24"></div></div>
+      </div>
+
+      <!-- Search & Sort -->
+      <div class="bg-cardBg border border-borderColor rounded-xl p-4">
+        <div class="search-bar">
+          <div class="search-input-wrap">
+            <i data-lucide="search" style="width:16px;height:16px;"></i>
+            <input id="search-input" type="text" class="search-input" placeholder="Buscar por nome ou WhatsApp..." autocomplete="off">
+          </div>
+          <select id="sort-select" class="sort-select">
+            <option value="last_order_at">Mais Recentes</option>
+            <option value="total_spent">Maior Valor Gasto</option>
+            <option value="total_orders">Mais Pedidos</option>
+            <option value="name">Nome A-Z</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Table (desktop) -->
+      <div id="list-container-desktop" class="view-desktop customers-table-wrap">
+        <table class="customers-table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th class="hide-mobile">WhatsApp</th>
+              <th class="text-center">Pedidos</th>
+              <th class="text-right">Total Gasto</th>
+              <th class="hide-mobile">Último Pedido</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="customers-tbody">
+            <tr><td colspan="6">
+              <div class="empty-state">
+                <div class="spinner"></div>
+              </div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Cards (mobile) -->
+      <div id="list-container-mobile" class="view-mobile customers-cards" id="customers-cards">
+        <div class="bg-cardBg border border-borderColor rounded-xl flex items-center justify-center p-10">
+          <div class="spinner"></div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div id="pagination-wrap" class="pagination hidden"></div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Detail Overlay (slide-up panel) -->
+<div id="detail-overlay" onclick="handleDetailOverlayClick(event)">
+  <div id="detail-panel"></div>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/supabase.js"></script>
+<script src="/js/core/helpers.js"></script>
+<script src="/js/core/supabaseClient.js"></script>
+<script src="/js/core/api.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="/js/modules/subscription.js"></script>
+<script src="/js/auth/authGuard.js"></script>
+<script src="/js/modules/store.js"></script>
+<script src="/js/modules/orders.js"></script>
+<script src="/js/modules/customers.js"></script>
+<script src="/js/ui/components.js"></script>
+<script src="/js/ui/render.js"></script>
+<script src="/js/storage.js"></script>
+<script src="/js/admin-common.js"></script>
+
+<script>
+  lucide.createIcons();
+
+  const PAGE_SIZE = 20;
+  let allCustomers   = [];
+  let filtered       = [];
+  let currentPage    = 1;
+  let currentSort    = 'last_order_at';
+  let searchQuery    = '';
+  let searchTimer    = null;
+  let storeId        = null;
+
+  // Expõe storeId para o módulo de detalhe
+  window._customersStoreId = null;
+
+  // ── Init ─────────────────────────────────────────────────────
+  async function initPage() {
+    storeId = AuthService.getActiveStoreId();
+    window._customersStoreId = storeId;
+
+    if (!storeId) {
+      renderEmpty('Loja não encontrada. Faça login novamente.');
+      return;
+    }
+
+    await loadCustomers();
+    initListeners();
+  }
+
+  // ── Load ─────────────────────────────────────────────────────
+  async function loadCustomers() {
+    try {
+      const sortAscending = (currentSort === 'name');
+      allCustomers = await CustomersModule.getAll(storeId, {
+        limit: 500, offset: 0,
+        orderBy: currentSort, ascending: sortAscending
+      });
+
+      renderStats(allCustomers);
+      applySearch();
+    } catch (err) {
+      console.error('[Clientes] Erro:', err);
+      renderEmpty('Erro ao carregar clientes. Tente recarregar a página.');
+    }
+  }
+
+  // ── Stats ─────────────────────────────────────────────────────
+  function renderStats(customers) {
+    const total    = customers.length;
+    const spent    = customers.reduce((s, c) => s + (c.total_spent || 0), 0);
+    const orders   = customers.reduce((s, c) => s + (c.total_orders || 0), 0);
+    const ticket   = orders > 0 ? spent / orders : 0;
+
+    const badge = document.getElementById('customers-count-badge');
+    if (badge) {
+      badge.textContent = `${total} cliente${total !== 1 ? 's' : ''}`;
+      badge.classList.remove('hidden');
+    }
+
+    document.getElementById('stats-row').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-card-label">Total Clientes</div>
+        <div class="stat-card-value">${total}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Total Pedidos</div>
+        <div class="stat-card-value">${orders}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Ticket Médio</div>
+        <div class="stat-card-value accent">${CustomersModule.fmtPrice(ticket)}</div>
+      </div>`;
+  }
+
+  // ── Search & Filter ───────────────────────────────────────────
+  function applySearch() {
+    const q = searchQuery.toLowerCase().trim();
+    if (q) {
+      filtered = allCustomers.filter(c =>
+        (c.name  || '').toLowerCase().includes(q) ||
+        (c.phone || '').replace(/\D/g,'').includes(q.replace(/\D/g,'')) ||
+        (c.phone || '').toLowerCase().includes(q)
+      );
+    } else {
+      filtered = [...allCustomers];
+    }
+    currentPage = 1;
+    renderList();
+    renderPagination();
+  }
+
+  // ── Sort ──────────────────────────────────────────────────────
+  function applySort(sortKey) {
+    currentSort = sortKey;
+    const asc = sortKey === 'name';
+    allCustomers.sort((a, b) => {
+      const av = a[sortKey] ?? (asc ? 'zzz' : 0);
+      const bv = b[sortKey] ?? (asc ? 'zzz' : 0);
+      if (typeof av === 'string') return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+      return asc ? av - bv : bv - av;
+    });
+    applySearch();
+  }
+
+  // ── Render List ───────────────────────────────────────────────
+  function renderList() {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const page  = filtered.slice(start, start + PAGE_SIZE);
+
+    if (!filtered.length) {
+      const msg = searchQuery ? 'Nenhum cliente encontrado para essa busca.' : 'Nenhum cliente cadastrado ainda.';
+      const sub = searchQuery ? 'Tente outro nome ou número.' : 'Os clientes aparecem aqui automaticamente após o primeiro pedido com WhatsApp preenchido.';
+      const emptyHtml = `
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <i data-lucide="users" style="width:24px;height:24px;"></i>
+          </div>
+          <h3>${msg}</h3>
+          <p>${sub}</p>
+        </div>`;
+
+      document.getElementById('customers-tbody').innerHTML = `<tr><td colspan="6">${emptyHtml}</td></tr>`;
+      document.getElementById('list-container-mobile').innerHTML = emptyHtml;
+      setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
+      return;
+    }
+
+    document.getElementById('customers-tbody').innerHTML = page.map(c => CustomersModule.renderRow(c)).join('');
+    document.getElementById('list-container-mobile').innerHTML = page.map(c => CustomersModule.renderCard(c)).join('');
+    setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
+  }
+
+  // ── Pagination ────────────────────────────────────────────────
+  function renderPagination() {
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+    const wrap = document.getElementById('pagination-wrap');
+    if (!wrap) return;
+
+    if (totalPages <= 1) { wrap.classList.add('hidden'); return; }
+    wrap.classList.remove('hidden');
+
+    const prevDisabled = currentPage <= 1 ? 'disabled' : '';
+    const nextDisabled = currentPage >= totalPages ? 'disabled' : '';
+
+    let pages = '';
+    for (let p = 1; p <= totalPages; p++) {
+      if (p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1) {
+        pages += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+      } else if (Math.abs(p - currentPage) === 2) {
+        pages += `<span class="page-info">…</span>`;
+      }
+    }
+
+    wrap.innerHTML = `
+      <button class="page-btn" onclick="goPage(${currentPage-1})" ${prevDisabled}>
+        <i data-lucide="chevron-left" style="width:14px;height:14px;"></i>
+      </button>
+      ${pages}
+      <button class="page-btn" onclick="goPage(${currentPage+1})" ${nextDisabled}>
+        <i data-lucide="chevron-right" style="width:14px;height:14px;"></i>
+      </button>`;
+    setTimeout(() => { if (window.lucide) window.lucide.createIcons({ root: wrap }); }, 10);
+  }
+
+  window.goPage = function(p) {
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+    if (p < 1 || p > totalPages) return;
+    currentPage = p;
+    renderList();
+    renderPagination();
+    document.getElementById('list-container-desktop')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // ── Empty ─────────────────────────────────────────────────────
+  function renderEmpty(msg) {
+    const emptyHtml = `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i data-lucide="alert-circle" style="width:24px;height:24px;"></i></div>
+        <h3>${msg}</h3>
+      </div>`;
+    document.getElementById('customers-tbody').innerHTML = `<tr><td colspan="6">${emptyHtml}</td></tr>`;
+    document.getElementById('list-container-mobile').innerHTML = emptyHtml;
+    setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
+  }
+
+  // ── Listeners ─────────────────────────────────────────────────
+  function initListeners() {
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      clearTimeout(searchTimer);
+      searchQuery = e.target.value;
+      searchTimer = setTimeout(applySearch, 250);
+    });
+
+    document.getElementById('sort-select').addEventListener('change', (e) => {
+      applySort(e.target.value);
+    });
+  }
+
+  // ── Detail overlay close on backdrop click ─────────────────────
+  window.handleDetailOverlayClick = function(e) {
+    if (e.target.id === 'detail-overlay') CustomersModule.closeDetail();
+  };
+
+  // ── Keyboard close ─────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') CustomersModule.closeDetail();
+  });
+
+  initPage();
+</script>
+</body>
+</html>
