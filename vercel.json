@@ -1,4 +1,6 @@
 {
+  "buildCommand": "echo 'Build handled by Vercel'",
+  "outputDirectory": ".",
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
