@@ -2,23 +2,36 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports = async (req, res) => {
-  const { slug } = req.query;
+  const { slug, domain } = req.query;
 
-  if (!slug) {
-    return res.status(400).send('Slug is required');
+  if (!slug && !domain) {
+    return res.status(400).send('Slug or Domain is required');
   }
 
   const { SUPABASE_URL, SUPABASE_ANON_KEY: SUPABASE_KEY } = require('../js/core/supabase');
 
   try {
-    // 1. Identifica se o parâmetro 'slug' é um UUID válido para determinar a coluna de busca
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
-    // Encode slug to be safe for REST query (handles chars like spaces, dots, etc.)
-    const safeValue = encodeURIComponent(slug);
-    const queryParam = isUUID ? `id=eq.${safeValue}` : `slug=eq.${safeValue}`;
+    let queryParam;
+    let isSubdomainFallback = false;
+    let safeSubdomain = '';
 
-    // 2. Busca dados da loja no Supabase via REST API (evita dependência pesada do SDK)
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/stores?${queryParam}&select=*`, {
+    if (domain) {
+      const d = domain.toLowerCase();
+      const safeValue = encodeURIComponent(d);
+      queryParam = `custom_domain=eq.${safeValue}`;
+      
+      if (d.endsWith('.encartshop.com')) {
+         isSubdomainFallback = true;
+         safeSubdomain = encodeURIComponent(d.replace('.encartshop.com', ''));
+      }
+    } else {
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
+      const safeValue = encodeURIComponent(slug);
+      queryParam = isUUID ? `id=eq.${safeValue}` : `slug=eq.${safeValue}`;
+    }
+
+    // 2. Busca dados da loja no Supabase via REST API
+    let response = await fetch(`${SUPABASE_URL}/rest/v1/stores?${queryParam}&select=*`, {
       headers: {
         'apikey': SUPABASE_KEY,
         'Authorization': `Bearer ${SUPABASE_KEY}`,
@@ -26,8 +39,20 @@ module.exports = async (req, res) => {
       }
     });
 
-    const stores = await response.json();
-    const store = stores && stores.length > 0 ? stores[0] : null;
+    let stores = await response.json();
+    let store = stores && stores.length > 0 ? stores[0] : null;
+
+    if (!store && isSubdomainFallback) {
+       response = await fetch(`${SUPABASE_URL}/rest/v1/stores?slug=eq.${safeSubdomain}&select=*`, {
+         headers: {
+           'apikey': SUPABASE_KEY,
+           'Authorization': `Bearer ${SUPABASE_KEY}`,
+           'Accept': 'application/json'
+         }
+       });
+       stores = await response.json();
+       store = stores && stores.length > 0 ? stores[0] : null;
+    }
 
     // 2. Lê o index.html da loja
     const filePath = path.join(process.cwd(), 'loja', 'index.html');
@@ -59,7 +84,7 @@ module.exports = async (req, res) => {
     // 3. Prepara metadados dinâmicos
     const storeName = store.name || 'Loja';
     const storeDesc = store.slogan || store.banner_text || 'Encontre os melhores produtos para pedir direto pelo WhatsApp.';
-    const storeUrl  = `https://encartshop.com/loja/${store.slug || slug}`;
+    const storeUrl  = store.custom_domain_verified && store.custom_domain ? `https://${store.custom_domain}` : `https://encartshop.com/loja/${store.slug || slug}`;
     const storeImage = store.banner_url || store.logo_url || 'https://encartshop.com/assets/preview-default.png';
     const robotsPolicy = getRobotsPolicy(req.headers.host);
 

@@ -41,6 +41,16 @@ const StoreAPI = {
       return data || null;
     } catch (e) { return null; }
   },
+  // Busca por custom_domain
+  async getByDomain(domain) {
+    if (!domain) return null;
+    try {
+      const { data, error } = await window.sb.from('stores')
+        .select('*').eq('custom_domain', domain).maybeSingle();
+      if (error) { console.error('StoreAPI.getByDomain:', error); return null; }
+      return data || null;
+    } catch (e) { return null; }
+  },
   async create(storeData) {
     try {
       const { data, error } = await window.sb.from('stores').insert([storeData]).select().single();
@@ -52,7 +62,12 @@ const StoreAPI = {
     if (!id) throw new Error('ID obrigatório');
     try {
       const { data, error } = await window.sb.from('stores').update(storeData).eq('id', id).select().single();
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505' && error.message.includes('custom_domain')) {
+          throw new Error('Este domínio já está sendo utilizado por outra loja.');
+        }
+        throw new Error(error.message || 'Erro ao atualizar loja');
+      }
       return data;
     } catch (e) { throw e; }
   },

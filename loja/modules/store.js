@@ -27,11 +27,31 @@ window.StoreContext = (() => {
       }
     }
 
+    let isCustomDomain = false;
+    let storeData = null;
+
+    if (!storeId) {
+      const host = window.location.hostname.toLowerCase();
+      if (host !== 'encartshop.com' && host !== 'www.encartshop.com' && !host.includes('localhost') && !host.includes('127.0.0.1')) {
+         isCustomDomain = true;
+         storeId = host;
+      }
+    }
+
     if (!storeId) throw new Error('Link da loja inválido. Verifique o link recebido.');
 
-    // 1. Busca loja por UUID ou slug
-    let storeData = await EncartAPI.StoreAPI.getById(storeId);
-    if (!storeData) storeData = await EncartAPI.StoreAPI.getBySlug(storeId);
+    // 1. Busca loja por UUID, slug ou domínio
+    if (isCustomDomain) {
+      storeData = await EncartAPI.StoreAPI.getByDomain(storeId);
+      if (!storeData && storeId.endsWith('.encartshop.com')) {
+         const slug = storeId.replace('.encartshop.com', '');
+         storeData = await EncartAPI.StoreAPI.getBySlug(slug);
+      }
+    } else {
+      storeData = await EncartAPI.StoreAPI.getById(storeId);
+      if (!storeData) storeData = await EncartAPI.StoreAPI.getBySlug(storeId);
+    }
+
     if (!storeData) throw new Error('Loja não encontrada. Verifique o link com o lojista.');
 
     activeStore = storeData;
