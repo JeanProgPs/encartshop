@@ -253,22 +253,24 @@
     document.getElementById('import-confirm-btn').disabled = false;
   }
 
-  function confirmImport() {
+  async function confirmImport() {
     if (!_pendingFile) return;
     
     const btn = document.getElementById('import-confirm-btn');
     btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Processando...';
+    btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"><\/i> Processando...';
     lucide.createIcons();
 
     const formData = new FormData();
     formData.append('file', _pendingFile);
 
+    const token = await AuthService.getToken();
+
     fetch('/api/import-products', {
       method: 'POST',
       body: formData,
       headers: {
-        'Authorization': `Bearer ${AuthService.getToken()}`
+        'Authorization': `Bearer ${token}`
       }
     })
     .then(res => res.json())
@@ -298,10 +300,11 @@
     lucide.createIcons();
 
     try {
+      const token = await AuthService.getToken();
       const response = await fetch('/api/export-products', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${AuthService.getToken()}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -335,10 +338,11 @@
     lucide.createIcons();
 
     try {
+      const token = await AuthService.getToken();
       const response = await fetch('/api/template-products', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${AuthService.getToken()}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
