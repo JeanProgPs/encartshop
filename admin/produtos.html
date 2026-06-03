@@ -161,6 +161,47 @@
           </select>
         </div>
       </div>
+      <!-- Seção Fashion (visível apenas para lojas fashion) -->
+      <div id="fashion-fields-section" style="display:none; border-top: 1px solid var(--border-color); padding-top:16px; margin-top:4px; margin-bottom:16px;">
+        <div class="flex items-center gap-2 mb-4">
+          <span style="font-size:0.75rem;font-weight:700;background:black;color:white;padding:2px 8px;border-radius:999px;letter-spacing:0.05em;">FASHION</span>
+          <span class="form-label" style="margin:0;">Informações de Moda</span>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Marca</label>
+            <input id="f-brand" type="text" class="form-input" placeholder="Ex: Nike, Adidas, Farm">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Gênero</label>
+            <select id="f-gender" class="form-input">
+              <option value="">Não especificado</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Feminino">Feminino</option>
+              <option value="Unissex">Unissex</option>
+              <option value="Infantil">Infantil</option>
+              <option value="Bebê">Bebê</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Cor</label>
+            <input id="f-color" type="text" class="form-input" placeholder="Ex: Preto, Branco, Azul">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tamanho</label>
+            <input id="f-size" type="text" class="form-input" list="size-list" placeholder="Ex: M, 42, GG">
+            <datalist id="size-list">
+              <option value="PP"><option value="P"><option value="M"><option value="G">
+              <option value="GG"><option value="XG"><option value="34"><option value="36">
+              <option value="38"><option value="40"><option value="42"><option value="44">
+              <option value="46"><option value="48">
+            </datalist>
+          </div>
+        </div>
+      </div>
+
       <div class="form-group">
         <label class="form-label">Imagem do Produto</label>
         <div style="display:flex;gap:8px;margin-bottom:8px;">
@@ -211,47 +252,6 @@
           </div>
         </div>
         <p style="font-size:0.7rem;color:var(--text-muted);margin-top:8px">Opcional. Links de imagem ou URLs. Excelente para FASHION (frente/costas/detalhe).</p>
-      </div>
-
-      <!-- Seção Fashion (visível apenas para lojas fashion) -->
-      <div id="fashion-fields-section" style="display:none; border-top: 1px solid var(--border-color); padding-top:16px; margin-top:4px;">
-        <div class="flex items-center gap-2 mb-4">
-          <span style="font-size:0.75rem;font-weight:700;background:black;color:white;padding:2px 8px;border-radius:999px;letter-spacing:0.05em;">FASHION</span>
-          <span class="form-label" style="margin:0;">Informações de Moda</span>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Marca</label>
-            <input id="f-brand" type="text" class="form-input" placeholder="Ex: Nike, Adidas, Farm">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Gênero</label>
-            <select id="f-gender" class="form-input">
-              <option value="">Não especificado</option>
-              <option value="Masculino">Masculino</option>
-              <option value="Feminino">Feminino</option>
-              <option value="Unissex">Unissex</option>
-              <option value="Infantil">Infantil</option>
-              <option value="Bebê">Bebê</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Cor</label>
-            <input id="f-color" type="text" class="form-input" placeholder="Ex: Preto, Branco, Azul">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Tamanho</label>
-            <input id="f-size" type="text" class="form-input" list="size-list" placeholder="Ex: M, 42, GG">
-            <datalist id="size-list">
-              <option value="PP"><option value="P"><option value="M"><option value="G">
-              <option value="GG"><option value="XG"><option value="34"><option value="36">
-              <option value="38"><option value="40"><option value="42"><option value="44">
-              <option value="46"><option value="48">
-            </datalist>
-          </div>
-        </div>
       </div>
 
       <div id="form-errors" style="display:none;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.25);border-radius:var(--radius);padding:12px 16px;font-size:0.85rem;color:var(--danger);"></div>
