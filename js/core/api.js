@@ -41,6 +41,16 @@ const StoreAPI = {
       return data || null;
     } catch (e) { return null; }
   },
+  // Busca por custom_domain
+  async getByDomain(domain) {
+    if (!domain) return null;
+    try {
+      const { data, error } = await window.sb.from('stores')
+        .select('*').eq('custom_domain', domain).maybeSingle();
+      if (error) { console.error('StoreAPI.getByDomain:', error); return null; }
+      return data || null;
+    } catch (e) { return null; }
+  },
   async create(storeData) {
     try {
       const { data, error } = await window.sb.from('stores').insert([storeData]).select().single();

@@ -2,6 +2,16 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?!encartshop\\.com|www\\.encartshop\\.com|localhost)(?<host>.*)"
+        }
+      ],
+      "destination": "/api/loja?domain=$host"
+    },
     { "source": "/dashboard", "destination": "/admin/dashboard" },
     { "source": "/produtos", "destination": "/admin/produtos" },
     { "source": "/pedidos", "destination": "/admin/pedidos" },
