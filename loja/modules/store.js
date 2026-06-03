@@ -184,7 +184,7 @@ window.StoreContext = (() => {
   }
 
   function getSeoImage(store) {
-    return store.banner_url || store.logo_url || 'https://encartshop.com/assets/preview-default.png';
+    return store.banner_url || store.logo_url || 'https://encartshop.com/assets/hero_retail_saas.png';
   }
 
   function normalizeSameAs(source) {

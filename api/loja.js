@@ -85,7 +85,7 @@ module.exports = async (req, res) => {
     const storeName = store.name || 'Loja';
     const storeDesc = store.slogan || store.banner_text || 'Encontre os melhores produtos para pedir direto pelo WhatsApp.';
     const storeUrl  = store.custom_domain_verified && store.custom_domain ? `https://${store.custom_domain}` : `https://encartshop.com/loja/${store.slug || slug}`;
-    const storeImage = store.banner_url || store.logo_url || 'https://encartshop.com/assets/preview-default.png';
+    const storeImage = store.banner_url || store.logo_url || 'https://encartshop.com/assets/hero_retail_saas.png';
     const robotsPolicy = getRobotsPolicy(req.headers.host);
 
     // 4. Injeta metadados no HEAD
