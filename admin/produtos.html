@@ -212,6 +212,48 @@
         </div>
         <p style="font-size:0.7rem;color:var(--text-muted);margin-top:8px">Opcional. Links de imagem ou URLs. Excelente para FASHION (frente/costas/detalhe).</p>
       </div>
+
+      <!-- Seção Fashion (visível apenas para lojas fashion) -->
+      <div id="fashion-fields-section" style="display:none; border-top: 1px solid var(--border-color); padding-top:16px; margin-top:4px;">
+        <div class="flex items-center gap-2 mb-4">
+          <span style="font-size:0.75rem;font-weight:700;background:black;color:white;padding:2px 8px;border-radius:999px;letter-spacing:0.05em;">FASHION</span>
+          <span class="form-label" style="margin:0;">Informações de Moda</span>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Marca</label>
+            <input id="f-brand" type="text" class="form-input" placeholder="Ex: Nike, Adidas, Farm">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Gênero</label>
+            <select id="f-gender" class="form-input">
+              <option value="">Não especificado</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Feminino">Feminino</option>
+              <option value="Unissex">Unissex</option>
+              <option value="Infantil">Infantil</option>
+              <option value="Bebê">Bebê</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Cor</label>
+            <input id="f-color" type="text" class="form-input" placeholder="Ex: Preto, Branco, Azul">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tamanho</label>
+            <input id="f-size" type="text" class="form-input" list="size-list" placeholder="Ex: M, 42, GG">
+            <datalist id="size-list">
+              <option value="PP"><option value="P"><option value="M"><option value="G">
+              <option value="GG"><option value="XG"><option value="34"><option value="36">
+              <option value="38"><option value="40"><option value="42"><option value="44">
+              <option value="46"><option value="48">
+            </datalist>
+          </div>
+        </div>
+      </div>
+
       <div id="form-errors" style="display:none;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.25);border-radius:var(--radius);padding:12px 16px;font-size:0.85rem;color:var(--danger);"></div>
     </div>
     <div class="modal-footer">
@@ -242,10 +284,16 @@
   lucide.createIcons();
   let editingId   = null;
   let allProducts = [];
-  let imgSource   = 'link'; // 'link' ou 'upload'
+  let imgSource   = 'link';
+  let _activeStore = null;
   const storeId   = () => AuthService.getActiveStoreId();
 
   async function initAdmin() {
+    _activeStore = await StoreModule.getActive();
+    // Mostrar seção fashion se o segmento da loja for fashion
+    if ((_activeStore?.store_segment || '') === 'fashion') {
+      document.getElementById('fashion-fields-section').style.display = 'block';
+    }
     await loadCategories();
     await renderProducts();
   }
@@ -304,13 +352,19 @@
       document.getElementById('f-image-2').value     = p.image_url_2 || '';
       document.getElementById('f-image-3').value     = p.image_url_3 || '';
       document.getElementById('f-image-file').value  = '';
+      // Fashion fields
+      document.getElementById('f-brand').value  = p.brand  || '';
+      document.getElementById('f-gender').value = p.gender || '';
+      document.getElementById('f-color').value  = p.color  || '';
+      document.getElementById('f-size').value   = p.size   || '';
       toggleImgSource(p.image && p.image.includes('supabase.co') ? 'upload' : 'link');
       previewImg();
       previewImg2();
       previewImg3();
     } else {
-      ['f-name','f-cat','f-price','f-promo-price','f-image','f-description','f-image-2','f-image-3'].forEach(id => document.getElementById(id).value = '');
+      ['f-name','f-cat','f-price','f-promo-price','f-image','f-description','f-image-2','f-image-3','f-brand','f-color','f-size'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('f-image-file').value  = '';
+      document.getElementById('f-gender').value = '';
       document.getElementById('f-unit').value   = 'un';
       document.getElementById('f-active').value = '1';
       toggleImgSource('link');
@@ -430,6 +484,11 @@
         description: document.getElementById('f-description').value.trim(),
         image_url_2: document.getElementById('f-image-2').value.trim() || null,
         image_url_3: document.getElementById('f-image-3').value.trim() || null,
+        // Fashion fields (salvos sempre; ignorados em lojas não-fashion no front)
+        brand:  document.getElementById('f-brand').value.trim()  || null,
+        gender: document.getElementById('f-gender').value        || null,
+        color:  document.getElementById('f-color').value.trim()  || null,
+        size:   document.getElementById('f-size').value.trim()   || null,
       };
 
       let errors = [];
