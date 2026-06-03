@@ -62,7 +62,12 @@ const StoreAPI = {
     if (!id) throw new Error('ID obrigatório');
     try {
       const { data, error } = await window.sb.from('stores').update(storeData).eq('id', id).select().single();
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505' && error.message.includes('custom_domain')) {
+          throw new Error('Este domínio já está sendo utilizado por outra loja.');
+        }
+        throw new Error(error.message || 'Erro ao atualizar loja');
+      }
       return data;
     } catch (e) { throw e; }
   },

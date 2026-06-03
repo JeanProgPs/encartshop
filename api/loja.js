@@ -84,7 +84,7 @@ module.exports = async (req, res) => {
     // 3. Prepara metadados dinâmicos
     const storeName = store.name || 'Loja';
     const storeDesc = store.slogan || store.banner_text || 'Encontre os melhores produtos para pedir direto pelo WhatsApp.';
-    const storeUrl  = `https://encartshop.com/loja/${store.slug || slug}`;
+    const storeUrl  = store.custom_domain_verified && store.custom_domain ? `https://${store.custom_domain}` : `https://encartshop.com/loja/${store.slug || slug}`;
     const storeImage = store.banner_url || store.logo_url || 'https://encartshop.com/assets/preview-default.png';
     const robotsPolicy = getRobotsPolicy(req.headers.host);
 
