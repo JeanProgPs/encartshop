@@ -83,16 +83,21 @@ module.exports = async (req, res) => {
 
     // 3. Prepara metadados dinâmicos
     const storeName = store.name || 'Loja';
-    const storeDesc = store.slogan || store.banner_text || 'Encontre os melhores produtos para pedir direto pelo WhatsApp.';
+    const storeTitle = (store.seo_title || storeName).trim();
+    const storeDesc = (store.seo_description || store.slogan || store.banner_text || 'Encontre os melhores produtos para pedir direto pelo WhatsApp.').trim();
+    const storeKeywords = (store.seo_keywords || generateStoreKeywords(store)).trim();
     const storeUrl  = store.custom_domain_verified && store.custom_domain ? `https://${store.custom_domain}` : `https://encartshop.com/loja/${store.slug || slug}`;
     const storeImage = store.banner_url || store.logo_url || 'https://encartshop.com/assets/hero_retail_saas.png';
-    const robotsPolicy = getRobotsPolicy(req.headers.host);
+    const robotsPolicy = getRobotsPolicy(req.headers.host, store);
 
     // 4. Injeta metadados no HEAD
-    html = html.replace(/<title>.*?<\/title>/, `<title>${storeName} — EncartShop</title>`);
-    html = html.replace(/<meta name="description" content=".*?">/, `<meta name="description" content="${storeDesc}">`);
-    html = html.replace(/<link rel="canonical" href=".*?">/, `<link rel="canonical" href="${storeUrl}">`);
-    html = html.replace(/<meta name="robots" content=".*?">/, `<meta name="robots" content="${robotsPolicy}">`);
+    html = html.replace(/<title>.*?<\/title>/, `<title>${escapeHTML(storeTitle)}</title>`);
+    html = html.replace(/<meta[^>]+name="description"[^>]*>/i, '');
+    html = html.replace(/<meta[^>]+name="keywords"[^>]*>/i, '');
+    html = html.replace(/<meta[^>]+name="robots"[^>]*>/i, '');
+    html = html.replace(/<link[^>]+rel="canonical"[^>]*>/i, '');
+    html = html.replace(/<meta[^>]+property="og:[^\"]+"[^>]*>/gi, '');
+    html = html.replace(/<meta[^>]+name="twitter:[^\"]+"[^>]*>/gi, '');
 
     const jsonLd = {
       "@context": "https://schema.org",
@@ -129,16 +134,20 @@ module.exports = async (req, res) => {
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="EncartShop">
     <meta property="og:url" content="${storeUrl}">
-    <meta property="og:title" content="${storeName} — EncartShop">
-    <meta property="og:description" content="${storeDesc}">
+    <meta property="og:title" content="${escapeHTML(storeTitle)}">
+    <meta property="og:description" content="${escapeHTML(storeDesc)}">
     <meta property="og:image" content="${storeImage}">
+    <meta property="og:image:alt" content="${escapeHTML(storeName)}">
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="${storeUrl}">
-    <meta name="twitter:title" content="${storeName} — EncartShop">
-    <meta name="twitter:description" content="${storeDesc}">
+    <meta name="twitter:title" content="${escapeHTML(storeTitle)}">
+    <meta name="twitter:description" content="${escapeHTML(storeDesc)}">
     <meta name="twitter:image" content="${storeImage}">
+    <meta name="twitter:image:alt" content="${escapeHTML(storeName)}">
+
+    <meta name="keywords" content="${escapeHTML(storeKeywords)}">
 
     <meta name="robots" content="${robotsPolicy}">
     <link rel="canonical" href="${storeUrl}">
@@ -215,11 +224,27 @@ module.exports = async (req, res) => {
   }
 };
 
-function getRobotsPolicy(host) {
+function getRobotsPolicy(host, store) {
   if (!host) return 'noindex, nofollow';
-  const normalized = host.toLowerCase();
+  const normalized = host.toLowerCase().split(':')[0];
   const isProduction = normalized === 'encartshop.com' || normalized === 'www.encartshop.com' || normalized.endsWith('.encartshop.com');
-  return isProduction ? 'index, follow' : 'noindex, nofollow';
+  if (isProduction) return 'index, follow';
+  if (store && store.custom_domain_verified && store.custom_domain && normalized === store.custom_domain.toLowerCase()) {
+    return 'index, follow';
+  }
+  return 'noindex, nofollow';
+}
+
+function generateStoreKeywords(store) {
+  if (!store) return 'loja online, ecommerce';
+  const baseKeywords = [store.name, 'loja online', 'ecommerce', 'comprar online'];
+  if (store.store_segment) {
+    baseKeywords.push(store.store_segment, `loja ${store.store_segment}`);
+    if (store.store_segment.toLowerCase().includes('fashion')) {
+      baseKeywords.push('moda', 'roupas', 'acessórios');
+    }
+  }
+  return baseKeywords.filter(Boolean).map(k => k.trim()).join(', ');
 }
 
 function escapeHTML(str) {

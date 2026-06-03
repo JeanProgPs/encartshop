@@ -69,9 +69,34 @@ const StoreModule = (() => {
 
   function getStoreUrl(store) {
     if (!store) return '';
-    
+    if (store.custom_domain_verified && store.custom_domain) {
+      return `https://${store.custom_domain}`;
+    }
+
     const param = store.slug ? store.slug : store.id;
     return `https://encartshop.com/loja/${param}`;
+  }
+
+  function generateSeoTitle(store) {
+    if (!store) return 'EncartShop';
+    const title = (store.seo_title || '').trim();
+    if (title) return title;
+    const label = store.name ? store.name.trim() : 'Sua loja online';
+    return `${label} | Loja Online`;
+  }
+
+  function generateSeoKeywords(store) {
+    if (!store) return 'loja online, ecommerce';
+    const keywords = (store.seo_keywords || '').trim();
+    if (keywords) return keywords;
+    const base = [store.name, 'loja online', 'ecommerce', 'comprar online'];
+    if (store.store_segment) {
+      base.push(store.store_segment, `loja ${store.store_segment}`);
+      if (store.store_segment.toLowerCase().includes('fashion')) {
+        base.push('moda', 'roupas', 'acessórios');
+      }
+    }
+    return base.filter(Boolean).map(k => k.trim()).join(', ');
   }
 
   async function save(storeData) {

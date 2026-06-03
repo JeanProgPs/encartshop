@@ -164,6 +164,30 @@
         </div>
       </div>
 
+      <!-- SEO da Loja -->
+      <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm">
+        <div class="flex items-center gap-2 mb-1">
+          <i data-lucide="settings" class="w-5 h-5 text-textPrimary"></i>
+          <h3 class="text-base font-semibold text-textPrimary">SEO da Loja</h3>
+        </div>
+        <p class="text-sm text-textSecondary mb-6">Configure o título, descrição e palavras-chave que serão usados no Google, WhatsApp e redes sociais.</p>
+
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-textPrimary">Título SEO</label>
+            <input id="s-seo-title" type="text" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Ex: Moda Feminina Bella | Loja Online">
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-textPrimary">Descrição SEO</label>
+            <textarea id="s-seo-description" rows="3" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Ex: Compre roupas, acessórios e novidades na Moda Feminina Bella."></textarea>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-textPrimary">Palavras-chave</label>
+            <input id="s-seo-keywords" type="text" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Ex: moda feminina, loja online, entrega rápida">
+          </div>
+        </div>
+      </div>
+
       <!-- WhatsApp -->
       <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm">
         <div class="flex items-center gap-2 mb-1">
@@ -333,6 +357,9 @@
     document.getElementById('s-slogan').value        = _store.slogan        || '';
     document.getElementById('s-address').value       = _store.address       || '';
     document.getElementById('s-hours').value         = _store.hours         || '';
+    document.getElementById('s-seo-title').value     = _store.seo_title      || '';
+    document.getElementById('s-seo-description').value = _store.seo_description || '';
+    document.getElementById('s-seo-keywords').value  = _store.seo_keywords  || '';
     const bt = _store.banner_text || '';
     if (bt.trim().startsWith('[')) {
       document.getElementById('s-banner').style.display = 'none';
@@ -454,12 +481,15 @@
 
       const storePayload = {
         name,
-        slogan:        document.getElementById('s-slogan').value.trim(),
-        address:       document.getElementById('s-address').value.trim(),
-        hours:         document.getElementById('s-hours').value.trim(),
-        whatsapp:      wa,
-        delivery_fee:  isCombine ? -1 : (parseFloat(document.getElementById('s-delivery-fee').value) || 0),
-        delivery_free: isCombine ? 0 : (parseFloat(document.getElementById('s-delivery-free').value) || 0),
+        slogan:          document.getElementById('s-slogan').value.trim(),
+        address:         document.getElementById('s-address').value.trim(),
+        hours:           document.getElementById('s-hours').value.trim(),
+        seo_title:       document.getElementById('s-seo-title').value.trim() || null,
+        seo_description: document.getElementById('s-seo-description').value.trim() || null,
+        seo_keywords:    document.getElementById('s-seo-keywords').value.trim() || null,
+        whatsapp:        wa,
+        delivery_fee:    isCombine ? -1 : (parseFloat(document.getElementById('s-delivery-fee').value) || 0),
+        delivery_free:   isCombine ? 0 : (parseFloat(document.getElementById('s-delivery-free').value) || 0),
       };
 
       // Preservar JSON do banner se estiver escondido
