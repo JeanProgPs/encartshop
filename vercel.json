@@ -16,6 +16,7 @@
     },
     { "source": "/dashboard", "destination": "/admin/dashboard" },
     { "source": "/produtos", "destination": "/admin/produtos" },
+    { "source": "/import-export", "destination": "/admin/import-export" },
     { "source": "/pedidos", "destination": "/admin/pedidos" },
     { "source": "/configuracoes", "destination": "/admin/configuracoes" },
     { "source": "/setup", "destination": "/admin/setup" },
