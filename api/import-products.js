@@ -90,7 +90,6 @@ export default async function handler(req, res) {
 
       const parsedPrice = rawPrice ? parseFloat(rawPrice.replace(',', '.')) : 0;
       const parsedPromo = rawPromo ? parseFloat(rawPromo.replace(',', '.')) : null;
-      const parsedStock = parseInt(rawStock || '0', 10);
 
       if (!rawName) {
         errors.push(`Linha ${rowNum}: Nome é obrigatório`);
@@ -103,7 +102,6 @@ export default async function handler(req, res) {
         category:    getVal(values, columnMap['categoria']) || null,
         price:       isNaN(parsedPrice) ? 0 : parsedPrice,
         promo_price: (parsedPromo === null || isNaN(parsedPromo)) ? null : parsedPromo,
-        stock:       isNaN(parsedStock) ? 0 : parsedStock,
         active:      rawStatus.toLowerCase() === 'ativo',
         image:       getVal(values, columnMap['imagem']) || null,
       };
