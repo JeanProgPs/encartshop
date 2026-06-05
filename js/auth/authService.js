@@ -133,6 +133,20 @@ const AuthService = (() => {
     }
   }
 
+  async function getToken() {
+    try {
+      const { data: { session }, error } = await window.sb.auth.getSession();
+      if (error) {
+        console.error('AuthService.getToken erro:', error);
+        return null;
+      }
+      return session?.access_token || null;
+    } catch (e) {
+      console.error('AuthService.getToken exceção:', e);
+      return null;
+    }
+  }
+
   return {
     signUp,
     login,
@@ -140,6 +154,7 @@ const AuthService = (() => {
     logout,
     getUser,
     updateCredentials,
+    getToken,
     getActiveStoreId,
     setActiveStoreId,
     clearActiveStoreId

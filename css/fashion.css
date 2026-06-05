@@ -212,11 +212,11 @@ body.segment-fashion {
   transform: scale(1.02);
 }
 
-.segment-fashion .product-image-wrap:hover .product-hover-image {
+.segment-fashion .product-image-wrap.has-gallery:hover .product-hover-image {
   opacity: 1;
   transform: scale(1);
 }
-.segment-fashion .product-image-wrap:hover .product-main-image {
+.segment-fashion .product-image-wrap.has-gallery:hover .product-main-image {
   opacity: 0;
 }
 

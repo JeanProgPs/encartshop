@@ -1,7 +1,9 @@
-const dns = require('dns').promises;
-const { SUPABASE_URL, SUPABASE_ANON_KEY } = require('../js/core/supabase');
+import { promises as dns } from 'dns';
 
-module.exports = async (req, res) => {
+const SUPABASE_URL = 'https://mhlxxxzuyfllnauhewnb.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_DlDsDwmZCJxd4lIYh19Idg_7Ve-xAef';
+
+export default async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }

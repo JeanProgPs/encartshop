@@ -180,11 +180,36 @@ window.StoreContext = (() => {
   }
 
   function getSeoDescription(store) {
-    return store.slogan || store.description || 'Encontre os melhores produtos para pedir direto pelo WhatsApp.';
+    const description = (store.seo_description || '').trim();
+    if (description) return description;
+    if (store.slogan) return store.slogan;
+    if (store.description) return store.description;
+    return 'Encontre os melhores produtos para pedir direto pelo WhatsApp.';
   }
 
   function getSeoImage(store) {
-    return store.banner_url || store.logo_url || 'https://encartshop.com/assets/preview-default.png';
+    return store.banner_url || store.logo_url || 'https://encartshop.com/assets/hero_retail_saas.png';
+  }
+
+  function getSeoTitle(store) {
+    const title = (store.seo_title || '').trim();
+    if (title) return title;
+    const base = store.name ? store.name.trim() : 'Loja';
+    const segment = store.store_segment ? ` - ${store.store_segment}` : '';
+    return `${base}${segment} | Loja Online`;
+  }
+
+  function getSeoKeywords(store) {
+    const keywords = (store.seo_keywords || '').trim();
+    if (keywords) return keywords;
+    const terms = [store.name, 'loja online', 'ecommerce', 'comprar online'];
+    if (store.store_segment) {
+      terms.push(store.store_segment, `loja ${store.store_segment}`);
+      if (store.store_segment.toLowerCase().includes('fashion')) {
+        terms.push('moda', 'roupas', 'acessórios');
+      }
+    }
+    return terms.filter(Boolean).map(term => term.trim()).join(', ');
   }
 
   function normalizeSameAs(source) {
@@ -210,24 +235,32 @@ window.StoreContext = (() => {
 
   function getCanonicalUrl(store) {
     const origin = window.location.origin.replace(/\/+$/, '');
+    if (store.custom_domain_verified && store.custom_domain) {
+      return `https://${store.custom_domain}`;
+    }
     const slug = store.slug || store.id || window.location.pathname.split('/').pop();
     return `${origin}/loja/${slug}`;
   }
 
-  function getRobotsPolicy() {
+  function getRobotsPolicy(store) {
     const host = window.location.hostname.toLowerCase();
     const isProduction = host === 'encartshop.com' || host === 'www.encartshop.com' || host.endsWith('.encartshop.com');
-    return isProduction ? 'index, follow' : 'noindex, nofollow';
+    if (isProduction) return 'index, follow';
+    if (store && store.custom_domain_verified && store.custom_domain && host === store.custom_domain.toLowerCase()) {
+      return 'index, follow';
+    }
+    return 'noindex, nofollow';
   }
 
   function updateSeoMetadata(store, isAvailable) {
-    const title = `${store.name || 'Loja'} — EncartShop`;
+    const title = getSeoTitle(store);
     const description = getSeoDescription(store);
     const image = getSeoImage(store);
     const url = getCanonicalUrl(store);
 
     document.title = title;
     setMetaTag('description', description);
+    setMetaTag('keywords', getSeoKeywords(store));
     setMetaTag('twitter:card', 'summary_large_image');
     setMetaTag('twitter:title', title);
     setMetaTag('twitter:description', description);
@@ -239,6 +272,7 @@ window.StoreContext = (() => {
     setOgTag('og:title', title);
     setOgTag('og:description', description);
     setOgTag('og:image', image);
+    setOgTag('og:image:alt', store.name || 'EncartShop');
     setCanonical(url);
     setMetaTag('robots', isAvailable ? 'index, follow' : 'noindex, nofollow');
     updateStoreStructuredData(store);
@@ -286,6 +320,9 @@ window.StoreContext = (() => {
       'image': product.image_url || getSeoImage(activeStore),
       'description': product.description || getSeoDescription(activeStore),
       'sku': product.sku || product.id || undefined,
+      'brand': product.brand || undefined,
+      'color': product.color || undefined,
+      'size': product.size || undefined,
       'offers': {
         '@type': 'Offer',
         'priceCurrency': 'BRL',

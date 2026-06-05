@@ -8,6 +8,7 @@ window.ProductCatalog = (() => {
   let activeCategory = 'Todos';
   let searchQuery = '';
   let storeSegment = 'market'; // Default
+  let activeFilters = { brand: [], gender: [], color: [], size: [] };
 
   async function init() {
     EventBus.log('ProductCatalog', 'Aguardando StoreContext...');
@@ -62,6 +63,13 @@ window.ProductCatalog = (() => {
       renderProducts();
     });
 
+    // Escuta filtros fashion
+    EventBus.on('FASHION_FILTER_CHANGED', (filters) => {
+      activeFilters = filters || { brand: [], gender: [], color: [], size: [] };
+      renderProducts();
+      document.getElementById('products-area')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
     // Escuta atualização do carrinho para atualizar QTY no grid
     EventBus.on(EventBus.EVENTS.CART_UPDATED, ({ cart }) => {
       _refreshAllProductCards(cart);
@@ -85,18 +93,50 @@ window.ProductCatalog = (() => {
       return;
     }
 
-    // Se houver busca ativa, filtra globalmente
+    // Primeiro, aplica a busca em texto, se houver
+    let currentProducts = allProducts;
     if (searchQuery && searchQuery.trim() !== '') {
       const queryNormal = searchQuery.toLowerCase().trim();
-      const filtered = allProducts.filter(p => 
+      currentProducts = currentProducts.filter(p => 
         (p.name || '').toLowerCase().includes(queryNormal) || 
         (p.description || '').toLowerCase().includes(queryNormal) ||
-        (p.category || '').toLowerCase().includes(queryNormal)
+        (p.category || '').toLowerCase().includes(queryNormal) ||
+        (p.brand || '').toLowerCase().includes(queryNormal) ||
+        (p.gender || '').toLowerCase().includes(queryNormal) ||
+        (p.color || '').toLowerCase().includes(queryNormal) ||
+        (p.size || '').toLowerCase().includes(queryNormal)
       );
+    }
 
-      EventBus.log('RenderMode', `Busca ativa: "${searchQuery}"`, { count: filtered.length });
+    // Aplica filtros fashion, se existirem e estiverem preenchidos
+    if (activeFilters) {
+      if (activeFilters.brand && activeFilters.brand.length > 0) {
+        currentProducts = currentProducts.filter(p => p.brand && activeFilters.brand.includes(p.brand));
+      }
+      if (activeFilters.gender && activeFilters.gender.length > 0) {
+        currentProducts = currentProducts.filter(p => p.gender && activeFilters.gender.includes(p.gender));
+      }
+      if (activeFilters.color && activeFilters.color.length > 0) {
+        currentProducts = currentProducts.filter(p => p.color && activeFilters.color.includes(p.color));
+      }
+      if (activeFilters.size && activeFilters.size.length > 0) {
+        currentProducts = currentProducts.filter(p => p.size && activeFilters.size.includes(p.size));
+      }
+    }
+
+    // Se houve busca ou filtros ativos, a renderização é agrupada como "Resultados"
+    const hasSearch = searchQuery && searchQuery.trim() !== '';
+    const hasFashionFilter = activeFilters && (
+      (activeFilters.brand && activeFilters.brand.length > 0) || 
+      (activeFilters.gender && activeFilters.gender.length > 0) ||
+      (activeFilters.color && activeFilters.color.length > 0) ||
+      (activeFilters.size && activeFilters.size.length > 0)
+    );
+
+    if (hasSearch || hasFashionFilter) {
+      EventBus.log('RenderMode', `Filtros ativos`, { count: currentProducts.length });
       
-      if (!filtered.length) {
+      if (!currentProducts.length) {
         area.innerHTML = `
           <div style="text-align:center;padding:60px 24px;color:var(--text-muted);">
             <div style="font-size:3rem;margin-bottom:12px">🔍</div>
@@ -105,11 +145,11 @@ window.ProductCatalog = (() => {
           </div>`;
         return;
       }
-      area.innerHTML = _renderGroup(`Resultados para "${searchQuery}"`, filtered, false);
+      area.innerHTML = _renderGroup(hasSearch ? `Resultados para "${searchQuery}"` : 'Resultados do Filtro', currentProducts, false);
       return;
     }
 
-    // Normalização para evitar problemas com aspas ou espaços vindos do UI
+    // Daqui pra baixo, não há busca textual nem filtros fashion ativos. Usa-se a "Categoria Ativa" (targetCat).
     const targetCat = (activeCategory || '').trim();
     EventBus.log('Render', `Iniciando renderização para: [${targetCat}]`);
 

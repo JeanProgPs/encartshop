@@ -5,22 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Loja — EncartShop</title>
   <meta name="description" content="Confira nossas ofertas e faça seu pedido pelo WhatsApp!">
+  <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://encartshop.com/loja/">
   <link rel="icon" type="image/png" href="/assets/favicon.png">
 
   <!-- Open Graph / Facebook -->
+  <meta property="og:locale" content="pt_BR">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="EncartShop">
   <meta property="og:url" content="https://encartshop.com/loja/">
   <meta property="og:title" content="Loja — EncartShop">
   <meta property="og:description" content="Confira nossas ofertas e faça seu pedido pelo WhatsApp!">
-  <meta property="og:image" content="https://encartshop.com/assets/preview-default.png">
+  <meta property="og:image" content="https://encartshop.com/assets/hero_retail_saas.png">
+  <meta property="og:image:alt" content="Loja EncartShop">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Loja — EncartShop">
   <meta name="twitter:description" content="Confira nossas ofertas e faça seu pedido pelo WhatsApp!">
-  <meta name="twitter:image" content="https://encartshop.com/assets/preview-default.png">
+  <meta name="twitter:image" content="https://encartshop.com/assets/hero_retail_saas.png">
   <meta name="twitter:url" content="https://encartshop.com/loja/">
 
   <link rel="stylesheet" href="/style.css">
@@ -411,8 +414,21 @@
     <div id="cat-tabs" class="cat-tabs-scroll"></div>
   </div>
 
-  <div id="products-area">
-    <!-- Renderizado via JS -->
+  <div id="mobile-filter-btn-container" style="display: none; margin: 16px 0;">
+    <button id="btn-mobile-filter" onclick="FashionModule.toggleMobileFilter()" style="width: 100%; padding: 12px; background: var(--bg-card, #fff); border: 1px solid var(--border); border-radius: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+      Filtrar Produtos
+    </button>
+  </div>
+
+  <div id="catalog-layout" style="display: flex; gap: 24px; align-items: flex-start;">
+    <aside id="fashion-sidebar-container" style="display: none; width: 220px; flex-shrink: 0; position: sticky; top: 140px; background: var(--bg-card, #fff); border-radius: 12px; border: 1px solid var(--border); padding: 16px;">
+      <!-- Filtros Fashion renderizados via JS -->
+    </aside>
+    
+    <div id="products-area" style="flex: 1; min-width: 0;">
+      <!-- Renderizado via JS -->
+    </div>
   </div>
 </main>
 
@@ -482,6 +498,26 @@
 </footer>
 
 <div id="toast-container"></div>
+
+<!-- Mobile Filter Drawer -->
+<div id="mobile-filter-modal" class="hidden" style="position: fixed; inset: 0; z-index: 9000; display: none; align-items: flex-end; justify-content: center; background: rgba(15,23,42,0.5); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); transition: opacity 0.3s ease;">
+  <div class="cart-drawer" style="max-height: 85vh; display: flex; flex-direction: column;">
+    <div class="cart-handle"></div>
+    <div class="cart-drawer-header">
+      <div class="cart-drawer-title">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+        Filtros
+      </div>
+      <button class="cart-close-btn" onclick="FashionModule.toggleMobileFilter()">✕</button>
+    </div>
+    <div id="mobile-filter-body" style="padding: 16px; overflow-y: auto; flex: 1;">
+      <!-- Filtros renderizados via JS -->
+    </div>
+    <div style="padding: 16px; border-top: 1px solid var(--border); background: var(--bg-card, #fff);">
+      <button onclick="FashionModule.applyFiltersMobile()" style="width: 100%; padding: 14px; background: var(--text, #000); color: #fff; border: none; border-radius: 12px; font-weight: 700; font-size: 1rem;">Aplicar Filtros</button>
+    </div>
+  </div>
+</div>
 
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>

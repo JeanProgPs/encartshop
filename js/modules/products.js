@@ -36,19 +36,29 @@ const ProductModule = (() => {
     return await EncartAPI.ProductAPI.delete(productId);
   }
 
-  function filter(products, { query, category, status }) {
+  function filter(products, { query, category, status, brand, gender, color, size }) {
     let result = products;
     if (query) {
       const q = query.toLowerCase();
-      result = result.filter(p => p.name.toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q));
+      result = result.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        (p.category    || '').toLowerCase().includes(q) ||
+        (p.description || '').toLowerCase().includes(q) ||
+        (p.brand       || '').toLowerCase().includes(q) ||
+        (p.gender      || '').toLowerCase().includes(q) ||
+        (p.color       || '').toLowerCase().includes(q) ||
+        (p.size        || '').toLowerCase().includes(q)
+      );
     }
-    if (category) {
-      result = result.filter(p => p.category === category);
-    }
+    if (category) result = result.filter(p => p.category === category);
+    if (brand)    result = result.filter(p => (p.brand  || '').toLowerCase() === brand.toLowerCase());
+    if (gender)   result = result.filter(p => (p.gender || '').toLowerCase() === gender.toLowerCase());
+    if (color)    result = result.filter(p => (p.color  || '').toLowerCase() === color.toLowerCase());
+    if (size)     result = result.filter(p => (p.size   || '').toLowerCase() === size.toLowerCase());
     if (status) {
-      if (status === 'active') result = result.filter(p => p.active);
+      if (status === 'active')   result = result.filter(p => p.active);
       else if (status === 'inactive') result = result.filter(p => !p.active);
-      else if (status === 'promo') result = result.filter(p => !!p.promo_price && p.active);
+      else if (status === 'promo')    result = result.filter(p => !!p.promo_price && p.active);
     }
     return result;
   }
