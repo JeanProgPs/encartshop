@@ -1,7 +1,7 @@
-const { createClient } = require('@supabase/supabase-js');
-const ExcelJS = require('exceljs');
+import { createClient } from '@supabase/supabase-js';
+import ExcelJS from 'exceljs';
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

@@ -1,11 +1,17 @@
-const { createClient } = require('@supabase/supabase-js');
-const ExcelJS = require('exceljs');
-const busboy = require('busboy');
+import { createClient } from '@supabase/supabase-js';
+import ExcelJS from 'exceljs';
+import busboy from 'busboy';
 
 const SUPABASE_URL = 'https://mhlxxxzuyfllnauhewnb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_DlDsDwmZCJxd4lIYh19Idg_7Ve-xAef';
 
-module.exports = async (req, res) => {
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

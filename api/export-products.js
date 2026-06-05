@@ -1,10 +1,10 @@
-const { createClient } = require('@supabase/supabase-js');
-const ExcelJS = require('exceljs');
+import { createClient } from '@supabase/supabase-js';
+import ExcelJS from 'exceljs';
 
 const SUPABASE_URL = 'https://mhlxxxzuyfllnauhewnb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_DlDsDwmZCJxd4lIYh19Idg_7Ve-xAef';
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
