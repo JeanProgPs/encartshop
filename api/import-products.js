@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import ExcelJS from 'exceljs';
-import busboy from 'busboy';
+import formidable from 'formidable';
+import fs from 'fs';
 
 const SUPABASE_URL = 'https://mhlxxxzuyfllnauhewnb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_DlDsDwmZCJxd4lIYh19Idg_7Ve-xAef';
@@ -26,13 +27,13 @@ export default async function handler(req, res) {
   });
 
   try {
-    // 1. Pega user logado
+    // 1. Autenticar usuário
     const { data: { user }, error: userErr } = await supabase.auth.getUser();
     if (userErr || !user) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    // 2. Pega store do usuário
+    // 2. Buscar loja do usuário
     const { data: stores, error: storesErr } = await supabase
       .from('stores')
       .select('id')
@@ -45,28 +46,27 @@ export default async function handler(req, res) {
 
     const storeId = stores[0].id;
 
-    // 3. Lê arquivo Excel do request
-    const bb = busboy({ headers: req.headers });
-    let fileBuffer = null;
+    // 3. Parsear o arquivo enviado via multipart/form-data
+    const form = formidable({ keepExtensions: true, maxFileSize: 10 * 1024 * 1024 });
 
-    await new Promise((resolve, reject) => {
-      bb.on('file', (fieldname, file, info) => {
-        if (info.filename.endsWith('.xlsx')) {
-          const chunks = [];
-          file.on('data', chunk => chunks.push(chunk));
-          file.on('end', () => { fileBuffer = Buffer.concat(chunks); });
-        }
+    const { files } = await new Promise((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) return reject(err);
+        resolve({ fields, files });
       });
-      bb.on('finish', resolve);
-      bb.on('error', reject);
-      req.pipe(bb);
     });
 
-    if (!fileBuffer) {
-      return res.status(400).json({ error: 'No file provided' });
+    // Pegar o arquivo (pode estar em files.file ou files.file[0])
+    let uploadedFile = files.file;
+    if (Array.isArray(uploadedFile)) uploadedFile = uploadedFile[0];
+
+    if (!uploadedFile) {
+      return res.status(400).json({ error: 'Nenhum arquivo enviado' });
     }
 
-    // 4. Parse Excel
+    // 4. Ler e parsear o Excel
+    const fileBuffer = fs.readFileSync(uploadedFile.filepath || uploadedFile.path);
+
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(fileBuffer);
     const worksheet = workbook.worksheets[0];
@@ -75,14 +75,16 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Planilha vazia ou sem dados' });
     }
 
-    // 5. Extrai headers
-    const headers = worksheet.getRow(1).values;
+    // 5. Mapear colunas pelos cabeçalhos
+    const headerRow = worksheet.getRow(1).values; // índice 1-based, index 0 é undefined
     const columnMap = {};
-    headers.forEach((header, idx) => {
-      if (header) columnMap[header.trim().toLowerCase()] = idx;
+    headerRow.forEach((header, idx) => {
+      if (header) columnMap[header.toString().trim().toLowerCase()] = idx;
     });
 
-    // 6. Valida dados e prepara operações
+    console.log('Colunas detectadas:', columnMap);
+
+    // 6. Processar linhas
     const created = [];
     const updated = [];
     const errors = [];
@@ -91,127 +93,98 @@ export default async function handler(req, res) {
       const row = worksheet.getRow(rowNum);
       const values = row.values;
 
-      if (!values || values.every(v => !v)) continue; // Pula linhas vazias
+      if (!values || values.every(v => !v)) continue;
 
-      const rawPromo = getValue(values, columnMap['preço promocional']);
+      const rawPrice = getValue(values, columnMap['preço'] ?? columnMap['preco']);
+      const rawPromo = getValue(values, columnMap['preço promocional'] ?? columnMap['preco promocional']);
+      const parsedPrice = rawPrice ? parseFloat(rawPrice.toString().replace(',', '.')) : 0;
       const parsedPromo = rawPromo ? parseFloat(rawPromo.toString().replace(',', '.')) : null;
 
+      const rawId = getValue(values, columnMap['id']);
+
       const product = {
-        id: getValue(values, columnMap['id']),
         name: getValue(values, columnMap['nome']),
-        description: getValue(values, columnMap['descrição']),
-        category: getValue(values, columnMap['categoria']),
-        price: parseFloat(getValue(values, columnMap['preço']).toString().replace(',', '.') || 0),
-        promo_price: parsedPromo,
-        stock: parseInt(getValue(values, columnMap['estoque']) || 0),
-        sku: getValue(values, columnMap['sku']),
-        active: getValue(values, columnMap['status'], 'Ativo').toLowerCase() === 'ativo',
-        image: getValue(values, columnMap['imagem']),
-        brand: getValue(values, columnMap['marca']),
-        gender: getValue(values, columnMap['gênero']),
-        color: getValue(values, columnMap['cor']),
-        size: getValue(values, columnMap['tamanho']),
+        description: getValue(values, columnMap['descrição'] ?? columnMap['descricao']) || null,
+        category: getValue(values, columnMap['categoria']) || null,
+        price: isNaN(parsedPrice) ? 0 : parsedPrice,
+        promo_price: parsedPromo === null || isNaN(parsedPromo) ? null : parsedPromo,
+        stock: parseInt(getValue(values, columnMap['estoque']) || '0', 10),
+        sku: getValue(values, columnMap['sku']) || null,
+        active: (getValue(values, columnMap['status']) || 'ativo').toLowerCase() === 'ativo',
+        image: getValue(values, columnMap['imagem']) || null,
+        brand: getValue(values, columnMap['marca']) || null,
+        gender: getValue(values, columnMap['gênero'] ?? columnMap['genero']) || null,
+        color: getValue(values, columnMap['cor']) || null,
+        size: getValue(values, columnMap['tamanho']) || null,
       };
 
-      // Limpar campos vazios que não devem ser enviados como string vazia
-      if (!product.id) delete product.id;
-      if (!product.description) product.description = null;
-      if (!product.sku) product.sku = null;
-      if (!product.image) product.image = null;
-      if (!product.brand) product.brand = null;
-      if (!product.gender) product.gender = null;
-      if (!product.color) product.color = null;
-      if (!product.size) product.size = null;
-
-      // Validação
-      const validation = validateProduct(product, rowNum);
-      if (!validation.valid) {
-        errors.push(`Linha ${rowNum}: ${validation.error}`);
+      // Validação básica
+      if (!product.name) {
+        errors.push(`Linha ${rowNum}: Nome é obrigatório`);
         continue;
       }
 
-      if (product.id) {
-        // Atualizar
-        updated.push({ ...product, store_id: storeId });
+      if (rawId && rawId.trim() !== '') {
+        // Atualizar produto existente
+        updated.push({ ...product, id: rawId.trim(), store_id: storeId });
       } else {
-        // Criar
+        // Criar produto novo
         product.store_id = storeId;
         created.push(product);
       }
     }
 
-    // 7. Executa inserts/updates
+    // 7. Inserir novos produtos
     if (created.length > 0) {
       const { error: insertErr } = await supabase
         .from('products')
         .insert(created);
       if (insertErr) {
         console.error('Insert error:', insertErr);
-        errors.push(`Erro ao criar ${created.length} produtos: ${insertErr.message}`);
+        errors.push(`Erro ao criar produtos: ${insertErr.message}`);
       }
     }
 
-    if (updated.length > 0) {
-      for (const product of updated) {
-        const { error: updateErr } = await supabase
-          .from('products')
-          .update(product)
-          .eq('id', product.id)
-          .eq('store_id', storeId);
-        if (updateErr) {
-          console.error('Update error:', updateErr);
-          errors.push(`Erro ao atualizar produto ${product.id}: ${updateErr.message}`);
-        }
+    // 8. Atualizar produtos existentes
+    for (const product of updated) {
+      const { id, ...updateData } = product;
+      const { error: updateErr } = await supabase
+        .from('products')
+        .update(updateData)
+        .eq('id', id)
+        .eq('store_id', storeId);
+      if (updateErr) {
+        console.error('Update error for', id, updateErr);
+        errors.push(`Erro ao atualizar produto ${id}: ${updateErr.message}`);
       }
     }
 
-    // 8. Retorna resumo
-    const summary = `Produtos processados: ${created.length + updated.length}\nProdutos criados: ${created.length}\nProdutos atualizados: ${updated.length}\nErros: ${errors.length}`;
+    // 9. Limpar arquivo temporário
+    try { fs.unlinkSync(uploadedFile.filepath || uploadedFile.path); } catch (_) {}
 
-    res.status(200).json({
+    const summary = `Produtos criados: ${created.length} | Atualizados: ${updated.length} | Erros: ${errors.length}`;
+
+    return res.status(200).json({
       success: errors.length === 0,
       summary,
       created: created.length,
       updated: updated.length,
-      errors: errors.slice(0, 5), // Primeiros 5 erros
+      errors: errors.slice(0, 10),
       totalErrors: errors.length
     });
 
   } catch (error) {
     console.error('Erro ao importar:', error);
-    res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      error: 'Erro ao processar arquivo: ' + error.message 
+      error: 'Erro ao processar arquivo: ' + error.message
     });
   }
-};
+}
 
 function getValue(values, columnIndex, defaultValue = '') {
-  if (!columnIndex) return defaultValue;
-  return (values[columnIndex] || '').toString().trim() || defaultValue;
-}
-
-function validateProduct(product, rowNum) {
-  if (!product.name) {
-    return { valid: false, error: 'Nome é obrigatório' };
-  }
-  if (isNaN(product.price) || product.price < 0) {
-    return { valid: false, error: 'Preço inválido' };
-  }
-  if (isNaN(product.stock) || product.stock < 0) {
-    return { valid: false, error: 'Estoque inválido' };
-  }
-  if (product.image && !isValidUrl(product.image)) {
-    return { valid: false, error: 'URL da imagem inválida' };
-  }
-  return { valid: true };
-}
-
-function isValidUrl(string) {
-  try {
-    new URL(string);
-    return true;
-  } catch (_) {
-    return false;
-  }
+  if (columnIndex === undefined || columnIndex === null) return defaultValue;
+  const val = values[columnIndex];
+  if (val === null || val === undefined) return defaultValue;
+  return val.toString().trim() || defaultValue;
 }
