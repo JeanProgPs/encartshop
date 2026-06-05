@@ -87,13 +87,16 @@ module.exports = async (req, res) => {
 
       if (!values || values.every(v => !v)) continue; // Pula linhas vazias
 
+      const rawPromo = getValue(values, columnMap['preço promocional']);
+      const parsedPromo = rawPromo ? parseFloat(rawPromo.toString().replace(',', '.')) : null;
+
       const product = {
         id: getValue(values, columnMap['id']),
         name: getValue(values, columnMap['nome']),
         description: getValue(values, columnMap['descrição']),
         category: getValue(values, columnMap['categoria']),
-        price: parseFloat(getValue(values, columnMap['preço']) || 0),
-        promo_price: parseFloat(getValue(values, columnMap['preço promocional']) || null),
+        price: parseFloat(getValue(values, columnMap['preço']).toString().replace(',', '.') || 0),
+        promo_price: parsedPromo,
         stock: parseInt(getValue(values, columnMap['estoque']) || 0),
         sku: getValue(values, columnMap['sku']),
         active: getValue(values, columnMap['status'], 'Ativo').toLowerCase() === 'ativo',
@@ -103,6 +106,16 @@ module.exports = async (req, res) => {
         color: getValue(values, columnMap['cor']),
         size: getValue(values, columnMap['tamanho']),
       };
+
+      // Limpar campos vazios que não devem ser enviados como string vazia
+      if (!product.id) delete product.id;
+      if (!product.description) product.description = null;
+      if (!product.sku) product.sku = null;
+      if (!product.image) product.image = null;
+      if (!product.brand) product.brand = null;
+      if (!product.gender) product.gender = null;
+      if (!product.color) product.color = null;
+      if (!product.size) product.size = null;
 
       // Validação
       const validation = validateProduct(product, rowNum);
@@ -196,3 +209,9 @@ function isValidUrl(string) {
     return false;
   }
 }
+
+module.exports.config = {
+  api: {
+    bodyParser: false,
+  },
+};

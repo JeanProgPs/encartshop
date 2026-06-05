@@ -5,16 +5,28 @@
   "main": "index.js",
   "scripts": {
     "dev": "vercel dev",
-    "build": "echo 'Build handled by Vercel'",
+    "build": "node build-tailwind.js && echo 'Build handled by Vercel'",
+    "tailwind": "node build-tailwind.js --watch",
     "test": "node --test"
   },
+  "type": "module",
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
-    "exceljs": "^4.3.0",
-    "busboy": "^1.3.0"
+    "busboy": "^1.3.0",
+    "exceljs": "^4.3.0"
   },
-  "devDependencies": {},
-  "keywords": ["ecommerce", "saas", "shopify", "retail"],
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.0",
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.0"
+  },
+  "keywords": [
+    "ecommerce",
+    "saas",
+    "shopify",
+    "retail"
+  ],
   "author": "EncartShop Team",
   "license": "MIT"
 }
