@@ -104,13 +104,8 @@ export default async function handler(req, res) {
         price:       isNaN(parsedPrice) ? 0 : parsedPrice,
         promo_price: (parsedPromo === null || isNaN(parsedPromo)) ? null : parsedPromo,
         stock:       isNaN(parsedStock) ? 0 : parsedStock,
-        sku:         getVal(values, columnMap['sku']) || null,
         active:      rawStatus.toLowerCase() === 'ativo',
         image:       getVal(values, columnMap['imagem']) || null,
-        brand:       getVal(values, columnMap['marca']) || null,
-        gender:      getVal(values, columnMap['genero']) || null,
-        color:       getVal(values, columnMap['cor']) || null,
-        size:        getVal(values, columnMap['tamanho']) || null,
       };
 
       if (rawId && rawId.trim() !== '') {
