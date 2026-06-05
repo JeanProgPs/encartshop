@@ -1,14 +1,16 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
-module.exports = async (req, res) => {
+const SUPABASE_URL = 'https://mhlxxxzuyfllnauhewnb.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_DlDsDwmZCJxd4lIYh19Idg_7Ve-xAef';
+
+export default async (req, res) => {
   const { slug, domain } = req.query;
 
   if (!slug && !domain) {
     return res.status(400).send('Slug or Domain is required');
   }
 
-  const { SUPABASE_URL, SUPABASE_ANON_KEY: SUPABASE_KEY } = require('../js/core/supabase');
 
   try {
     let queryParam;
