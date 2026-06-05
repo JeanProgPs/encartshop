@@ -209,9 +209,3 @@ function isValidUrl(string) {
     return false;
   }
 }
-
-module.exports.config = {
-  api: {
-    bodyParser: false,
-  },
-};
