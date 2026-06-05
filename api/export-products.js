@@ -55,27 +55,16 @@ export default async function handler(req, res) {
 
     // 5. Define as colunas
     const columns = [
-      { header: 'ID', key: 'id', width: 15 },
-      { header: 'Nome', key: 'name', width: 25 },
-      { header: 'Descrição', key: 'description', width: 35 },
-      { header: 'Categoria', key: 'category', width: 15 },
+      { header: 'ID', key: 'id', width: 36 },
+      { header: 'Nome', key: 'name', width: 30 },
+      { header: 'Descrição', key: 'description', width: 40 },
+      { header: 'Categoria', key: 'category', width: 20 },
       { header: 'Preço', key: 'price', width: 12 },
-      { header: 'Preço Promocional', key: 'promo_price', width: 15 },
+      { header: 'Preço Promocional', key: 'promo_price', width: 18 },
       { header: 'Estoque', key: 'stock', width: 12 },
-      { header: 'SKU', key: 'sku', width: 12 },
       { header: 'Status', key: 'active', width: 10 },
-      { header: 'Imagem', key: 'image', width: 40 },
+      { header: 'Imagem', key: 'image', width: 50 },
     ];
-
-    // Adiciona campos de fashion se existirem
-    if (products.some(p => p.brand || p.gender || p.color || p.size)) {
-      columns.push(
-        { header: 'Marca', key: 'brand', width: 12 },
-        { header: 'Gênero', key: 'gender', width: 12 },
-        { header: 'Cor', key: 'color', width: 12 },
-        { header: 'Tamanho', key: 'size', width: 10 }
-      );
-    }
 
     worksheet.columns = columns;
 
@@ -86,28 +75,17 @@ export default async function handler(req, res) {
 
     // 7. Adiciona produtos
     products.forEach(product => {
-      const row = {
-        id: product.id,
-        name: product.name || '',
+      worksheet.addRow({
+        id:          product.id,
+        name:        product.name || '',
         description: product.description || '',
-        category: product.category || '',
-        price: product.price || 0,
-        promo_price: product.promo_price || '',
-        stock: product.stock || 0,
-        sku: product.sku || '',
-        active: product.active ? 'Ativo' : 'Inativo',
-        image: product.image || '',
-      };
-
-      // Adiciona campos fashion se existirem
-      if (columns.some(c => c.key === 'brand')) {
-        row.brand = product.brand || '';
-        row.gender = product.gender || '';
-        row.color = product.color || '';
-        row.size = product.size || '';
-      }
-
-      worksheet.addRow(row);
+        category:    product.category || '',
+        price:       product.price || 0,
+        promo_price: product.promo_price ?? '',
+        stock:       product.stock || 0,
+        active:      product.active ? 'Ativo' : 'Inativo',
+        image:       product.image || '',
+      });
     });
 
     // 8. Auto-ajusta colunas
