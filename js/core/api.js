@@ -129,11 +129,14 @@ const ProductAPI = {
 };
 
 const OrderAPI = {
-  async getByStore(storeId) {
+  async getByStore(storeId, startDate = null, endDate = null) {
     if (!storeId) return [];
     try {
-      const { data, error } = await window.sb.from('orders')
-        .select('*').eq('store_id', storeId).order('created_at', { ascending: false });
+      let query = window.sb.from('orders').select('*').eq('store_id', storeId);
+      if (startDate) query = query.gte('created_at', startDate + 'T00:00:00.000Z');
+      if (endDate) query = query.lte('created_at', endDate + 'T23:59:59.999Z');
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
       if (error) { console.error('OrderAPI.getByStore:', error); return []; }
       return data || [];
     } catch (e) { return []; }

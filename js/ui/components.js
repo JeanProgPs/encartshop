@@ -97,7 +97,7 @@ const UIComponents = (() => {
           <div style="font-size:0.65rem;font-weight:700;color:#52525B;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;padding-left:14px;">Crescimento</div>
           ${navItem('marketing', 'megaphone', 'Marketing', true)}
           ${navItem('promocoes', 'tag', '<span id="sidebar-nav-campaigns-label">Campanhas</span>')}
-          ${navItem('relatorios', 'bar-chart-3', 'Relatórios', true)}
+          ${navItem('relatorios', 'bar-chart-3', 'Relatórios')}
         </div>
 
         <div>
