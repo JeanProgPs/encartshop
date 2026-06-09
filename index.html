@@ -321,8 +321,20 @@
 
     /* Mobile */
     @media (max-width: 768px) {
-      .l-nav { padding: 16px 20px; }
+      .l-nav { padding: 12px 16px; gap: 8px; }
       .l-nav-links { display: none; }
+
+      /* Esconde o link "Entrar" e o botão "Demonstração" no mobile */
+      .l-nav-actions .nav-btn-demo,
+      .l-nav-actions .nav-link-entrar { display: none; }
+
+      /* Botão "Criar Loja" compacto no mobile */
+      .l-nav-actions .nav-btn-criar {
+        padding: 8px 16px;
+        font-size: 0.8rem;
+        white-space: nowrap;
+      }
+
       .l-hero { padding: 140px 20px 60px; }
       .l-hero-actions { flex-direction: column; width: 100%; }
       .l-hero-actions a { width: 100%; }
@@ -350,9 +362,9 @@
       <a href="#faq">FAQ</a>
     </div>
     <div class="l-nav-actions">
-      <a href="admin/index.html" style="color: var(--l-text-muted); font-size: 0.9rem; font-weight: 600; margin-right: 8px; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--l-text-muted)'">Entrar</a>
-      <a href="demo.html" class="btn-ghost-light" style="padding: 10px 20px; font-size: 0.9rem;">Demonstração</a>
-      <a href="admin/setup.html" class="btn-glow" style="padding: 10px 20px; font-size: 0.9rem;">Criar Loja</a>
+      <a href="admin/index.html" class="nav-link-entrar" style="color: var(--l-text-muted); font-size: 0.9rem; font-weight: 600; margin-right: 8px; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--l-text-muted)'">Entrar</a>
+      <a href="demo.html" class="btn-ghost-light nav-btn-demo" style="padding: 10px 20px; font-size: 0.9rem;">Demonstração</a>
+      <a href="admin/setup.html" class="btn-glow nav-btn-criar" style="padding: 10px 20px; font-size: 0.9rem;">Criar Loja</a>
     </div>
   </nav>
 
