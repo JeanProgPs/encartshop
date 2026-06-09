@@ -472,17 +472,17 @@
 
       <div class="cart-name-wrap">
         <label class="cart-name-label" for="customer-name">Seu nome para o pedido</label>
-        <input type="text" id="customer-name" class="cart-name-input" placeholder="Ex: Maria Silva">
+        <input type="text" id="customer-name" class="cart-name-input" placeholder="Ex: Maria Silva" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false">
       </div>
 
       <div class="cart-name-wrap">
         <label class="cart-name-label" for="customer-whatsapp">WhatsApp (opcional)</label>
-        <input type="tel" id="customer-whatsapp" class="cart-name-input" placeholder="(11) 99999-9999" autocomplete="tel">
+        <input type="tel" id="customer-whatsapp" class="cart-name-input" placeholder="(11) 99999-9999" autocomplete="off" inputmode="tel">
       </div>
 
       <div class="cart-name-wrap">
         <label class="cart-name-label" for="customer-address">Endereço completo (opcional)</label>
-        <input type="text" id="customer-address" class="cart-name-input" placeholder="Ex: Rua das Flores, 123 — Jd. Primavera, SP" autocomplete="street-address">
+        <input type="text" id="customer-address" class="cart-name-input" placeholder="Ex: Rua das Flores, 123 — Jd. Primavera, SP" autocomplete="off" autocorrect="off" spellcheck="false">
       </div>
 
       <button id="whatsapp-btn" class="btn-whatsapp" onclick="checkout()">
