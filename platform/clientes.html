@@ -152,8 +152,8 @@
     };
 
     const getStoreLink = (domain, slug, id) => {
-      if(domain) return \`https://\${domain}\`;
-      return \`https://encartshop.com/loja/\${slug || id}\`;
+      if(domain) return 'https://' + domain;
+      return 'https://encartshop.com/loja/' + (slug || id);
     };
 
     tbody.innerHTML = data.map(c => `
