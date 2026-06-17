@@ -16,6 +16,18 @@
     @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
     .drawer-slide { animation: drawerSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     @keyframes drawerSlideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    
+    /* Progress bar for subscription */
+    .sub-progress { height: 6px; border-radius: 99px; background: rgba(255,255,255,0.08); overflow: hidden; }
+    .sub-progress-bar { height: 100%; border-radius: 99px; transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+    
+    /* Metric card hover */
+    .metric-card { transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease; }
+    .metric-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    
+    /* Badge pulse for expiring */
+    .badge-pulse { animation: badgePulse 2s ease-in-out infinite; }
+    @keyframes badgePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
   </style>
 </head>
 <body data-page="clientes" class="bg-bgPrimary text-textPrimary antialiased selection:bg-indigo-500 selection:text-white">
@@ -56,13 +68,14 @@
               <tr class="bg-bgPrimary/50 border-b border-borderColor text-xs uppercase tracking-wider text-textSecondary">
                 <th class="px-6 py-4 font-semibold">Loja / Responsável</th>
                 <th class="px-6 py-4 font-semibold">Contato</th>
-                <th class="px-6 py-4 font-semibold">Plano</th>
+                <th class="px-6 py-4 font-semibold text-center">Produtos</th>
+                <th class="px-6 py-4 font-semibold">Assinatura</th>
                 <th class="px-6 py-4 font-semibold">Status</th>
                 <th class="px-6 py-4 font-semibold text-right">Ações</th>
               </tr>
             </thead>
             <tbody id="clients-tbody" class="divide-y divide-borderColor text-sm">
-              <tr><td colspan="5" class="p-8 text-center text-textSecondary">Carregando clientes...</td></tr>
+              <tr><td colspan="6" class="p-8 text-center text-textSecondary">Carregando clientes...</td></tr>
             </tbody>
           </table>
         </div>
@@ -83,9 +96,9 @@
 
 <!-- Drawer Detalhes -->
 <div id="drawer-detalhes" class="fixed inset-0 bg-black/60 z-[100] hidden backdrop-blur-sm" onclick="UIComponents.handleOverlayClick(event, 'drawer-detalhes')">
-  <div class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-bgPrimary shadow-2xl drawer-slide flex flex-col border-l border-borderColor">
+  <div class="absolute right-0 top-0 bottom-0 w-full max-w-lg bg-bgPrimary shadow-2xl drawer-slide flex flex-col border-l border-borderColor">
     <div class="p-6 border-b border-borderColor flex items-center justify-between bg-cardBg">
-      <h3 class="font-bold text-lg text-textPrimary">Detalhes do Cliente</h3>
+      <h3 class="font-bold text-lg text-textPrimary">Raio-X da Loja</h3>
       <button onclick="UIComponents.closeModal('drawer-detalhes')" class="text-textSecondary hover:text-textPrimary"><i data-lucide="x"></i></button>
     </div>
     
@@ -117,19 +130,67 @@
   let currentSearch = '';
   let isLoading = false;
 
+  // ── Helpers ─────────────────────────────────────────────
+  function getSubscriptionBadge(subStatus, expiresInDays) {
+    const configs = {
+      active:   { label: 'Ativa',      class: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20', icon: 'check-circle' },
+      expiring: { label: 'Vence em breve', class: 'text-amber-500 bg-amber-500/10 border-amber-500/20 badge-pulse', icon: 'clock' },
+      grace:    { label: 'Em carência', class: 'text-orange-500 bg-orange-500/10 border-orange-500/20 badge-pulse', icon: 'alert-triangle' },
+      blocked:  { label: 'Bloqueada',   class: 'text-red-500 bg-red-500/10 border-red-500/20', icon: 'x-octagon' },
+      expired:  { label: 'Expirada',    class: 'text-red-500 bg-red-500/10 border-red-500/20', icon: 'x-circle' }
+    };
+    const cfg = configs[subStatus] || configs.active;
+    
+    let daysText = '';
+    if (subStatus === 'active' && expiresInDays !== null && expiresInDays !== undefined && expiresInDays < 999) {
+      daysText = `<span class="text-[10px] text-textSecondary block mt-0.5">${expiresInDays}d restantes</span>`;
+    } else if (subStatus === 'expiring') {
+      daysText = `<span class="text-[10px] text-amber-500 block mt-0.5">${expiresInDays}d restantes</span>`;
+    } else if (subStatus === 'grace') {
+      daysText = `<span class="text-[10px] text-orange-500 block mt-0.5">Carência</span>`;
+    }
+    
+    return `
+      <div class="flex flex-col items-start">
+        <span class="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider border ${cfg.class} inline-flex items-center gap-1">
+          <i data-lucide="${cfg.icon}" class="w-3 h-3"></i> ${cfg.label}
+        </span>
+        ${daysText}
+      </div>
+    `;
+  }
+
+  function getExpiresText(expiresAt) {
+    if (!expiresAt) return '<span class="text-textSecondary">—</span>';
+    const d = new Date(expiresAt);
+    return UIRender.fmtDateShort(expiresAt);
+  }
+
+  function getActivityColor(status) {
+    if (status === 'active') return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+    if (status === 'risk') return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+    return 'text-red-500 bg-red-500/10 border-red-500/20';
+  }
+
+  function getStoreLink(domain, slug, id) {
+    if (domain) return 'https://' + domain;
+    return 'https://encartshop.com/loja/' + (slug || id);
+  }
+
+  // ── Load & Render ───────────────────────────────────────
   async function loadClients() {
-    if(isLoading) return;
+    if (isLoading) return;
     isLoading = true;
     const tbody = document.getElementById('clients-tbody');
-    tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-textSecondary">Carregando...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-textSecondary">Carregando...</td></tr>`;
     
     try {
-      const res = await PlatformAPI.getClients(currentPage, currentSearch, currentFilter);
+      const res = await PlatformAPI.getStoresOverview(currentPage, currentSearch, currentFilter);
       renderTable(res.data, res.count);
     } catch (e) {
       console.error(e);
       showToast('Erro ao carregar clientes', 'error');
-      tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-danger">Erro ao carregar.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-danger">Erro ao carregar.</td></tr>`;
     } finally {
       isLoading = false;
     }
@@ -138,23 +199,12 @@
   function renderTable(data, totalCount) {
     const tbody = document.getElementById('clients-tbody');
     if (!data || data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-textSecondary">Nenhum cliente encontrado.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-textSecondary">Nenhum cliente encontrado.</td></tr>`;
       document.getElementById('pagination-info').textContent = `Nenhum resultado`;
       return;
     }
 
     const fmtD = dStr => UIRender.fmtDateShort(dStr);
-    
-    const getActivityColor = (status) => {
-      if(status === 'active') return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
-      if(status === 'risk') return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
-      return 'text-red-500 bg-red-500/10 border-red-500/20';
-    };
-
-    const getStoreLink = (domain, slug, id) => {
-      if(domain) return 'https://' + domain;
-      return 'https://encartshop.com/loja/' + (slug || id);
-    };
 
     tbody.innerHTML = data.map(c => `
       <tr class="hover:bg-bgPrimary/50 transition-colors group">
@@ -173,10 +223,15 @@
           <div class="text-textPrimary">${escapeHTML(c.email || '--')}</div>
           <div class="text-xs text-textSecondary mt-0.5">${escapeHTML(c.telefone || '--')}</div>
         </td>
+        <td class="px-6 py-4 text-center">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-bgPrimary border border-borderColor">
+            <i data-lucide="package" class="w-3.5 h-3.5 text-indigo-500"></i>
+            <span class="font-bold text-textPrimary">${c.products_count || 0}</span>
+          </div>
+        </td>
         <td class="px-6 py-4">
-          <span class="px-2.5 py-1 rounded-md text-xs font-medium border border-borderColor bg-bgPrimary">
-            ${c.plan}
-          </span>
+          ${getSubscriptionBadge(c.subscription_status, c.expires_in_days)}
+          <div class="text-[10px] text-textSecondary mt-0.5">${c.expires_at ? fmtD(c.expires_at) : 'Sem expiração'}</div>
         </td>
         <td class="px-6 py-4">
           <span class="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${getActivityColor(c.activity_status)}">
@@ -210,6 +265,7 @@
     document.getElementById('btn-next').disabled = end >= totalCount;
   }
 
+  // ── Drawer Detail (Raio-X) ──────────────────────────────
   async function openDetail(storeId) {
     UIComponents.openModal('drawer-detalhes');
     const content = document.getElementById('drawer-content');
@@ -220,45 +276,190 @@
       const { store, usage } = res.data;
       const fmtD = d => UIRender.fmtDateShort(d);
 
+      // Subscription status display
+      const subStatus = usage.subscription_status || 'active';
+      const expiresInDays = usage.expires_in_days;
+      
+      const subConfigs = {
+        active: {
+          label: 'Assinatura Ativa',
+          icon: 'check-circle',
+          barPct: 100,
+          textClass: 'text-emerald-500',
+          bgClass: 'bg-emerald-500/10',
+          borderClass: 'border-emerald-500/20',
+          barBgClass: 'bg-emerald-500'
+        },
+        expiring: {
+          label: 'Vence em Breve',
+          icon: 'clock',
+          barPct: Math.max(10, Math.min(100, (expiresInDays / 30) * 100)),
+          textClass: 'text-amber-500',
+          bgClass: 'bg-amber-500/10',
+          borderClass: 'border-amber-500/20',
+          barBgClass: 'bg-amber-500'
+        },
+        grace: {
+          label: 'Período de Carência',
+          icon: 'alert-triangle',
+          barPct: 20,
+          textClass: 'text-orange-500',
+          bgClass: 'bg-orange-500/10',
+          borderClass: 'border-orange-500/20',
+          barBgClass: 'bg-orange-500'
+        },
+        blocked: {
+          label: 'Loja Bloqueada',
+          icon: 'x-octagon',
+          barPct: 0,
+          textClass: 'text-red-500',
+          bgClass: 'bg-red-500/10',
+          borderClass: 'border-red-500/20',
+          barBgClass: 'bg-red-500'
+        },
+        expired: {
+          label: 'Assinatura Expirada',
+          icon: 'x-circle',
+          barPct: 0,
+          textClass: 'text-red-500',
+          bgClass: 'bg-red-500/10',
+          borderClass: 'border-red-500/20',
+          barBgClass: 'bg-red-500'
+        }
+      };
+      const subCfg = subConfigs[subStatus] || subConfigs.active;
+
       content.innerHTML = `
-        <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-5">
           
-          <!-- Informações Pessoais -->
-          <div class="bg-cardBg border border-borderColor rounded-xl p-5">
-            <h4 class="text-sm font-semibold text-textSecondary mb-4 uppercase tracking-wider">Informações</h4>
-            <div class="space-y-3">
-              <div><span class="text-xs text-textSecondary block">Loja</span><span class="font-medium">${escapeHTML(store.name)}</span></div>
-              <div><span class="text-xs text-textSecondary block">Responsável</span><span class="font-medium">${escapeHTML(store.responsavel)}</span></div>
-              <div><span class="text-xs text-textSecondary block">E-mail</span><span class="font-medium">${escapeHTML(store.email || '--')}</span></div>
-              <div><span class="text-xs text-textSecondary block">Telefone</span><span class="font-medium">${escapeHTML(store.telefone || '--')}</span></div>
-              <div><span class="text-xs text-textSecondary block">Data Cadastro</span><span class="font-medium">${fmtD(store.created_at)}</span></div>
+          <!-- Cabeçalho da Loja -->
+          <div class="flex items-center gap-4 pb-4 border-b border-borderColor">
+            <div class="w-14 h-14 rounded-xl bg-indigo-500/10 flex items-center justify-center text-xl font-bold text-indigo-500 flex-shrink-0">
+              ${String(store.name).charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <h4 class="text-lg font-bold text-textPrimary">${escapeHTML(store.name)}</h4>
+              <p class="text-sm text-textSecondary">${escapeHTML(store.responsavel)} · ${escapeHTML(store.email || '')}</p>
             </div>
           </div>
 
-          <!-- Utilização -->
-          <div class="bg-cardBg border border-borderColor rounded-xl p-5">
-            <h4 class="text-sm font-semibold text-textSecondary mb-4 uppercase tracking-wider">Utilização</h4>
+          <!-- Card Assinatura -->
+          <div class="bg-cardBg border ${subCfg.borderClass} rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-sm font-semibold text-textSecondary uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="${subCfg.icon}" class="w-4 h-4 ${subCfg.textClass}"></i>
+                Assinatura
+              </h4>
+              <span class="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${subCfg.textClass} ${subCfg.bgClass} border ${subCfg.borderClass}">
+                ${subCfg.label}
+              </span>
+            </div>
             <div class="space-y-3">
-              <div class="flex justify-between items-center pb-2 border-b border-borderColor">
-                <span class="text-sm">Último Login</span>
-                <span class="font-medium">${store.last_login ? fmtD(store.last_login) : 'Nunca'}</span>
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-textSecondary">Expira em</span>
+                <span class="font-medium text-textPrimary">${store.expires_at ? fmtD(store.expires_at) : 'Sem expiração'}</span>
               </div>
-              <div class="flex justify-between items-center pb-2 border-b border-borderColor">
-                <span class="text-sm">Encartes Criados</span>
-                <span class="font-medium">${usage.encartes_criados}</span>
+              ${expiresInDays !== null && expiresInDays !== undefined ? `
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-textSecondary">Dias restantes</span>
+                <span class="font-bold ${subCfg.textClass}">${expiresInDays > 0 ? expiresInDays + ' dias' : 'Expirado'}</span>
               </div>
-              <div class="flex justify-between items-center pb-2 border-b border-borderColor">
-                <span class="text-sm">Produtos Cadastrados</span>
-                <span class="font-medium">${usage.produtos_cadastrados}</span>
+              <div class="sub-progress">
+                <div class="sub-progress-bar ${subCfg.barBgClass}" style="width: ${subCfg.barPct}%"></div>
               </div>
-              <div class="flex justify-between items-center pb-2 border-b border-borderColor">
-                <span class="text-sm">PDFs Gerados</span>
-                <span class="font-medium">${usage.pdfs_gerados}</span>
+              ` : ''}
+              ${store.plan_value ? `
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-textSecondary">Valor do plano</span>
+                <span class="font-medium text-textPrimary">R$ ${Number(store.plan_value).toFixed(2)}</span>
+              </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- Métricas em Grid -->
+          <div>
+            <h4 class="text-sm font-semibold text-textSecondary mb-3 uppercase tracking-wider">Métricas da Loja</h4>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="metric-card bg-cardBg border border-borderColor rounded-xl p-4 flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center mb-2">
+                  <i data-lucide="package" class="w-5 h-5 text-indigo-500"></i>
+                </div>
+                <span class="text-2xl font-bold text-textPrimary">${usage.produtos_cadastrados}</span>
+                <span class="text-xs text-textSecondary mt-0.5">Produtos</span>
+              </div>
+              <div class="metric-card bg-cardBg border border-borderColor rounded-xl p-4 flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center mb-2">
+                  <i data-lucide="shopping-cart" class="w-5 h-5 text-emerald-500"></i>
+                </div>
+                <span class="text-2xl font-bold text-textPrimary">${usage.orders_count || 0}</span>
+                <span class="text-xs text-textSecondary mt-0.5">Pedidos</span>
+              </div>
+              <div class="metric-card bg-cardBg border border-borderColor rounded-xl p-4 flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-full bg-violet-500/10 flex items-center justify-center mb-2">
+                  <i data-lucide="users" class="w-5 h-5 text-violet-500"></i>
+                </div>
+                <span class="text-2xl font-bold text-textPrimary">${usage.clientes_count || 0}</span>
+                <span class="text-xs text-textSecondary mt-0.5">Clientes</span>
+              </div>
+              <div class="metric-card bg-cardBg border border-borderColor rounded-xl p-4 flex flex-col items-center text-center">
+                <div class="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center mb-2">
+                  <i data-lucide="megaphone" class="w-5 h-5 text-amber-500"></i>
+                </div>
+                <span class="text-2xl font-bold text-textPrimary">${usage.campaigns_count || 0}</span>
+                <span class="text-xs text-textSecondary mt-0.5">Campanhas</span>
               </div>
             </div>
           </div>
 
-          <!-- Status -->
+          <!-- Encartes / Promoções -->
+          <div class="bg-cardBg border border-borderColor rounded-xl p-5">
+            <h4 class="text-sm font-semibold text-textSecondary mb-3 uppercase tracking-wider">Promoções & Encartes</h4>
+            <div class="flex justify-between items-center py-2 border-b border-borderColor">
+              <span class="text-sm text-textSecondary flex items-center gap-2"><i data-lucide="tag" class="w-4 h-4"></i> Encartes Criados</span>
+              <span class="font-bold text-textPrimary">${usage.encartes_criados}</span>
+            </div>
+            <div class="flex justify-between items-center py-2">
+              <span class="text-sm text-textSecondary flex items-center gap-2"><i data-lucide="file-text" class="w-4 h-4"></i> PDFs Gerados</span>
+              <span class="font-bold text-textPrimary">${usage.pdfs_gerados}</span>
+            </div>
+          </div>
+
+          <!-- Timeline -->
+          <div class="bg-cardBg border border-borderColor rounded-xl p-5">
+            <h4 class="text-sm font-semibold text-textSecondary mb-4 uppercase tracking-wider">Timeline</h4>
+            <div class="relative pl-6 space-y-4">
+              <div class="absolute left-2 top-1 bottom-1 w-px bg-borderColor"></div>
+              
+              <div class="relative">
+                <div class="absolute -left-4 w-3 h-3 rounded-full bg-indigo-500 border-2 border-bgPrimary"></div>
+                <div>
+                  <span class="text-xs font-semibold text-indigo-500 uppercase">Cadastro</span>
+                  <p class="text-sm text-textPrimary font-medium">${fmtD(store.created_at)}</p>
+                </div>
+              </div>
+              
+              <div class="relative">
+                <div class="absolute -left-4 w-3 h-3 rounded-full ${store.last_login ? 'bg-emerald-500' : 'bg-red-500/40'} border-2 border-bgPrimary"></div>
+                <div>
+                  <span class="text-xs font-semibold ${store.last_login ? 'text-emerald-500' : 'text-red-500'} uppercase">Último Login</span>
+                  <p class="text-sm text-textPrimary font-medium">${store.last_login ? fmtD(store.last_login) : 'Nunca acessou'}</p>
+                </div>
+              </div>
+              
+              ${store.expires_at ? `
+              <div class="relative">
+                <div class="absolute -left-4 w-3 h-3 rounded-full bg-${subCfg.color}-500 border-2 border-bgPrimary"></div>
+                <div>
+                  <span class="text-xs font-semibold text-${subCfg.color}-500 uppercase">Expiração</span>
+                  <p class="text-sm text-textPrimary font-medium">${fmtD(store.expires_at)}</p>
+                </div>
+              </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- Status Atual -->
           <div class="bg-cardBg border border-borderColor rounded-xl p-5">
             <h4 class="text-sm font-semibold text-textSecondary mb-4 uppercase tracking-wider">Status Atual</h4>
             <div class="flex items-center gap-2">
@@ -268,12 +469,15 @@
 
         </div>
       `;
+
+      setTimeout(() => lucide.createIcons(), 30);
     } catch (e) {
+      console.error(e);
       content.innerHTML = `<div class="text-center text-danger py-10">Erro ao carregar detalhes.</div>`;
     }
   }
 
-  // Event Listeners
+  // ── Event Listeners ─────────────────────────────────────
   document.getElementById('search-input').addEventListener('input', debounce((e) => {
     currentSearch = e.target.value;
     currentPage = 1;

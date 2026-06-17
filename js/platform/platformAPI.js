@@ -52,7 +52,11 @@ const PlatformAPI = (() => {
     return await fetchFromEdge('client_detail', { store_id: storeId });
   }
 
-  return { getStats, getRecentClients, getClients, getClientDetail };
+  async function getStoresOverview(page = 1, search = '', filter = 'all') {
+    return await fetchFromEdge('stores_overview', { page, search, filter });
+  }
+
+  return { getStats, getRecentClients, getClients, getClientDetail, getStoresOverview };
 })();
 
 window.PlatformAPI = PlatformAPI;

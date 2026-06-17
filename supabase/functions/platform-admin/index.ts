@@ -35,6 +35,122 @@ serve(async (req) => {
     const url = new URL(req.url)
     const action = url.searchParams.get('action')
 
+    if (action === 'stores_overview') {
+      const page = parseInt(url.searchParams.get('page') || '1')
+      const limit = 20
+      const offset = (page - 1) * limit
+      const search = url.searchParams.get('search') || ''
+      const filter = url.searchParams.get('filter') || 'all' // all, active, risk, inactive
+
+      // 1. Get all stores
+      let storesQuery = supabaseAdmin.from('stores').select('id, name, slug, status, expires_at, plan_value, created_at, user_id, whatsapp, custom_domain', { count: 'exact' })
+
+      if (search) {
+        storesQuery = storesQuery.ilike('name', `%${search}%`)
+      }
+
+      storesQuery = storesQuery.order('created_at', { ascending: false })
+
+      // If no activity filter, paginate in DB
+      if (filter === 'all') {
+        storesQuery = storesQuery.range(offset, offset + limit - 1)
+      }
+
+      const { data: stores, count: totalCount, error: storesErr } = await storesQuery
+      if (storesErr) throw storesErr
+
+      // 2. Get all auth users
+      const { data: usersData, error: usersErr } = await supabaseAdmin.auth.admin.listUsers()
+      if (usersErr) throw usersErr
+      const users = usersData.users || []
+
+      // 3. Get product counts per store (single query)
+      const { data: allProducts } = await supabaseAdmin.from('products').select('store_id')
+      const productCountMap: Record<string, number> = {}
+      for (const p of (allProducts || [])) {
+        productCountMap[p.store_id] = (productCountMap[p.store_id] || 0) + 1
+      }
+
+      // 4. Get order counts per store (single query)
+      const { data: allOrders } = await supabaseAdmin.from('orders').select('store_id')
+      const orderCountMap: Record<string, number> = {}
+      for (const o of (allOrders || [])) {
+        orderCountMap[o.store_id] = (orderCountMap[o.store_id] || 0) + 1
+      }
+
+      const now = new Date()
+
+      let result = (stores || []).map(store => {
+        const user = users.find(u => u.id === store.user_id)
+
+        let responsavel = store.name
+        if (user) {
+          if (user.user_metadata?.name) responsavel = user.user_metadata.name
+          else if (user.email) responsavel = user.email
+        }
+
+        let activityStatus = 'inactive'
+        let lastLogin = null
+        if (user && user.last_sign_in_at) {
+          lastLogin = user.last_sign_in_at
+          const diffDays = (now.getTime() - new Date(lastLogin).getTime()) / (1000 * 3600 * 24)
+          if (diffDays <= 7) activityStatus = 'active'
+          else if (diffDays <= 30) activityStatus = 'risk'
+        }
+
+        // Subscription status calculation
+        let subscriptionStatus = store.status === 'suspended' ? 'blocked' : 'active'
+        let expiresInDays: number | null = null
+        if (store.expires_at) {
+          const expiresAt = new Date(store.expires_at)
+          expiresInDays = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 3600 * 24))
+          if (store.status === 'suspended') {
+            subscriptionStatus = 'blocked'
+          } else if (expiresInDays > 7) {
+            subscriptionStatus = 'active'
+          } else if (expiresInDays > 0) {
+            subscriptionStatus = 'expiring'
+          } else if (expiresInDays >= -5) {
+            subscriptionStatus = 'grace'
+          } else {
+            subscriptionStatus = 'blocked'
+          }
+        }
+
+        return {
+          id: store.id,
+          name: store.name,
+          slug: store.slug,
+          custom_domain: store.custom_domain,
+          status: store.status,
+          plan_value: store.plan_value,
+          expires_at: store.expires_at,
+          expires_in_days: expiresInDays,
+          subscription_status: subscriptionStatus,
+          products_count: productCountMap[store.id] || 0,
+          orders_count: orderCountMap[store.id] || 0,
+          created_at: store.created_at,
+          responsavel,
+          email: user?.email || '',
+          telefone: store.whatsapp || '',
+          last_login: lastLogin,
+          activity_status: activityStatus
+        }
+      })
+
+      // Apply activity filter client-side if needed
+      if (filter !== 'all') {
+        result = result.filter(r => r.activity_status === filter)
+        result = result.slice(offset, offset + limit)
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        data: result,
+        count: filter === 'all' ? totalCount : result.length
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
     if (action === 'stats') {
       // 1. Get all stores
       const { data: stores, error: storesErr } = await supabaseAdmin.from('stores').select('id, status, expires_at, created_at, user_id')
@@ -241,7 +357,30 @@ serve(async (req) => {
       // Usage stats
       const { count: encartesCount } = await supabaseAdmin.from('promocoes').select('*', { count: 'exact', head: true }).eq('store_id', storeId)
       const { count: productsCount } = await supabaseAdmin.from('products').select('*', { count: 'exact', head: true }).eq('store_id', storeId)
-      
+      const { count: ordersCount } = await supabaseAdmin.from('orders').select('*', { count: 'exact', head: true }).eq('store_id', storeId)
+      const { count: clientesCount } = await supabaseAdmin.from('clientes').select('*', { count: 'exact', head: true }).eq('store_id', storeId)
+      const { count: campaignsCount } = await supabaseAdmin.from('store_campaigns').select('*', { count: 'exact', head: true }).eq('store_id', storeId).eq('is_active', true)
+
+      // Subscription status calculation
+      const now = new Date()
+      let subscriptionStatus = store.status === 'suspended' ? 'blocked' : 'active'
+      let expiresInDays: number | null = null
+      if (store.expires_at) {
+        const expiresAt = new Date(store.expires_at)
+        expiresInDays = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 3600 * 24))
+        if (store.status === 'suspended') {
+          subscriptionStatus = 'blocked'
+        } else if (expiresInDays > 7) {
+          subscriptionStatus = 'active'
+        } else if (expiresInDays > 0) {
+          subscriptionStatus = 'expiring'
+        } else if (expiresInDays >= -5) {
+          subscriptionStatus = 'grace'
+        } else {
+          subscriptionStatus = 'blocked'
+        }
+      }
+
       return new Response(JSON.stringify({
         success: true,
         data: {
@@ -255,7 +394,12 @@ serve(async (req) => {
           usage: {
             encartes_criados: encartesCount || 0,
             produtos_cadastrados: productsCount || 0,
-            pdfs_gerados: 0 // Placeholder
+            orders_count: ordersCount || 0,
+            clientes_count: clientesCount || 0,
+            campaigns_count: campaignsCount || 0,
+            pdfs_gerados: 0, // Placeholder
+            subscription_status: subscriptionStatus,
+            expires_in_days: expiresInDays
           }
         }
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
