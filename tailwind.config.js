@@ -5,6 +5,8 @@ export default {
     './admin/**/*.js',
     './loja/**/*.html',
     './loja/**/*.js',
+    './platform/**/*.html',
+    './platform/**/*.js',
     './index.html',
     './demo.html',
     './faq.html',

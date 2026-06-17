@@ -1,5 +1,5 @@
 import postcss from 'postcss';
-import tailwindcss from '@tailwindcss/postcss';
+import tailwindcss from 'tailwindcss';
 import fs from 'fs';
 
 const inputPath = './assets/input.css';
