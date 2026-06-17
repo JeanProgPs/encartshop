@@ -133,6 +133,9 @@
     document.getElementById('card-title').textContent = 'Selecione sua loja';
     document.getElementById('card-sub').textContent   = 'Escolha a loja que deseja gerenciar.';
 
+    document.getElementById('step-password').classList.add('hidden');
+    document.getElementById('step-select').classList.remove('hidden');
+
     if (!stores.length) {
       list.innerHTML = '';
       noStores.classList.remove('hidden');
@@ -156,9 +159,6 @@
         </div>
         <span class="check">✓</span>
       </div>`).join('');
-    
-    document.getElementById('step-password').classList.add('hidden');
-    document.getElementById('step-select').classList.remove('hidden');
   }
 
   async function selectAndGo(id) {
@@ -186,8 +186,18 @@
     const { success, data, error } = await AuthService.login(email, password);
 
     if (success && data.user) {
+      // Verifica se é administrador da plataforma
+      if (data.user.app_metadata && data.user.app_metadata.role === 'SUPER_ADMIN') {
+         window.location.href = '/platform';
+         return;
+      }
+
       // Login OK, agora busca as lojas desse usuário
       await renderUserStores(data.user.id);
+      
+      // Reseta botão em caso de múltiplas opções ou sem opções
+      btn.textContent = 'Entrar no Painel';
+      btn.disabled = false;
     } else {
       errEl.textContent = error || 'E-mail ou senha incorretos.';
       errEl.style.display = 'block';

@@ -52,6 +52,11 @@ const AuthGuard = (() => {
   async function checkAlreadyLoggedIn() {
     try {
       const user = await AuthService.getUser();
+      if (user && user.app_metadata?.role === 'SUPER_ADMIN') {
+        window.location.replace('/platform');
+        return;
+      }
+      
       const activeStoreId = AuthService.getActiveStoreId();
       if (user && activeStoreId) {
         window.location.replace('dashboard.html');
