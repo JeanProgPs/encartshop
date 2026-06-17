@@ -27,7 +27,11 @@
     { "source": "/admin", "destination": "/admin/index" },
     { "source": "/promocoes", "destination": "/admin/promocoes" },
     { "source": "/clientes", "destination": "/admin/clientes" },
-    { "source": "/relatorios", "destination": "/admin/relatorios" }
+    { "source": "/relatorios", "destination": "/admin/relatorios" },
+    { "source": "/platform", "destination": "/platform/dashboard" },
+    { "source": "/platform/dashboard", "destination": "/platform/dashboard.html" },
+    { "source": "/platform/clientes", "destination": "/platform/clientes.html" },
+    { "source": "/platform/configuracoes", "destination": "/platform/configuracoes.html" }
   ],
   "headers": [
     {

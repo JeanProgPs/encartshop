@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Platform Admin — Configurações</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/assets/output.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body data-page="configuracoes" class="bg-bgPrimary text-textPrimary antialiased selection:bg-indigo-500 selection:text-white">
+
+<div class="admin-layout flex min-h-screen">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content flex-1 ml-0 md:ml-[256px] flex flex-col min-h-screen transition-all duration-300">
+    <header class="h-[64px] bg-cardBg/80 backdrop-blur-md border-b border-borderColor sticky top-0 z-50 px-4 md:px-8 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <h2 class="text-sm font-bold text-indigo-500 tracking-wider uppercase">Configurações da Plataforma</h2>
+      </div>
+    </header>
+
+    <div class="flex-1 p-4 md:p-8 flex flex-col gap-6 max-w-[1400px] w-full mx-auto">
+      <div class="bg-cardBg border border-borderColor rounded-xl p-8 shadow-card flex flex-col items-center justify-center text-center">
+        <div class="w-16 h-16 bg-indigo-500/10 rounded-full flex items-center justify-center mb-4">
+          <i data-lucide="settings" class="w-8 h-8 text-indigo-500"></i>
+        </div>
+        <h3 class="text-xl font-bold text-textPrimary mb-2">Configurações Gerais</h3>
+        <p class="text-textSecondary max-w-md">Esta seção está em desenvolvimento. Futuramente você poderá configurar chaves de API, webhooks e parâmetros globais do EncartShop aqui.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/supabase.js"></script>
+<script src="/js/core/helpers.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="/js/ui/components.js"></script>
+
+<!-- Platform Scripts -->
+<script src="/js/platform/platformGuard.js"></script>
+<script src="/js/platform/platformCommon.js"></script>
+
+<script>
+  setTimeout(() => lucide.createIcons(), 50);
+</script>
+</body>
+</html>

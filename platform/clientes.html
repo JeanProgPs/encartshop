@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Platform Admin — Clientes</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/assets/output.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    .fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(10px); }
+    @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+    .drawer-slide { animation: drawerSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes drawerSlideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  </style>
+</head>
+<body data-page="clientes" class="bg-bgPrimary text-textPrimary antialiased selection:bg-indigo-500 selection:text-white">
+
+<div class="admin-layout flex min-h-screen">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content flex-1 ml-0 md:ml-[256px] flex flex-col min-h-screen transition-all duration-300">
+    
+    <header class="h-[64px] bg-cardBg/80 backdrop-blur-md border-b border-borderColor sticky top-0 z-50 px-4 md:px-8 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <h2 class="text-sm font-bold text-indigo-500 tracking-wider uppercase">Clientes da Plataforma</h2>
+      </div>
+    </header>
+
+    <div class="flex-1 p-4 md:p-8 flex flex-col gap-6 max-w-[1400px] w-full mx-auto">
+      
+      <!-- Filtros e Busca -->
+      <div class="flex flex-col md:flex-row gap-4 items-center justify-between fade-in-up">
+        <div class="relative w-full md:w-96">
+          <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-textSecondary"></i>
+          <input type="text" id="search-input" placeholder="Buscar loja, email, responsável..." class="w-full bg-cardBg border border-borderColor rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all">
+        </div>
+
+        <div class="flex items-center gap-2 bg-cardBg p-1 border border-borderColor rounded-lg">
+          <button class="filter-btn active px-3 py-1.5 rounded-md text-sm font-medium text-textPrimary bg-bgPrimary shadow-sm" data-filter="all">Todos</button>
+          <button class="filter-btn px-3 py-1.5 rounded-md text-sm font-medium text-textSecondary hover:text-textPrimary transition-colors" data-filter="active">Ativos</button>
+          <button class="filter-btn px-3 py-1.5 rounded-md text-sm font-medium text-textSecondary hover:text-textPrimary transition-colors" data-filter="risk">Em Risco</button>
+          <button class="filter-btn px-3 py-1.5 rounded-md text-sm font-medium text-textSecondary hover:text-textPrimary transition-colors" data-filter="inactive">Inativos</button>
+        </div>
+      </div>
+
+      <!-- Tabela -->
+      <div class="bg-cardBg border border-borderColor rounded-xl shadow-card overflow-hidden fade-in-up" style="animation-delay: 0.1s;">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-bgPrimary/50 border-b border-borderColor text-xs uppercase tracking-wider text-textSecondary">
+                <th class="px-6 py-4 font-semibold">Loja / Responsável</th>
+                <th class="px-6 py-4 font-semibold">Contato</th>
+                <th class="px-6 py-4 font-semibold">Plano</th>
+                <th class="px-6 py-4 font-semibold">Status</th>
+                <th class="px-6 py-4 font-semibold text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="clients-tbody" class="divide-y divide-borderColor text-sm">
+              <tr><td colspan="5" class="p-8 text-center text-textSecondary">Carregando clientes...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="p-4 border-t border-borderColor flex items-center justify-between">
+          <span class="text-sm text-textSecondary" id="pagination-info">Mostrando 0-0 de 0</span>
+          <div class="flex gap-2">
+             <button id="btn-prev" class="px-3 py-1 border border-borderColor rounded bg-bgPrimary text-textSecondary disabled:opacity-50">Anterior</button>
+             <button id="btn-next" class="px-3 py-1 border border-borderColor rounded bg-bgPrimary text-textSecondary disabled:opacity-50">Próxima</button>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </main>
+</div>
+
+<!-- Drawer Detalhes -->
+<div id="drawer-detalhes" class="fixed inset-0 bg-black/60 z-[100] hidden backdrop-blur-sm" onclick="UIComponents.handleOverlayClick(event, 'drawer-detalhes')">
+  <div class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-bgPrimary shadow-2xl drawer-slide flex flex-col border-l border-borderColor">
+    <div class="p-6 border-b border-borderColor flex items-center justify-between bg-cardBg">
+      <h3 class="font-bold text-lg text-textPrimary">Detalhes do Cliente</h3>
+      <button onclick="UIComponents.closeModal('drawer-detalhes')" class="text-textSecondary hover:text-textPrimary"><i data-lucide="x"></i></button>
+    </div>
+    
+    <div id="drawer-content" class="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
+      <!-- Loading content injected here -->
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/supabase.js"></script>
+<script src="/js/core/helpers.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="/js/ui/components.js"></script>
+<script src="/js/ui/render.js"></script>
+
+<!-- Platform Scripts -->
+<script src="/js/platform/platformGuard.js"></script>
+<script src="/js/platform/platformCommon.js"></script>
+<script src="/js/platform/platformAPI.js"></script>
+
+<script>
+  let currentPage = 1;
+  let currentFilter = 'all';
+  let currentSearch = '';
+  let isLoading = false;
+
+  async function loadClients() {
+    if(isLoading) return;
+    isLoading = true;
+    const tbody = document.getElementById('clients-tbody');
+    tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-textSecondary">Carregando...</td></tr>`;
+    
+    try {
+      const res = await PlatformAPI.getClients(currentPage, currentSearch, currentFilter);
+      renderTable(res.data, res.count);
+    } catch (e) {
+      console.error(e);
+      showToast('Erro ao carregar clientes', 'error');
+      tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-danger">Erro ao carregar.</td></tr>`;
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  function renderTable(data, totalCount) {
+    const tbody = document.getElementById('clients-tbody');
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-textSecondary">Nenhum cliente encontrado.</td></tr>`;
+      document.getElementById('pagination-info').textContent = `Nenhum resultado`;
+      return;
+    }
+
+    const fmtD = dStr => UIRender.fmtDateShort(dStr);
+    
+    const getActivityColor = (status) => {
+      if(status === 'active') return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+      if(status === 'risk') return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+      return 'text-red-500 bg-red-500/10 border-red-500/20';
+    };
+
+    const getStoreLink = (domain, slug, id) => {
+      if(domain) return \`https://\${domain}\`;
+      return \`https://encartshop.com/loja/\${slug || id}\`;
+    };
+
+    tbody.innerHTML = data.map(c => `
+      <tr class="hover:bg-bgPrimary/50 transition-colors group">
+        <td class="px-6 py-4">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded bg-indigo-500/10 flex items-center justify-center font-bold text-indigo-500 flex-shrink-0">
+              ${String(c.name).charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div class="font-semibold text-textPrimary">${escapeHTML(c.name)}</div>
+              <div class="text-xs text-textSecondary mt-0.5">Resp: ${escapeHTML(c.responsavel)}</div>
+            </div>
+          </div>
+        </td>
+        <td class="px-6 py-4">
+          <div class="text-textPrimary">${escapeHTML(c.email || '--')}</div>
+          <div class="text-xs text-textSecondary mt-0.5">${escapeHTML(c.telefone || '--')}</div>
+        </td>
+        <td class="px-6 py-4">
+          <span class="px-2.5 py-1 rounded-md text-xs font-medium border border-borderColor bg-bgPrimary">
+            ${c.plan}
+          </span>
+        </td>
+        <td class="px-6 py-4">
+          <span class="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${getActivityColor(c.activity_status)}">
+            ${c.activity_status}
+          </span>
+          <div class="text-[10px] text-textSecondary mt-1">
+            Login: ${c.last_login ? fmtD(c.last_login) : 'Nunca'}
+          </div>
+        </td>
+        <td class="px-6 py-4 text-right">
+          <div class="flex items-center justify-end gap-2">
+            <a href="${getStoreLink(c.custom_domain, c.slug, c.id)}" target="_blank" class="p-2 text-textSecondary hover:text-indigo-500 transition-colors" title="Ver Loja">
+              <i data-lucide="external-link" class="w-4 h-4"></i>
+            </a>
+            <button onclick="openDetail('${c.id}')" class="p-2 text-textSecondary hover:text-indigo-500 transition-colors" title="Ver Detalhes">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    setTimeout(() => lucide.createIcons(), 10);
+
+    const limit = 20;
+    const start = (currentPage - 1) * limit + 1;
+    const end = Math.min(currentPage * limit, totalCount);
+    document.getElementById('pagination-info').textContent = `Mostrando ${start}-${end} de ${totalCount}`;
+    
+    document.getElementById('btn-prev').disabled = currentPage === 1;
+    document.getElementById('btn-next').disabled = end >= totalCount;
+  }
+
+  async function openDetail(storeId) {
+    UIComponents.openModal('drawer-detalhes');
+    const content = document.getElementById('drawer-content');
+    content.innerHTML = `<div class="text-center text-textSecondary py-10">Carregando detalhes...</div>`;
+
+    try {
+      const res = await PlatformAPI.getClientDetail(storeId);
+      const { store, usage } = res.data;
+      const fmtD = d => UIRender.fmtDateShort(d);
+
+      content.innerHTML = `
+        <div class="flex flex-col gap-6">
+          
+          <!-- Informações Pessoais -->
+          <div class="bg-cardBg border border-borderColor rounded-xl p-5">
+            <h4 class="text-sm font-semibold text-textSecondary mb-4 uppercase tracking-wider">Informações</h4>
+            <div class="space-y-3">
+              <div><span class="text-xs text-textSecondary block">Loja</span><span class="font-medium">${escapeHTML(store.name)}</span></div>
+              <div><span class="text-xs text-textSecondary block">Responsável</span><span class="font-medium">${escapeHTML(store.responsavel)}</span></div>
+              <div><span class="text-xs text-textSecondary block">E-mail</span><span class="font-medium">${escapeHTML(store.email || '--')}</span></div>
+              <div><span class="text-xs text-textSecondary block">Telefone</span><span class="font-medium">${escapeHTML(store.telefone || '--')}</span></div>
+              <div><span class="text-xs text-textSecondary block">Data Cadastro</span><span class="font-medium">${fmtD(store.created_at)}</span></div>
+            </div>
+          </div>
+
+          <!-- Utilização -->
+          <div class="bg-cardBg border border-borderColor rounded-xl p-5">
+            <h4 class="text-sm font-semibold text-textSecondary mb-4 uppercase tracking-wider">Utilização</h4>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center pb-2 border-b border-borderColor">
+                <span class="text-sm">Último Login</span>
+                <span class="font-medium">${store.last_login ? fmtD(store.last_login) : 'Nunca'}</span>
+              </div>
+              <div class="flex justify-between items-center pb-2 border-b border-borderColor">
+                <span class="text-sm">Encartes Criados</span>
+                <span class="font-medium">${usage.encartes_criados}</span>
+              </div>
+              <div class="flex justify-between items-center pb-2 border-b border-borderColor">
+                <span class="text-sm">Produtos Cadastrados</span>
+                <span class="font-medium">${usage.produtos_cadastrados}</span>
+              </div>
+              <div class="flex justify-between items-center pb-2 border-b border-borderColor">
+                <span class="text-sm">PDFs Gerados</span>
+                <span class="font-medium">${usage.pdfs_gerados}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div class="bg-cardBg border border-borderColor rounded-xl p-5">
+            <h4 class="text-sm font-semibold text-textSecondary mb-4 uppercase tracking-wider">Status Atual</h4>
+            <div class="flex items-center gap-2">
+               <span class="font-bold text-lg uppercase ${store.activity_status === 'active' ? 'text-emerald-500' : store.activity_status === 'risk' ? 'text-amber-500' : 'text-red-500'}">${store.activity_status}</span>
+            </div>
+          </div>
+
+        </div>
+      `;
+    } catch (e) {
+      content.innerHTML = `<div class="text-center text-danger py-10">Erro ao carregar detalhes.</div>`;
+    }
+  }
+
+  // Event Listeners
+  document.getElementById('search-input').addEventListener('input', debounce((e) => {
+    currentSearch = e.target.value;
+    currentPage = 1;
+    loadClients();
+  }, 500));
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.remove('active', 'bg-bgPrimary', 'shadow-sm', 'text-textPrimary');
+        b.classList.add('text-textSecondary');
+      });
+      const t = e.target;
+      t.classList.add('active', 'bg-bgPrimary', 'shadow-sm', 'text-textPrimary');
+      t.classList.remove('text-textSecondary');
+      
+      currentFilter = t.dataset.filter;
+      currentPage = 1;
+      loadClients();
+    });
+  });
+
+  document.getElementById('btn-prev').addEventListener('click', () => {
+    if (currentPage > 1) { currentPage--; loadClients(); }
+  });
+  document.getElementById('btn-next').addEventListener('click', () => {
+    currentPage++; loadClients();
+  });
+
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => { clearTimeout(timeout); func(...args); };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  loadClients();
+</script>
+</body>
+</html>
