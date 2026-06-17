@@ -11,22 +11,30 @@ const PlatformAPI = (() => {
       const token = await AuthService.getToken();
       if (!token) throw new Error('Não autenticado');
 
-      // Constroi query string
+      // Supabase functions.invoke() ignores query strings in the function name,
+      // so we use a direct fetch against the Edge Function URL instead.
+      const SUPABASE_URL = SupabaseCore.SUPABASE_URL;
       const queryParams = new URLSearchParams({ action, ...params }).toString();
-      
-      const { data, error } = await window.sb.functions.invoke(`${FUNCTION_NAME}?${queryParams}`, {
+      const url = `${SUPABASE_URL}/functions/v1/${FUNCTION_NAME}?${queryParams}`;
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'apikey': SupabaseCore.SUPABASE_ANON_KEY,
         }
       });
 
-      if (error) {
-        throw new Error(error.message || 'Erro na comunicação com o servidor');
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        throw new Error(errBody?.error || `Edge Function returned a non-2xx status code`);
       }
 
+      const data = await response.json();
+
       if (data?.error) {
-         throw new Error(data.error);
+        throw new Error(data.error);
       }
 
       return data;
