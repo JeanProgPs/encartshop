@@ -63,24 +63,27 @@ const UIRender = (() => {
     const defaultImg = 'https://images.placeholders.dev/?width=400&height=400&text=Sem%20Imagem&bgColor=%23f1f5f9&textColor=%2364748b';
     const img = escapeHTML(p.image) || defaultImg;
     
-    // Suporte a galeria para FASHION
-    const hasGallery = storeSegment === 'fashion' && (p.image_url_2 || p.image_url_3);
+    // Suporte a galeria para todos os produtos (múltiplas ou única imagem)
     const galleryImages = [];
     if (p.image) galleryImages.push(p.image);
     if (p.image_url_2) galleryImages.push(p.image_url_2);
     if (p.image_url_3) galleryImages.push(p.image_url_3);
-    
-    // Para FOOD, mostrar descrição
-    const showDescription = (storeSegment === 'food' || storeSegment === 'fashion') && p.description;
+    if (galleryImages.length === 0) galleryImages.push(defaultImg);
+
+    const hasMultipleImages = galleryImages.length > 1;
+    const showHoverImage = storeSegment === 'fashion' && hasMultipleImages;
+
+    // Para FOOD e FASHION, mostrar descrição, ou se o produto possuir descrição
+    const showDescription = p.description;
     const descriptionHtml = showDescription ? `<div class="product-description" style="font-size:0.8rem;color:var(--text-muted);margin:6px 0;line-height:1.4;max-height:50px;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(p.description)}</div>` : '';
 
     return `
-      <div class="product-card" id="prod-${p.id}" data-product-id="${p.id}" ${hasGallery ? `data-gallery='${escapeHTML(JSON.stringify(galleryImages))}'` : ''}>
-        <div class="product-image-wrap ${hasGallery ? 'has-gallery' : ''}" ${hasGallery ? `style="cursor:pointer;position:relative;"` : ''}>
+      <div class="product-card" id="prod-${p.id}" data-product-id="${p.id}" data-gallery='${escapeHTML(JSON.stringify(galleryImages))}'>
+        <div class="product-image-wrap ${showHoverImage ? 'has-gallery' : ''}" style="cursor:pointer;position:relative;">
           <img src="${img}" alt="${escapeHTML(p.name)}" loading="lazy" onerror="this.src='${defaultImg}'" class="product-main-image">
-          ${hasGallery && galleryImages.length > 1 ? `<img src="${escapeHTML(galleryImages[1])}" alt="${escapeHTML(p.name)} hover" loading="lazy" class="product-hover-image" onerror="this.src='${defaultImg}'">` : ''}
+          ${showHoverImage ? `<img src="${escapeHTML(galleryImages[1])}" alt="${escapeHTML(p.name)} hover" loading="lazy" class="product-hover-image" onerror="this.src='${defaultImg}'">` : ''}
           ${isPromo ? `<div class="promo-badge">${storeSegment === 'fashion' ? 'OUTLET' : '🔥 OFERTA'}</div>` : ''}
-          ${hasGallery ? `<div class="gallery-indicator" style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.7rem;padding:4px 8px;border-radius:4px;font-weight:600;">📸 ${galleryImages.length}</div>` : ''}
+          ${hasMultipleImages ? `<div class="gallery-indicator" style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.7rem;padding:4px 8px;border-radius:4px;font-weight:600;">📸 ${galleryImages.length}</div>` : ''}
         </div>
         <div class="product-info">
           <div class="product-name" title="${escapeHTML(p.name)}">${escapeHTML(p.name)}</div>
