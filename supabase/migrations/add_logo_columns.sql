@@ -9,12 +9,12 @@ VALUES (
   'logos',
   'logos',
   true,
-  2097152,  -- 2 MB em bytes
+  5242880,  -- 5 MB em bytes
   ARRAY['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 )
 ON CONFLICT (id) DO UPDATE
   SET public            = true,
-      file_size_limit   = 2097152,
+      file_size_limit   = 5242880,
       allowed_mime_types = ARRAY['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
 -- 2. Remove policies antigas (evita conflito)

@@ -176,12 +176,12 @@ VALUES (
   'products',
   'products',
   true,
-  2097152, -- 2MB em bytes
+  5242880, -- 5MB em bytes
   ARRAY['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 )
 ON CONFLICT (id) DO UPDATE SET
   public = true,
-  file_size_limit = 2097152,
+  file_size_limit = 5242880,
   allowed_mime_types = ARRAY['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
 -- Política de leitura pública do storage
@@ -284,7 +284,7 @@ CREATE POLICY "delivery_zones_delete_own"
 -- [x] orders   — SELECT/UPDATE/DELETE restritos ao dono; INSERT público (clientes)
 -- [x] profiles — SELECT/INSERT/UPDATE restritos ao auth.uid()
 -- [x] storage  — Upload restrito a autenticados; leitura pública
--- [x] Limite de 2MB no bucket via file_size_limit
+-- [x] Limite de 5MB no bucket via file_size_limit
 -- [x] MIME types permitidos: jpeg, jpg, png, webp
 -- [x] Nenhum usuário pode ver dados de outra loja via RLS
 -- [x] Enumeração de IDs impossível sem UUID válido (UUIDs são impraticáveis de adivinhar)

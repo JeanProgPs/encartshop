@@ -8,7 +8,7 @@ const StorageModule = (() => {
   const BUCKET_PRODUCTS = 'products';
   const BUCKET_LOGOS    = 'logos';
 
-  const MAX_SIZE_MB    = 2;
+  const MAX_SIZE_MB    = 5;
   const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
   const ALLOWED_TYPES  = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
   const MAX_DIMENSION  = 1200; // pixels para produtos
@@ -24,8 +24,7 @@ const StorageModule = (() => {
       return `Formato inválido. Use: JPG, PNG ou WEBP.`;
     }
     if (file.size > MAX_SIZE_BYTES) {
-      const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-      return `Arquivo muito grande (${sizeMB}MB). Máximo: ${MAX_SIZE_MB}MB.`;
+      return `A imagem selecionada possui mais de 5 MB. Escolha uma imagem menor ou reduza sua qualidade antes do envio.`;
     }
     return null;
   }
