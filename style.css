@@ -612,6 +612,21 @@ select.form-input option {
   box-shadow: var(--shadow-accent);
 }
 
+.discount-banner {
+  background-color: #d9f99d;
+  color: #0f172a;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-align: center;
+  padding: 6px 4px;
+  width: 100%;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+}
+
 .product-info {
   padding: 14px;
 }

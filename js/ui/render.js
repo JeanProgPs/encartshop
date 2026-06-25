@@ -57,6 +57,7 @@ const UIRender = (() => {
   function productStoreCard(p, cartQty = 0, storeSegment = 'market') {
     const isPromo = !!p.promo_price;
     const price = isPromo ? p.promo_price : p.price;
+    const discountPct = isPromo && p.price > p.promo_price ? Math.round(((p.price - p.promo_price) / p.price) * 100) : 0;
     const unit = p.unit || 'un';
     const isKg = unit.toLowerCase() === 'kg';
     const qtyLabel = isKg ? (cartQty < 1 && cartQty > 0 ? `${cartQty * 1000}g` : `${cartQty.toFixed(1).replace('.',',')}kg`) : `${cartQty}x`;
@@ -85,6 +86,7 @@ const UIRender = (() => {
           ${isPromo ? `<div class="promo-badge">${storeSegment === 'fashion' ? 'OUTLET' : '🔥 OFERTA'}</div>` : ''}
           ${hasMultipleImages ? `<div class="gallery-indicator" style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.7rem;padding:4px 8px;border-radius:4px;font-weight:600;">📸 ${galleryImages.length}</div>` : ''}
         </div>
+        ${isPromo && discountPct > 0 ? `<div class="discount-banner">-${discountPct}% OFF</div>` : ''}
         <div class="product-info">
           <div class="product-name" title="${escapeHTML(p.name)}">${escapeHTML(p.name)}</div>
           ${descriptionHtml}
