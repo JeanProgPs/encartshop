@@ -1,0 +1,46 @@
+{
+  "buildCommand": "echo 'Build handled by Vercel'",
+  "outputDirectory": ".",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?!encartshop\\.com|www\\.encartshop\\.com|localhost)(?<host>.*)"
+        }
+      ],
+      "destination": "/api/loja?domain=$host"
+    },
+    { "source": "/dashboard", "destination": "/admin/dashboard" },
+    { "source": "/produtos", "destination": "/admin/produtos" },
+    { "source": "/import-export", "destination": "/admin/import-export" },
+    { "source": "/pedidos", "destination": "/admin/pedidos" },
+    { "source": "/configuracoes", "destination": "/admin/configuracoes" },
+    { "source": "/setup", "destination": "/admin/setup" },
+    { "source": "/lojas", "destination": "/admin/lojas" },
+    { "source": "/pagamento", "destination": "/admin/pagamento" },
+    { "source": "/loja/:slug", "destination": "/api/loja?slug=:slug" },
+    { "source": "/loja", "destination": "/loja/index.html" },
+    { "source": "/admin", "destination": "/admin/index" },
+    { "source": "/promocoes", "destination": "/admin/promocoes" },
+    { "source": "/clientes", "destination": "/admin/clientes" },
+    { "source": "/relatorios", "destination": "/admin/relatorios" },
+    { "source": "/platform", "destination": "/platform/dashboard" },
+    { "source": "/platform/dashboard", "destination": "/platform/dashboard.html" },
+    { "source": "/platform/clientes", "destination": "/platform/clientes.html" },
+    { "source": "/platform/configuracoes", "destination": "/platform/configuracoes.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" }
+      ]
+    }
+  ]
+}

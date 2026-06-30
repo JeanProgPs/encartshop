@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produtos — EncartShop</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/assets/output.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    .product-admin-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
+    /* Estilos do Modal originais mantidos e adaptados ao novo sistema de cores */
+    .modal-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:24px; }
+    .modal-header h2 { font-size:1.1rem;font-weight:700; }
+    .modal-footer { display:flex;gap:12px;justify-content:flex-end;margin-top:24px; }
+    .form-row { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
+    .img-preview { width:100%;height:160px;border-radius:var(--radius);object-fit:cover;background:var(--primary-light);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.85rem;overflow:hidden; }
+    .img-preview img { width:100%;height:100%;object-fit:cover;border-radius:var(--radius); }
+
+    @media(max-width:768px){
+      .form-row{grid-template-columns:1fr; gap: 12px;}
+      .product-admin-grid{grid-template-columns:repeat(2,1fr); gap: 12px;}
+      .modal { width: 95%; padding: 20px; }
+      .modal-footer { flex-direction: column; }
+      .modal-footer button { width: 100%; }
+    }
+    @media(max-width:480px){ 
+      .product-admin-grid{grid-template-columns:repeat(2,1fr); gap: 8px;} 
+    }
+    
+    .fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(10px); }
+    @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body data-page="produtos" class="bg-bgPrimary text-textPrimary antialiased selection:bg-accent selection:text-white">
+
+<div class="admin-layout flex min-h-screen">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content flex-1 ml-0 md:ml-[256px] flex flex-col min-h-screen transition-all duration-300">
+    
+    <!-- Topbar Premium -->
+    <header class="h-[64px] bg-cardBg/80 backdrop-blur-md border-b border-borderColor sticky top-0 z-50 px-4 md:px-8 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <h2 class="text-sm font-semibold text-textPrimary leading-tight hidden md:block">Produtos</h2>
+      </div>
+      <div class="flex items-center gap-3">
+        <button class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-bgPrimary transition-colors relative">
+          <i data-lucide="bell" class="w-5 h-5 text-textSecondary"></i>
+        </button>
+        <button onclick="openModal()" class="flex items-center gap-2 bg-textPrimary text-white px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity">
+          <i data-lucide="plus" class="w-4 h-4"></i> Novo
+        </button>
+        <a href="import-export.html" class="flex items-center gap-2 bg-blue-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors">
+          <i data-lucide="exchange-cw" class="w-4 h-4"></i> Importar/Exportar
+        </a>
+      </div>
+    </header>
+
+    <div class="flex-1 p-4 md:p-8 flex flex-col gap-6 max-w-[1400px] w-full mx-auto fade-in-up">
+      
+      <!-- Toolbar Moderna -->
+      <div class="flex flex-col md:flex-row md:items-center gap-4 justify-between bg-cardBg p-4 border border-borderColor rounded-xl shadow-sm">
+        <div class="flex-1 max-w-md relative">
+          <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-textSecondary"></i>
+          <input type="text" id="search-input" class="w-full bg-bgPrimary border border-borderColor rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all" placeholder="Buscar produto..." oninput="renderProducts()">
+        </div>
+        <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <select id="filter-cat" class="w-full sm:w-auto bg-bgPrimary border border-borderColor rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent" onchange="renderProducts()">
+            <option value="">Todas categorias</option>
+          </select>
+          <select id="filter-status" class="w-full sm:w-auto bg-bgPrimary border border-borderColor rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-accent" onchange="renderProducts()">
+            <option value="">Todos status</option>
+            <option value="active">Ativos</option>
+            <option value="inactive">Inativos</option>
+            <option value="promo">Em Promoção</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="product-count" class="text-sm text-textSecondary font-medium"></div>
+      
+      <div class="product-admin-grid" id="products-grid"></div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal Produto -->
+<div class="modal-overlay hidden" id="modal-overlay" onclick="UIComponents.handleOverlayClick(event,'modal-overlay')">
+  <div class="modal" style="max-width:600px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="modal-title">Adicionar Produto</h2>
+      <button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-bgPrimary transition-colors" onclick="closeModal()">
+        <i data-lucide="x" class="w-5 h-5 text-textSecondary"></i>
+      </button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nome do Produto *</label>
+          <input id="f-name" type="text" class="form-input" placeholder="Ex: Camiseta Premium">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoria *</label>
+          <input id="f-cat" type="text" class="form-input" list="cat-list" placeholder="Ex: Vestuário">
+          <datalist id="cat-list"></datalist>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Preço Normal (R$) *</label>
+          <input id="f-price" type="number" step="0.01" min="0.01" class="form-input" placeholder="0,00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Preço Promocional (R$)</label>
+          <input id="f-promo-price" type="number" step="0.01" class="form-input" placeholder="Deixe vazio se não tiver">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Unidade</label>
+          <select id="f-unit" class="form-input">
+            <option value="un">Unidade (un)</option>
+            <option value="kg">Quilograma (kg)</option>
+            <option value="pct">Pacote (pct)</option>
+            <option value="cx">Caixa (cx)</option>
+            <option value="lt">Litro (lt)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select id="f-active" class="form-input">
+            <option value="1">Ativo (visível na loja)</option>
+            <option value="0">Inativo (oculto)</option>
+          </select>
+        </div>
+      </div>
+      <!-- Seção Fashion (visível apenas para lojas fashion) -->
+      <div id="fashion-fields-section" style="display:none; border-top: 1px solid var(--border-color); padding-top:16px; margin-top:4px; margin-bottom:16px;">
+        <div class="flex items-center gap-2 mb-4">
+          <span style="font-size:0.75rem;font-weight:700;background:black;color:white;padding:2px 8px;border-radius:999px;letter-spacing:0.05em;">FASHION</span>
+          <span class="form-label" style="margin:0;">Informações de Moda</span>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Marca</label>
+            <input id="f-brand" type="text" class="form-input" placeholder="Ex: Nike, Adidas, Farm">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Gênero</label>
+            <select id="f-gender" class="form-input">
+              <option value="">Não especificado</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Feminino">Feminino</option>
+              <option value="Unissex">Unissex</option>
+              <option value="Infantil">Infantil</option>
+              <option value="Bebê">Bebê</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Cor</label>
+            <input id="f-color" type="text" class="form-input" placeholder="Ex: Preto, Branco, Azul">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tamanho</label>
+            <input id="f-size" type="text" class="form-input" list="size-list" placeholder="Ex: M, 42, GG">
+            <datalist id="size-list">
+              <option value="PP"><option value="P"><option value="M"><option value="G">
+              <option value="GG"><option value="XG"><option value="34"><option value="36">
+              <option value="38"><option value="40"><option value="42"><option value="44">
+              <option value="46"><option value="48">
+            </datalist>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Descrição do Produto</label>
+        <textarea id="f-description" class="form-input" placeholder="Ex: Pão brioche, burger 180g, cheddar, bacon..." style="resize:vertical;min-height:80px;"></textarea>
+        <p style="font-size:0.7rem;color:var(--text-muted);margin-top:4px">Opcional. Máx 500 caracteres. Use para ingredientes, detalhes, etc.</p>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Imagem do Produto</label>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <button class="px-3 py-1.5 border border-borderColor rounded bg-cardBg text-sm font-medium hover:bg-bgPrimary transition-colors" id="btn-img-link" onclick="toggleImgSource('link')" style="flex:1;">🔗 Link</button>
+          <button class="px-3 py-1.5 border border-borderColor rounded bg-cardBg text-sm font-medium hover:bg-bgPrimary transition-colors" id="btn-img-upload" onclick="toggleImgSource('upload')" style="flex:1;">📤 Arquivo</button>
+        </div>
+        
+        <div id="img-source-link">
+          <input id="f-image" type="text" class="form-input" placeholder="https://..." oninput="previewImg()">
+        </div>
+        
+        <div id="img-source-upload" class="hidden">
+          <input id="f-image-file" type="file" class="form-input" accept="image/jpeg,image/jpg,image/png,image/webp" onchange="previewImgFile()">
+          <p style="font-size:0.7rem;color:var(--text-muted);margin-top:4px">Máximo 5MB. Formatos: JPG, PNG, WEBP.</p>
+          <div id="upload-progress" style="display:none;margin-top:8px">
+            <div style="height:4px;background:rgba(0,0,0,0.08);border-radius:4px;overflow:hidden">
+              <div id="upload-bar" style="height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width 0.3s ease"></div>
+            </div>
+            <span id="upload-label" style="font-size:0.72rem;color:var(--text-muted)">0%</span>
+          </div>
+        </div>
+
+        <div id="img-preview" class="img-preview" style="margin-top:8px;">
+          <span>Pré-visualização da imagem</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Imagens Adicionais (Frente, Costas, Detalhe)</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:6px;font-weight:500;">Imagem 2</label>
+            <div style="display:flex;gap:6px;margin-bottom:6px;">
+              <button class="px-2 py-1 border border-borderColor rounded bg-cardBg text-xs font-medium hover:bg-bgPrimary transition-colors" id="btn-img-link-2" onclick="toggleImgSource2('link')" style="flex:1;">🔗 Link</button>
+              <button class="px-2 py-1 border border-borderColor rounded bg-cardBg text-xs font-medium hover:bg-bgPrimary transition-colors" id="btn-img-upload-2" onclick="toggleImgSource2('upload')" style="flex:1;">📤 Arquivo</button>
+            </div>
+            <div id="img-source-link-2">
+              <input id="f-image-2" type="text" class="form-input" placeholder="https://..." oninput="previewImg2()" style="font-size:0.9rem;padding:8px;border:1px solid var(--border-color);border-radius:var(--radius);">
+            </div>
+            <div id="img-source-upload-2" class="hidden">
+              <input id="f-image-file-2" type="file" class="form-input" accept="image/jpeg,image/jpg,image/png,image/webp" onchange="previewImgFile2()" style="font-size:0.85rem;padding:6px;">
+              <div id="upload-progress-2" style="display:none;margin-top:6px">
+                <div style="height:3px;background:rgba(0,0,0,0.08);border-radius:3px;overflow:hidden">
+                  <div id="upload-bar-2" style="height:100%;background:var(--accent);border-radius:3px;width:0%;transition:width 0.3s ease"></div>
+                </div>
+                <span id="upload-label-2" style="font-size:0.65rem;color:var(--text-muted)">0%</span>
+              </div>
+            </div>
+            <div id="img-preview-2" class="img-preview" style="margin-top:8px;height:120px;font-size:0.85rem;">
+              <span>Preview</span>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:0.8rem;color:var(--text-secondary);display:block;margin-bottom:6px;font-weight:500;">Imagem 3</label>
+            <div style="display:flex;gap:6px;margin-bottom:6px;">
+              <button class="px-2 py-1 border border-borderColor rounded bg-cardBg text-xs font-medium hover:bg-bgPrimary transition-colors" id="btn-img-link-3" onclick="toggleImgSource3('link')" style="flex:1;">🔗 Link</button>
+              <button class="px-2 py-1 border border-borderColor rounded bg-cardBg text-xs font-medium hover:bg-bgPrimary transition-colors" id="btn-img-upload-3" onclick="toggleImgSource3('upload')" style="flex:1;">📤 Arquivo</button>
+            </div>
+            <div id="img-source-link-3">
+              <input id="f-image-3" type="text" class="form-input" placeholder="https://..." oninput="previewImg3()" style="font-size:0.9rem;padding:8px;border:1px solid var(--border-color);border-radius:var(--radius);">
+            </div>
+            <div id="img-source-upload-3" class="hidden">
+              <input id="f-image-file-3" type="file" class="form-input" accept="image/jpeg,image/jpg,image/png,image/webp" onchange="previewImgFile3()" style="font-size:0.85rem;padding:6px;">
+              <div id="upload-progress-3" style="display:none;margin-top:6px">
+                <div style="height:3px;background:rgba(0,0,0,0.08);border-radius:3px;overflow:hidden">
+                  <div id="upload-bar-3" style="height:100%;background:var(--accent);border-radius:3px;width:0%;transition:width 0.3s ease"></div>
+                </div>
+                <span id="upload-label-3" style="font-size:0.65rem;color:var(--text-muted)">0%</span>
+              </div>
+            </div>
+            <div id="img-preview-3" class="img-preview" style="margin-top:8px;height:120px;font-size:0.85rem;">
+              <span>Preview</span>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:0.7rem;color:var(--text-muted);margin-top:8px">Opcional. Adicione links externos ou faça upload de arquivos locais.</p>
+      </div>
+
+      <div id="form-errors" style="display:none;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.25);border-radius:var(--radius);padding:12px 16px;font-size:0.85rem;color:var(--danger);"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="px-4 py-2 border border-borderColor rounded-lg text-sm font-medium hover:bg-bgPrimary transition-colors" onclick="closeModal()">Cancelar</button>
+      <button id="save-btn" class="px-4 py-2 bg-textPrimary text-white rounded-lg text-sm font-medium hover:bg-black transition-colors" onclick="saveProduct()">Salvar Produto</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/supabase.js"></script>
+<script src="/js/core/helpers.js"></script>
+<script src="/js/core/supabaseClient.js"></script>
+<script src="/js/core/api.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="/js/modules/subscription.js"></script>
+<script src="/js/auth/authGuard.js"></script>
+<script src="/js/modules/store.js"></script>
+<script src="/js/modules/products.js"></script>
+<script src="/js/ui/components.js"></script>
+<script src="/js/ui/render.js"></script>
+<script src="/js/storage.js"></script>
+<script src="/js/admin-common.js"></script>
+<script>
+  lucide.createIcons();
+  let editingId   = null;
+  let allProducts = [];
+  let imgSource   = 'link';
+  let imgSource2  = 'link';
+  let imgSource3  = 'link';
+  let _activeStore = null;
+  const storeId   = () => AuthService.getActiveStoreId();
+
+  async function initAdmin() {
+    _activeStore = await StoreModule.getActive();
+    // Mostrar seção fashion se o segmento da loja for fashion
+    if ((_activeStore?.store_segment || '') === 'fashion') {
+      document.getElementById('fashion-fields-section').style.display = 'block';
+    }
+    await loadCategories();
+    await renderProducts();
+  }
+
+  async function renderProducts() {
+    const q      = document.getElementById('search-input').value.toLowerCase();
+    const cat    = document.getElementById('filter-cat').value;
+    const status = document.getElementById('filter-status').value;
+
+    allProducts = await ProductsModule.getAll(storeId());
+    const filtered = ProductsModule.filter(allProducts, { query: q, category: cat, status });
+
+    document.getElementById('product-count').textContent = `${filtered.length} produto(s) encontrado(s)`;
+
+    const grid = document.getElementById('products-grid');
+    if (!filtered.length) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">` + UIRender.emptyState('📦', 'Nenhum produto encontrado', 'Tente ajustar os filtros ou adicione seu primeiro produto.') + `</div>`;
+      return;
+    }
+    grid.innerHTML = filtered.map(p => UIRender.productAdminCard(p, {
+      onEdit: 'editProduct', onToggle: 'toggleActive', onDelete: 'deleteProduct'
+    })).join('');
+    
+    // Process icons in newly rendered cards
+    setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
+  }
+
+  async function loadCategories() {
+    const prods = await ProductsModule.getAll(storeId());
+    const cats  = ProductsModule.getCategories(prods);
+    const sel   = document.getElementById('filter-cat');
+    const dl    = document.getElementById('cat-list');
+    while (sel.options.length > 1) sel.remove(1);
+    dl.innerHTML = '';
+    cats.forEach(c => {
+      const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o);
+      const d = document.createElement('option'); d.value = c; dl.appendChild(d);
+    });
+  }
+
+  function openModal(id = null) {
+    editingId = id;
+    document.getElementById('modal-title').textContent = id ? 'Editar Produto' : 'Adicionar Produto';
+    document.getElementById('form-errors').style.display = 'none';
+    if (id) {
+      const p = allProducts.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById('f-name').value        = p.name;
+      document.getElementById('f-cat').value         = p.category;
+      document.getElementById('f-price').value       = p.price;
+      document.getElementById('f-promo-price').value = p.promo_price || '';
+      document.getElementById('f-unit').value        = p.unit || 'un';
+      document.getElementById('f-active').value      = p.active ? '1' : '0';
+      document.getElementById('f-image').value       = p.image || '';
+      document.getElementById('f-description').value = p.description || '';
+      document.getElementById('f-image-2').value     = p.image_url_2 || '';
+      document.getElementById('f-image-3').value     = p.image_url_3 || '';
+      document.getElementById('f-image-file').value  = '';
+      document.getElementById('f-image-file-2').value  = '';
+      document.getElementById('f-image-file-3').value  = '';
+      // Fashion fields
+      document.getElementById('f-brand').value  = p.brand  || '';
+      document.getElementById('f-gender').value = p.gender || '';
+      document.getElementById('f-color').value  = p.color  || '';
+      document.getElementById('f-size').value   = p.size   || '';
+      toggleImgSource(p.image && p.image.includes('supabase.co') ? 'upload' : 'link');
+      toggleImgSource2(p.image_url_2 && p.image_url_2.includes('supabase.co') ? 'upload' : 'link');
+      toggleImgSource3(p.image_url_3 && p.image_url_3.includes('supabase.co') ? 'upload' : 'link');
+      previewImg();
+      previewImg2();
+      previewImg3();
+    } else {
+      ['f-name','f-cat','f-price','f-promo-price','f-image','f-description','f-image-2','f-image-3','f-brand','f-color','f-size'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('f-image-file').value  = '';
+      document.getElementById('f-image-file-2').value  = '';
+      document.getElementById('f-image-file-3').value  = '';
+      document.getElementById('f-gender').value = '';
+      document.getElementById('f-unit').value   = 'un';
+      document.getElementById('f-active').value = '1';
+      toggleImgSource('link');
+      toggleImgSource2('link');
+      toggleImgSource3('link');
+      document.getElementById('img-preview').innerHTML = '<span>Pré-visualização da imagem</span>';
+      document.getElementById('img-preview-2').innerHTML = '<span>Preview</span>';
+      document.getElementById('img-preview-3').innerHTML = '<span>Preview</span>';
+    }
+    UIComponents.openModal('modal-overlay');
+  }
+
+  function closeModal() { UIComponents.closeModal('modal-overlay'); editingId = null; }
+
+  function toggleImgSource(src) {
+    imgSource = src;
+    const btnLink = document.getElementById('btn-img-link');
+    const btnUp   = document.getElementById('btn-img-upload');
+    const divLink = document.getElementById('img-source-link');
+    const divUp   = document.getElementById('img-source-upload');
+
+    if (src === 'link') {
+      btnLink.style.background = 'var(--text-primary)'; btnLink.style.color = '#fff';
+      btnUp.style.background = 'var(--card-bg)'; btnUp.style.color = 'inherit';
+      divLink.classList.remove('hidden');
+      divUp.classList.add('hidden');
+    } else {
+      btnUp.style.background = 'var(--text-primary)'; btnUp.style.color = '#fff';
+      btnLink.style.background = 'var(--card-bg)'; btnLink.style.color = 'inherit';
+      divUp.classList.remove('hidden');
+      divLink.classList.add('hidden');
+    }
+  }
+
+  function toggleImgSource2(src) {
+    imgSource2 = src;
+    const btnLink = document.getElementById('btn-img-link-2');
+    const btnUp   = document.getElementById('btn-img-upload-2');
+    const divLink = document.getElementById('img-source-link-2');
+    const divUp   = document.getElementById('img-source-upload-2');
+
+    if (src === 'link') {
+      btnLink.style.background = 'var(--text-primary)'; btnLink.style.color = '#fff';
+      btnUp.style.background = 'var(--card-bg)'; btnUp.style.color = 'inherit';
+      divLink.classList.remove('hidden');
+      divUp.classList.add('hidden');
+    } else {
+      btnUp.style.background = 'var(--text-primary)'; btnUp.style.color = '#fff';
+      btnLink.style.background = 'var(--card-bg)'; btnLink.style.color = 'inherit';
+      divUp.classList.remove('hidden');
+      divLink.classList.add('hidden');
+    }
+  }
+
+  function toggleImgSource3(src) {
+    imgSource3 = src;
+    const btnLink = document.getElementById('btn-img-link-3');
+    const btnUp   = document.getElementById('btn-img-upload-3');
+    const divLink = document.getElementById('img-source-link-3');
+    const divUp   = document.getElementById('img-source-upload-3');
+
+    if (src === 'link') {
+      btnLink.style.background = 'var(--text-primary)'; btnLink.style.color = '#fff';
+      btnUp.style.background = 'var(--card-bg)'; btnUp.style.color = 'inherit';
+      divLink.classList.remove('hidden');
+      divUp.classList.add('hidden');
+    } else {
+      btnUp.style.background = 'var(--text-primary)'; btnUp.style.color = '#fff';
+      btnLink.style.background = 'var(--card-bg)'; btnLink.style.color = 'inherit';
+      divUp.classList.remove('hidden');
+      divLink.classList.add('hidden');
+    }
+  }
+
+  function previewImg() {
+    const url = document.getElementById('f-image').value.trim();
+    const div = document.getElementById('img-preview');
+    div.innerHTML = url
+      ? `<img src="${escapeHTML(url)}" onerror="this.parentElement.innerHTML='<span>URL inválida</span>'">`
+      : '<span>Pré-visualização da imagem</span>';
+  }
+
+  function previewImgFile() {
+    const file = document.getElementById('f-image-file').files[0];
+    const div  = document.getElementById('img-preview');
+    if (!file) { div.innerHTML = '<span>Pré-visualização da imagem</span>'; return; }
+
+    const err = StorageModule.validateFile(file);
+    if (err) {
+      div.innerHTML = `<span style="color:var(--danger)">${escapeHTML(err)}</span>`;
+      document.getElementById('f-image-file').value = '';
+      showToast(err, 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => div.innerHTML = `<img src="${escapeHTML(e.target.result)}" alt="preview">`;
+    reader.readAsDataURL(file);
+  }
+
+  function previewImgFile2() {
+    const file = document.getElementById('f-image-file-2').files[0];
+    const div  = document.getElementById('img-preview-2');
+    if (!file) { div.innerHTML = '<span>Preview</span>'; return; }
+
+    const err = StorageModule.validateFile(file);
+    if (err) {
+      div.innerHTML = `<span style="color:var(--danger)">${escapeHTML(err)}</span>`;
+      document.getElementById('f-image-file-2').value = '';
+      showToast(err, 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => div.innerHTML = `<img src="${escapeHTML(e.target.result)}" alt="preview" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">`;
+    reader.readAsDataURL(file);
+  }
+
+  function previewImgFile3() {
+    const file = document.getElementById('f-image-file-3').files[0];
+    const div  = document.getElementById('img-preview-3');
+    if (!file) { div.innerHTML = '<span>Preview</span>'; return; }
+
+    const err = StorageModule.validateFile(file);
+    if (err) {
+      div.innerHTML = `<span style="color:var(--danger)">${escapeHTML(err)}</span>`;
+      document.getElementById('f-image-file-3').value = '';
+      showToast(err, 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => div.innerHTML = `<img src="${escapeHTML(e.target.result)}" alt="preview" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">`;
+    reader.readAsDataURL(file);
+  }
+
+  function previewImg2() {
+    const url = document.getElementById('f-image-2').value.trim();
+    const div = document.getElementById('img-preview-2');
+    div.innerHTML = url
+      ? `<img src="${escapeHTML(url)}" onerror="this.parentElement.innerHTML='<span>URL inválida</span>'" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">`
+      : '<span>Preview</span>';
+  }
+
+  function previewImg3() {
+    const url = document.getElementById('f-image-3').value.trim();
+    const div = document.getElementById('img-preview-3');
+    div.innerHTML = url
+      ? `<img src="${escapeHTML(url)}" onerror="this.parentElement.innerHTML='<span>URL inválida</span>'" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius);">`
+      : '<span>Preview</span>';
+  }
+
+  async function saveProduct() {
+    const btn = document.getElementById('save-btn');
+    UIComponents.setLoading(btn, true, 'Salvar Produto');
+
+    try {
+      const promoVal = document.getElementById('f-promo-price').value;
+      let imageUrl = document.getElementById('f-image').value.trim();
+
+      if (imgSource === 'upload') {
+        const file = document.getElementById('f-image-file').files[0];
+        if (file) {
+          const fileErr = StorageModule.validateFile(file);
+          if (fileErr) {
+            showToast(fileErr, 'error');
+            UIComponents.setLoading(btn, false, 'Salvar Produto');
+            return;
+          }
+
+          const progressWrap = document.getElementById('upload-progress');
+          const progressBar  = document.getElementById('upload-bar');
+          const progressLbl  = document.getElementById('upload-label');
+          if (progressWrap) progressWrap.style.display = 'block';
+
+          showToast('Comprimindo e enviando imagem...', 'info');
+          imageUrl = await StorageModule.uploadImage(file, storeId(), (pct) => {
+            if (progressBar) progressBar.style.width = pct + '%';
+            if (progressLbl) progressLbl.textContent = pct + '%';
+          });
+
+          if (progressWrap) progressWrap.style.display = 'none';
+          showToast('Imagem enviada!', 'success');
+        }
+      }
+
+      let imageUrl2 = document.getElementById('f-image-2').value.trim();
+      if (imgSource2 === 'upload') {
+        const file = document.getElementById('f-image-file-2').files[0];
+        if (file) {
+          const fileErr = StorageModule.validateFile(file);
+          if (fileErr) {
+            showToast(fileErr, 'error');
+            UIComponents.setLoading(btn, false, 'Salvar Produto');
+            return;
+          }
+
+          const progressWrap = document.getElementById('upload-progress-2');
+          const progressBar  = document.getElementById('upload-bar-2');
+          const progressLbl  = document.getElementById('upload-label-2');
+          if (progressWrap) progressWrap.style.display = 'block';
+
+          showToast('Comprimindo e enviando imagem 2...', 'info');
+          imageUrl2 = await StorageModule.uploadImage(file, storeId(), (pct) => {
+            if (progressBar) progressBar.style.width = pct + '%';
+            if (progressLbl) progressLbl.textContent = pct + '%';
+          });
+
+          if (progressWrap) progressWrap.style.display = 'none';
+          showToast('Imagem 2 enviada!', 'success');
+        }
+      }
+
+      let imageUrl3 = document.getElementById('f-image-3').value.trim();
+      if (imgSource3 === 'upload') {
+        const file = document.getElementById('f-image-file-3').files[0];
+        if (file) {
+          const fileErr = StorageModule.validateFile(file);
+          if (fileErr) {
+            showToast(fileErr, 'error');
+            UIComponents.setLoading(btn, false, 'Salvar Produto');
+            return;
+          }
+
+          const progressWrap = document.getElementById('upload-progress-3');
+          const progressBar  = document.getElementById('upload-bar-3');
+          const progressLbl  = document.getElementById('upload-label-3');
+          if (progressWrap) progressWrap.style.display = 'block';
+
+          showToast('Comprimindo e enviando imagem 3...', 'info');
+          imageUrl3 = await StorageModule.uploadImage(file, storeId(), (pct) => {
+            if (progressBar) progressBar.style.width = pct + '%';
+            if (progressLbl) progressLbl.textContent = pct + '%';
+          });
+
+          if (progressWrap) progressWrap.style.display = 'none';
+          showToast('Imagem 3 enviada!', 'success');
+        }
+      }
+
+      const data = {
+        name:       document.getElementById('f-name').value.trim(),
+        category:   document.getElementById('f-cat').value.trim(),
+        price:      parseFloat(document.getElementById('f-price').value),
+        promo_price: promoVal ? parseFloat(promoVal) : null,
+        unit:       document.getElementById('f-unit').value,
+        active:     document.getElementById('f-active').value === '1',
+        image:      imageUrl,
+        description: document.getElementById('f-description').value.trim(),
+        image_url_2: imageUrl2 || null,
+        image_url_3: imageUrl3 || null,
+        // Fashion fields (salvos sempre; ignorados em lojas não-fashion no front)
+        brand:  document.getElementById('f-brand').value.trim()  || null,
+        gender: document.getElementById('f-gender').value        || null,
+        color:  document.getElementById('f-color').value.trim()  || null,
+        size:   document.getElementById('f-size').value.trim()   || null,
+      };
+
+      let errors = [];
+      if (editingId) {
+        const res = await ProductsModule.update(editingId, data);
+        errors = res.errors || [];
+        if (res.success) { 
+          showToast('Produto atualizado!', 'success'); 
+          closeModal(); 
+          await renderProducts(); 
+        }
+      } else {
+        const res = await ProductsModule.create(storeId(), data);
+        errors = res.errors || [];
+        if (res.success && !errors.length) { 
+          showToast('Produto adicionado!', 'success'); 
+          closeModal(); 
+          await renderProducts(); 
+          await loadCategories(); 
+        }
+      }
+
+      if (errors.length) {
+        const errEl = document.getElementById('form-errors');
+        errEl.innerHTML = errors.map(e => `• ${escapeHTML(e)}`).join('<br>');
+        errEl.style.display = 'block';
+      }
+    } catch (err) {
+      console.error("Erro ao salvar produto:", err);
+      showToast('Ocorreu um erro ao salvar o produto.', 'error');
+    } finally {
+      UIComponents.setLoading(btn, false, 'Salvar Produto');
+    }
+  }
+
+  function editProduct(id)  { openModal(id); }
+
+  async function toggleActive(id, current) {
+    await ProductsModule.toggleActive(id, current);
+    await renderProducts();
+    showToast(!current ? 'Produto ativado!' : 'Produto desativado.', 'info');
+  }
+
+  async function deleteProduct(id) {
+    if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+    await ProductsModule.remove(id);
+    await renderProducts();
+    showToast('Produto excluído.', 'info');
+  }
+
+  initAdmin();
+</script>
+</body>
+</html>

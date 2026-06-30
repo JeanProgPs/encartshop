@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedidos — EncartShop</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/assets/output.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    .filter-bar { display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center; }
+    .filter-tab { padding:8px 16px;border-radius:99px;font-size:0.82rem;font-weight:600;cursor:pointer;transition:var(--transition);border:1.5px solid var(--border-color);background:var(--bg-primary);color:var(--text-secondary); }
+    .filter-tab:hover  { border-color:var(--text-primary);color:var(--text-primary); }
+    .filter-tab.active { background:var(--text-primary);border-color:var(--text-primary);color:#fff; }
+    .filter-tab .count { display:inline-block;background:rgba(255,255,255,0.2);border-radius:99px;padding:1px 7px;font-size:0.72rem;margin-left:6px; }
+
+    @keyframes order-glow {
+      0%   { border-color:var(--accent);  box-shadow:0 0 0 0 rgba(0,0,0,0.1); }
+      50%  { border-color:var(--success); box-shadow:0 0 15px 4px rgba(16,185,129,0.2); }
+      100% { border-color:var(--border-color); box-shadow:0 0 0 0 transparent; }
+    }
+    .order-highlight { animation:order-glow 3s ease-in-out; border-width:1.5px !important; }
+
+    .fade-in-up { animation:fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards; opacity:0; transform:translateY(10px); }
+    @keyframes fadeInUp { to { opacity:1; transform:translateY(0); } }
+
+    .hover-scale { transition:transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s ease; }
+    .hover-scale:hover { transform:translateY(-2px); box-shadow:var(--shadow-lg); }
+
+    /* Search bar */
+    #order-search-input:focus,
+    #order-date-input:focus { border-color:var(--accent); outline:none; }
+  </style>
+</head>
+<body data-page="pedidos" class="bg-bgPrimary text-textPrimary antialiased selection:bg-accent selection:text-white">
+
+<div class="admin-layout flex min-h-screen">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content flex-1 ml-0 md:ml-[256px] flex flex-col min-h-screen transition-all duration-300">
+    
+    <header class="h-[64px] bg-cardBg/80 backdrop-blur-md border-b border-borderColor sticky top-0 z-50 px-4 md:px-8 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <h2 class="text-sm font-semibold text-textPrimary leading-tight hidden md:block">Pedidos</h2>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="new-orders-badge" class="px-2.5 py-1 text-xs font-bold bg-info/10 text-info border border-info/20 rounded-full" style="display:none;"></span>
+        <button class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-bgPrimary transition-colors relative">
+          <i data-lucide="bell" class="w-5 h-5 text-textSecondary"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="flex-1 p-4 md:p-8 flex flex-col gap-4 max-w-[1000px] w-full mx-auto fade-in-up">
+
+      <!-- Filtros de status -->
+      <div class="filter-bar" id="filter-bar">
+        <button class="filter-tab active" data-filter="all" onclick="setFilter('all',this)">
+          Todos <span class="count" id="cnt-all">0</span>
+        </button>
+        <button class="filter-tab" data-filter="novo" onclick="setFilter('novo',this)">
+          Novos <span class="count" id="cnt-novo">0</span>
+        </button>
+        <button class="filter-tab" data-filter="confirmado" onclick="setFilter('confirmado',this)">
+          Confirmados <span class="count" id="cnt-confirmado">0</span>
+        </button>
+        <button class="filter-tab" data-filter="em_entrega" onclick="setFilter('em_entrega',this)">
+          Em Entrega <span class="count" id="cnt-em_entrega">0</span>
+        </button>
+        <button class="filter-tab" data-filter="finalizado" onclick="setFilter('finalizado',this)">
+          Finalizados <span class="count" id="cnt-finalizado">0</span>
+        </button>
+        <button class="filter-tab" data-filter="cancelado" onclick="setFilter('cancelado',this)">
+          Cancelados <span class="count" id="cnt-cancelado">0</span>
+        </button>
+      </div>
+
+      <!-- Barra de Busca e Data -->
+      <div class="flex flex-col sm:flex-row gap-3 bg-cardBg border border-borderColor rounded-xl p-4">
+        <!-- Busca por nome / número -->
+        <div class="flex-1 relative flex items-center">
+          <i data-lucide="search" class="w-4 h-4 text-textSecondary absolute left-3 pointer-events-none"></i>
+          <input
+            type="text"
+            id="order-search-input"
+            autocomplete="off"
+            placeholder="Buscar por cliente ou número do pedido..."
+            class="w-full bg-bgPrimary border border-borderColor rounded-lg pl-9 pr-4 py-2 text-sm text-textPrimary transition-colors">
+        </div>
+        <!-- Filtro por data -->
+        <div class="relative flex items-center">
+          <i data-lucide="calendar" class="w-4 h-4 text-textSecondary absolute left-3 pointer-events-none"></i>
+          <input
+            type="date"
+            id="order-date-input"
+            class="bg-bgPrimary border border-borderColor rounded-lg pl-9 pr-4 py-2 text-sm text-textPrimary transition-colors min-w-[170px]">
+        </div>
+        <!-- Filtro por pagamento online -->
+        <div class="relative flex items-center">
+          <i data-lucide="credit-card" class="w-4 h-4 text-textSecondary absolute left-3 pointer-events-none"></i>
+          <select
+            id="payment-filter-select"
+            onchange="setPaymentFilter(this.value)"
+            class="bg-bgPrimary border border-borderColor rounded-lg pl-9 pr-4 py-2 text-sm text-textPrimary transition-colors appearance-none min-w-[150px] focus:outline-none focus:border-accent"
+            style="background-image:url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e\");background-repeat:no-repeat;background-position:right 8px center;background-size:14px;">
+            <option value="all">Pagamento: Todos</option>
+            <option value="paid">PIX Pago</option>
+            <option value="pending">Aguardando PIX</option>
+            <option value="overdue">PIX Expirado</option>
+            <option value="cancelled">PIX Cancelado</option>
+            <option value="refunded">PIX Estornado</option>
+          </select>
+        </div>
+        <!-- Limpar filtros (sempre visível, desabilitado quando sem filtro) -->
+        <button
+          id="clear-filters-btn"
+          onclick="clearSearchFilters()"
+          disabled
+          class="flex items-center gap-2 px-4 py-2 bg-bgPrimary border border-borderColor text-textSecondary rounded-lg text-sm font-medium transition-colors opacity-40 cursor-not-allowed hover:bg-borderColor">
+          <i data-lucide="x-circle" class="w-4 h-4"></i>
+          Limpar filtros
+        </button>
+      </div>
+
+      <div id="orders-list" class="flex flex-col gap-4"></div>
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/supabase.js"></script>
+<script src="/js/core/helpers.js"></script>
+<script src="/js/core/supabaseClient.js"></script>
+<script src="/js/core/api.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="/js/modules/subscription.js"></script>
+<script src="/js/auth/authGuard.js"></script>
+<script src="/js/modules/store.js"></script>
+<script src="/js/modules/orders.js"></script>
+<script src="/js/ui/components.js"></script>
+<script src="/js/ui/render.js"></script>
+<script src="/js/storage.js"></script>
+<script src="/js/admin-common.js"></script>
+<script>
+  lucide.createIcons();
+
+  let currentFilter  = 'all';
+  let allOrders      = [];
+  let paymentMap     = new Map();   // orderId → resumo financeiro (anti N+1)
+  let searchText     = '';
+  let searchDate     = '';
+  let paymentFilter  = 'all';       // filtro financeiro: all | paid | pending | overdue | cancelled | refunded
+  let listenersReady = false;
+
+  const storeId = () => AuthService.getActiveStoreId();
+
+  // ── Listeners de busca (inicializados APÓS carga dos pedidos) ──────────
+  function initSearchListeners() {
+    if (listenersReady) return;
+    listenersReady = true;
+
+    document.getElementById('order-search-input').addEventListener('input', (e) => {
+      searchText = e.target.value.toLowerCase().trim();
+      updateClearBtn();
+      renderOrderList();
+    });
+
+    document.getElementById('order-date-input').addEventListener('change', (e) => {
+      searchDate = e.target.value;
+      updateClearBtn();
+      renderOrderList();
+    });
+
+    document.getElementById('payment-filter-select')?.addEventListener('change', (e) => {
+      setPaymentFilter(e.target.value);
+    });
+  }
+
+  function setPaymentFilter(value) {
+    paymentFilter = value || 'all';
+    updateClearBtn();
+    renderOrderList();
+  }
+
+  function updateClearBtn() {
+    const btn = document.getElementById('clear-filters-btn');
+    if (!btn) return;
+    const active = !!(searchText || searchDate || paymentFilter !== 'all');
+    btn.disabled = !active;
+    btn.classList.toggle('opacity-40',         !active);
+    btn.classList.toggle('cursor-not-allowed', !active);
+  }
+
+  window.clearSearchFilters = function() {
+    searchText    = '';
+    searchDate    = '';
+    paymentFilter = 'all';
+    const si = document.getElementById('order-search-input');
+    const di = document.getElementById('order-date-input');
+    const pf = document.getElementById('payment-filter-select');
+    if (si) si.value = '';
+    if (di) di.value = '';
+    if (pf) pf.value = 'all';
+    updateClearBtn();
+    renderOrderList();
+  };
+
+  // ── Init ───────────────────────────────────────────────────────────────
+  async function initAdmin() {
+    document.getElementById('orders-list').innerHTML =
+      Array.from({length: 3}).map(() =>
+        `<div class="h-32 bg-cardBg border border-borderColor rounded-xl animate-pulse"></div>`
+      ).join('');
+
+    try {
+      await renderOrders();
+
+      // Só liga listeners depois que os pedidos já estão carregados
+      initSearchListeners();
+
+      // Verifica ?ref= na URL para destacar pedido específico
+      const searchRef = new URLSearchParams(window.location.search).get('ref');
+      if (searchRef) {
+        const refUpper     = searchRef.toUpperCase();
+        const matchedOrder = allOrders.find(o => {
+          const nameMatch = o.customer_name && o.customer_name.toUpperCase().includes(`#${refUpper}`);
+          const idMatch   = o.id && String(o.id).toUpperCase().endsWith(refUpper);
+          return nameMatch || idMatch;
+        });
+
+        if (matchedOrder) {
+          currentFilter = 'all';
+          document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+          document.querySelector('.filter-tab[data-filter="all"]')?.classList.add('active');
+          renderOrderList();
+          setTimeout(() => {
+            const card = document.getElementById(`order-${matchedOrder.id}`);
+            if (card) {
+              card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              card.classList.add('order-highlight');
+              if (window.showToast) showToast(`Pedido #${searchRef} localizado!`, 'success');
+            }
+          }, 400);
+        } else {
+          if (window.showToast) showToast(`Pedido #${searchRef} não encontrado.`, 'warning');
+        }
+      }
+    } catch (err) {
+      console.error('[Pedidos] Erro ao carregar:', err);
+      document.getElementById('orders-list').innerHTML =
+        UIRender.emptyState('⚠️', 'Erro ao carregar pedidos', 'Tente recarregar a página.');
+      if (window.showToast) showToast('Erro ao carregar pedidos.', 'error');
+    }
+  }
+
+  // ── Filtro de status ───────────────────────────────────────────────────
+  function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderOrderList();
+  }
+
+  // ── Busca e renderização ───────────────────────────────────────────────
+  async function renderOrders() {
+    allOrders = await OrdersModule.getAll(storeId());
+
+    // Carrega status financeiro em lote — UMA query para todos os pedidos (anti N+1)
+    const orderIds = allOrders.map(o => o.id).filter(Boolean);
+    paymentMap = await EncartAPI.OrderPaymentAPI.getSummaryByOrders(storeId(), orderIds);
+
+    updateCounts();
+    renderOrderList();
+  }
+
+  function updateCounts() {
+    const counts = OrdersModule.countByStatus(allOrders);
+    document.getElementById('cnt-all').textContent        = counts.all        || 0;
+    document.getElementById('cnt-novo').textContent       = counts.novo       || 0;
+    document.getElementById('cnt-confirmado').textContent = counts.confirmado  || 0;
+    document.getElementById('cnt-em_entrega').textContent = counts.em_entrega  || 0;
+    document.getElementById('cnt-finalizado').textContent = counts.finalizado  || 0;
+    document.getElementById('cnt-cancelado').textContent  = counts.cancelado   || 0;
+
+    const badge = document.getElementById('new-orders-badge');
+    if (counts.novo > 0) { badge.textContent = `${counts.novo} novo(s)`; badge.style.display = ''; }
+    else badge.style.display = 'none';
+  }
+
+  function renderOrderList() {
+    const list = document.getElementById('orders-list');
+    if (!list) return;
+
+    // 1. Filtra por status operacional
+    let filtered = OrdersModule.filter(allOrders, currentFilter);
+
+    // 2. Filtra por texto (nome ou ID do pedido)
+    if (searchText) {
+      filtered = filtered.filter(o => {
+        const nameMatch = o.customer_name && o.customer_name.toLowerCase().includes(searchText);
+        const numMatch  = o.id && String(o.id).toLowerCase().includes(searchText);
+        return nameMatch || numMatch;
+      });
+    }
+
+    // 3. Filtra por data
+    if (searchDate) {
+      filtered = filtered.filter(o => {
+        if (!o.created_at) return false;
+        return o.created_at.split('T')[0] === searchDate;
+      });
+    }
+
+    // 4. Filtra por status financeiro (exclusivamente via order_payments)
+    if (paymentFilter !== 'all') {
+      const PM_STATUS_MAP = {
+        paid:      ['confirmed'],
+        pending:   ['pending'],
+        overdue:   ['expired'],
+        cancelled: ['cancelled'],
+        refunded:  ['refunded'],
+      };
+      const allowedStatuses = PM_STATUS_MAP[paymentFilter] || [];
+      filtered = filtered.filter(o => {
+        const pm = paymentMap.get(o.id);
+        return pm && allowedStatuses.includes(pm.status);
+      });
+    }
+
+    if (!filtered.length) {
+      const hasFilter = searchText || searchDate || paymentFilter !== 'all';
+      list.innerHTML = hasFilter
+        ? UIRender.emptyState('🔍', 'Nenhum pedido encontrado', 'Tente ajustar os termos de busca ou limpar os filtros.')
+        : UIRender.emptyState('🛒', 'Nenhum pedido', 'Os pedidos aparecerão aqui assim que os clientes finalizarem pelo WhatsApp.');
+      return;
+    }
+
+    list.innerHTML = filtered.map(o => UIRender.orderAdminCard(o, paymentMap.get(o.id) ?? null)).join('');
+    setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
+  }
+
+  // ── Ações ──────────────────────────────────────────────────────────────
+  async function handleOrderStatus(btn) {
+    const orderId       = btn.dataset.orderId;
+    const currentStatus = btn.dataset.currentStatus;
+    const newStatus     = btn.dataset.newStatus;
+
+    const { success, error } = await OrdersModule.updateStatus(orderId, currentStatus, newStatus);
+    if (success) {
+      showToast(`Status atualizado: ${OrdersModule.getStatusLabel(newStatus)}`, 'success');
+      await renderOrders();
+    } else {
+      showToast(error || 'Falha ao atualizar status.', 'error');
+    }
+  }
+
+  async function handleDeleteOrder(id) {
+    if (!confirm('Excluir este pedido?')) return;
+    await OrdersModule.remove(id);
+    await renderOrders();
+    showToast('Pedido excluído.', 'info');
+  }
+
+  // ── Impressão de cupom ─────────────────────────────────────────────────
+  window.handlePrintOrder = function(id) {
+    const o = allOrders.find(order => order.id === id);
+    if (!o) return;
+
+    const printWindow = window.open('', '_blank', 'width=600,height=800');
+    if (!printWindow) {
+      showToast('Permita popups para imprimir o pedido.', 'warning');
+      return;
+    }
+
+    const itemsHtml = (o.items || []).map(item => `
+      <tr>
+        <td style="padding:6px 0;font-size:14px;">${item.qty || item.quantity}x ${item.name}</td>
+        <td style="padding:6px 0;text-align:right;font-size:14px;">${UIRender.fmtPrice(item.price * (item.qty || item.quantity))}</td>
+      </tr>`).join('');
+
+    const dateStr     = new Date(o.created_at).toLocaleString('pt-BR');
+    const isCombine   = o.delivery_fee === -1;
+    const deliveryFee = isCombine ? 0 : (Number(o.delivery_fee) || 0);
+    const subtotal    = (o.items || []).reduce((s, i) => s + i.price * (i.qty || i.quantity), 0);
+    const total       = subtotal + deliveryFee;
+
+    printWindow.document.write(`<!DOCTYPE html><html><head>
+      <title>Pedido #${String(o.id).slice(-5).toUpperCase()}</title>
+      <style>
+        body{font-family:'Courier New',Courier,monospace;margin:20px;color:#000;background:#fff;}
+        .receipt{max-width:400px;margin:0 auto;}
+        .header{text-align:center;margin-bottom:20px;border-bottom:1px dashed #000;padding-bottom:10px;}
+        .title{font-size:18px;font-weight:bold;margin:5px 0;}
+        .info{font-size:12px;margin:3px 0;}
+        table{width:100%;border-collapse:collapse;margin:15px 0;border-bottom:1px dashed #000;}
+        th{padding-bottom:5px;font-size:12px;}th:first-child{text-align:left;}th:last-child{text-align:right;}
+        .totals{font-size:14px;margin-top:10px;}
+        .total-row{display:flex;justify-content:space-between;margin:4px 0;}
+        .total-bold{font-weight:bold;border-top:1px dashed #000;padding-top:6px;font-size:16px;}
+        .footer{text-align:center;margin-top:30px;font-size:11px;border-top:1px dashed #000;padding-top:10px;}
+        @media print{body{margin:0;}.receipt{max-width:100%;}}
+      </style></head><body>
+      <div class="receipt">
+        <div class="header">
+          <div class="title">EncartShop</div>
+          <div class="info">PEDIDO #${String(o.id).slice(-5).toUpperCase()}</div>
+          <div class="info">Data: ${dateStr}</div>
+        </div>
+        <div class="info"><strong>Cliente:</strong> ${o.customer_name || 'Não informado'}</div>
+        <table>
+          <thead><tr><th>Item</th><th>Total</th></tr></thead>
+          <tbody>${itemsHtml}</tbody>
+        </table>
+        <div class="totals">
+          <div class="total-row"><span>Subtotal:</span><span>${UIRender.fmtPrice(subtotal)}</span></div>
+          <div class="total-row"><span>Entrega:</span><span>${isCombine ? 'A combinar' : UIRender.fmtPrice(deliveryFee)}</span></div>
+          <div class="total-row total-bold"><span>TOTAL:</span><span>${UIRender.fmtPrice(total)}</span></div>
+        </div>
+        <div class="footer">Obrigado pela preferência!</div>
+      </div>
+      <script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<\/script>
+    </body></html>`);
+    printWindow.document.close();
+  };
+
+  initAdmin();
+
+  // ── Realtime: atualização automática do status financeiro ─────────────
+  //
+  // Ouve mudanças na tabela order_payments para o store atual.
+  // Quando o webhook do Asaas confirma um PIX, o Supabase propaga
+  // o UPDATE via postgres_changes → o badge do card é atualizado
+  // no DOM sem recarregar a página.
+  //
+  // Estratégia cirúrgica (anti N+1):
+  //   • Atualiza apenas o card afetado no DOM
+  //   • Atualiza paymentMap em memória
+  //   • Não re-renderiza a lista inteira
+  //   • Não faz nova query ao banco
+  //
+  // Compatibilidade:
+  //   • Lojas sem pagamento online: canal não recebe eventos (sem order_payments)
+  //   • Pedidos WhatsApp: sem order_payment associado → sem eventos
+  (function initRealtime() {
+    const sid = storeId();
+    if (!sid || !window.sb) return;
+
+    // Configura o canal filtrando pelo store_id — RLS garante isolamento,
+    // mas o filtro no canal reduz tráfego desnecessário
+    const channel = window.sb
+      .channel(`order-payments-${sid}`)
+      .on(
+        'postgres_changes',
+        {
+          event:  'UPDATE',
+          schema: 'public',
+          table:  'order_payments',
+          filter: `store_id=eq.${sid}`,
+        },
+        (payload) => {
+          const updated = payload.new;
+          if (!updated || !updated.order_id) return;
+
+          // 1. Atualiza paymentMap em memória
+          const existing = paymentMap.get(updated.order_id) || {};
+          paymentMap.set(updated.order_id, {
+            ...existing,
+            id:                 updated.id,
+            status:             updated.status,
+            billing_type:       updated.billing_type,
+            amount:             updated.amount,
+            paid_at:            updated.paid_at,
+            gateway:            updated.gateway,
+            gateway_payment_id: updated.gateway_payment_id,
+          });
+
+          // 2. Tenta atualizar o card específico no DOM (se estiver visível)
+          _patchOrderCard(updated.order_id);
+
+          // 3. Toast informativo apenas na confirmação
+          if (updated.status === 'confirmed') {
+            if (window.showToast) showToast('💠 PIX confirmado! Pagamento recebido.', 'success');
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.info('[Pedidos] Realtime conectado — monitorando pagamentos PIX.');
+        }
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[Pedidos] Realtime: falha na conexão. Badges atualizarão ao recarregar.');
+        }
+      });
+
+    // Limpeza ao sair da página (evita vazamento de subscriptions)
+    window.addEventListener('beforeunload', () => {
+      try { window.sb.removeChannel(channel); } catch { /* silencioso */ }
+    });
+  })();
+
+  /**
+   * Atualiza cirurgicamente o badge e o detalhe financeiro
+   * de um card específico no DOM, sem re-renderizar a lista.
+   *
+   * @param {string} orderId - UUID do pedido cujo card deve ser atualizado
+   */
+  function _patchOrderCard(orderId) {
+    const card = document.getElementById(`order-${orderId}`);
+    if (!card) return; // card não está visível no filtro atual — sem ação
+
+    const summary = paymentMap.get(orderId) ?? null;
+
+    // Atualiza o badge (span com data-order-payment-badge)
+    const badgeEl = card.querySelector('[data-order-payment-badge]');
+    const newBadgeHtml = UIRender.paymentBadge(summary);
+
+    if (badgeEl) {
+      // Substitui o badge existente
+      const wrapper = document.createElement('span');
+      wrapper.innerHTML = newBadgeHtml;
+      const newBadge = wrapper.firstElementChild;
+      if (newBadge) badgeEl.replaceWith(newBadge);
+      else badgeEl.remove();
+    } else if (newBadgeHtml) {
+      // Badge novo — insere após o span #XXXXX existente
+      const refSpan = card.querySelector('span.font-mono');
+      if (refSpan) {
+        const wrapper = document.createElement('span');
+        wrapper.innerHTML = newBadgeHtml;
+        const newBadge = wrapper.firstElementChild;
+        if (newBadge) refSpan.insertAdjacentElement('afterend', newBadge);
+      }
+    }
+
+    // Atualiza o bloco de detalhe financeiro
+    // O bloco tem class bg-success/5 e está entre os itens e as ações
+    const detailEl = card.querySelector('.bg-success\\/5');
+    const newDetailHtml = UIRender.paymentDetail(summary);
+
+    if (detailEl) {
+      if (newDetailHtml) {
+        detailEl.outerHTML = newDetailHtml;
+      } else {
+        detailEl.remove();
+      }
+    } else if (newDetailHtml) {
+      // Injeta antes do último border-t (bloco de ações)
+      const actionsBlock = card.querySelector('.border-t.border-borderColor.pt-4.mt-2');
+      if (actionsBlock) {
+        actionsBlock.insertAdjacentHTML('beforebegin', newDetailHtml);
+      }
+    }
+  }
+</script>
+</body>
+</html>

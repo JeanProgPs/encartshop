@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações — EncartShop</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/assets/output.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    .fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(10px); }
+    @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+
+    /* Switch Moderno */
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background-color: var(--border-color); transition: .2s ease; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .2s ease; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--success, #10b981); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* File Upload Overlay */
+    .logo-upload-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; opacity: 0; transition: opacity 0.2s ease;
+      color: #fff; font-size: 0.7rem; font-weight: 700; flex-direction: column; gap: 4px;
+    }
+    .logo-preview-circle:hover .logo-upload-overlay { opacity: 1; }
+  </style>
+</head>
+<body data-page="configuracoes" class="bg-bgPrimary text-textPrimary antialiased selection:bg-accent selection:text-white">
+
+<div class="admin-layout flex min-h-screen">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content flex-1 ml-0 md:ml-[256px] flex flex-col min-h-screen transition-all duration-300">
+    
+    <header class="h-[64px] bg-cardBg/80 backdrop-blur-md border-b border-borderColor sticky top-0 z-50 px-4 md:px-8 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <h2 class="text-sm font-semibold text-textPrimary leading-tight hidden md:block">Configurações</h2>
+      </div>
+      <div class="flex items-center gap-3">
+        <button class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-bgPrimary transition-colors relative">
+          <i data-lucide="bell" class="w-5 h-5 text-textSecondary"></i>
+        </button>
+        <button onclick="saveAll()" class="flex items-center gap-2 bg-textPrimary text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-black transition-colors">
+          <i data-lucide="save" class="w-4 h-4"></i> Salvar
+        </button>
+      </div>
+    </header>
+
+    <div class="flex-1 p-4 md:p-8 flex flex-col gap-6 max-w-[800px] w-full mx-auto fade-in-up">
+      
+      <!-- Link da Loja -->
+      <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm">
+        <div class="flex items-center gap-2 mb-1">
+          <i data-lucide="link" class="w-5 h-5 text-textPrimary"></i>
+          <h3 class="text-base font-semibold text-textPrimary">Link da sua Loja</h3>
+        </div>
+        <p class="text-sm text-textSecondary mb-4">Compartilhe este link com seus clientes no WhatsApp e redes sociais.</p>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-bgPrimary border border-borderColor rounded-lg p-3">
+          <span id="loja-link" class="text-sm font-medium text-accent break-all cursor-pointer">Carregando...</span>
+          <button onclick="copyLink()" class="flex items-center justify-center gap-2 px-3 py-1.5 border border-borderColor rounded-md text-xs font-semibold hover:bg-cardBg transition-colors flex-shrink-0">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+          </button>
+        </div>
+      </div>
+
+      <!-- Identidade Visual -->
+      <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm">
+        <div class="flex items-center gap-2 mb-1">
+          <i data-lucide="image" class="w-5 h-5 text-textPrimary"></i>
+          <h3 class="text-base font-semibold text-textPrimary">Identidade Visual</h3>
+        </div>
+        <p class="text-sm text-textSecondary mb-6">Faça upload da logo da sua loja. Ela aparecerá no header da vitrine pública.</p>
+        
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+          <div class="logo-preview-circle w-24 h-24 rounded-full bg-bgPrimary border-2 border-dashed border-borderColor flex items-center justify-center overflow-hidden flex-shrink-0 relative cursor-pointer group" id="logo-circle" onclick="document.getElementById('logo-file-input').click()">
+            <img id="logo-preview-img" src="" alt="Logo da loja" class="w-full h-full object-cover" style="display:none;">
+            <span class="logo-placeholder text-2xl font-bold text-textSecondary" id="logo-placeholder">?</span>
+            <div class="logo-upload-overlay group-hover:opacity-100">
+              <i data-lucide="camera" class="w-5 h-5 mb-1"></i> Trocar
+            </div>
+          </div>
+          
+          <div class="flex-1 flex flex-col gap-3">
+            <input type="file" id="logo-file-input" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="handleLogoSelect(event)">
+            <button onclick="document.getElementById('logo-file-input').click()" class="w-max px-4 py-2 border border-borderColor rounded-lg text-sm font-medium hover:bg-bgPrimary transition-colors flex items-center gap-2">
+              <i data-lucide="upload" class="w-4 h-4"></i> Escolher Logo
+            </button>
+            <div id="logo-progress-wrap" class="hidden items-center gap-3 w-full max-w-xs">
+              <div class="flex-1 h-1.5 bg-bgPrimary rounded-full overflow-hidden">
+                <div id="logo-progress-fill" class="h-full bg-accent transition-all w-0"></div>
+              </div>
+              <span id="logo-progress-pct" class="text-xs text-textSecondary">0%</span>
+            </div>
+            <div id="logo-status" class="text-xs text-textSecondary">JPG, PNG ou WEBP • Máx. 5 MB</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Informações da Loja -->
+      <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm">
+        <div class="flex items-center gap-2 mb-1">
+          <i data-lucide="store" class="w-5 h-5 text-textPrimary"></i>
+          <h3 class="text-base font-semibold text-textPrimary">Informações da Loja</h3>
+        </div>
+        <p class="text-sm text-textSecondary mb-6">Nome, slogan e endereço que aparecerão na loja para seus clientes.</p>
+        
+        <div class="flex flex-col gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-textPrimary">Nome da Loja <span class="text-danger">*</span></label>
+              <input id="s-name" type="text" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Ex: Boutique Elegance">
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-textPrimary">Slogan</label>
+              <input id="s-slogan" type="text" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Ex: Sua loja de confiança!">
+            </div>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-textPrimary">Endereço</label>
+            <input id="s-address" type="text" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Rua das Flores, 123 - Centro">
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-textPrimary">Horário de Funcionamento</label>
+            <input id="s-hours" type="text" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Seg–Sáb: 7h às 20h | Dom: 8h às 14h">
+          </div>
+          <div class="flex flex-col gap-1.5" id="banner-text-container">
+            <label class="text-sm font-medium text-textPrimary">Texto do Banner Promocional</label>
+            <input id="s-banner" type="text" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="🔥 Promoções da semana! Aproveite!">
+            <div id="banner-json-notice" style="display:none;" class="text-xs text-accent mt-1">Sua loja possui campanhas com imagens ativas. Gerencie na aba Promoções.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEO da Loja -->
+      <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm">
+        <div class="flex items-center gap-2 mb-1">
+          <i data-lucide="settings" class="w-5 h-5 text-textPrimary"></i>
+          <h3 class="text-base font-semibold text-textPrimary">SEO da Loja</h3>
+        </div>
+        <p class="text-sm text-textSecondary mb-6">Configure o título, descrição e palavras-chave que serão usados no Google, WhatsApp e redes sociais.</p>
+
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-textPrimary">Título SEO</label>
+            <input id="s-seo-title" type="text" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Ex: Moda Feminina Bella | Loja Online">
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-textPrimary">Descrição SEO</label>
+            <textarea id="s-seo-description" rows="3" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Ex: Compre roupas, acessórios e novidades na Moda Feminina Bella."></textarea>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-textPrimary">Palavras-chave</label>
+            <input id="s-seo-keywords" type="text" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Ex: moda feminina, loja online, entrega rápida">
+          </div>
+        </div>
+      </div>
+
+      <!-- WhatsApp -->
+      <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm">
+        <div class="flex items-center gap-2 mb-1">
+          <i data-lucide="message-circle" class="w-5 h-5 text-textPrimary"></i>
+          <h3 class="text-base font-semibold text-textPrimary">WhatsApp para Pedidos</h3>
+        </div>
+        <p class="text-sm text-textSecondary mb-6">Número que receberá os pedidos dos clientes. Use o formato internacional sem espaços.</p>
+        
+        <div class="flex flex-col gap-1.5 max-w-sm">
+          <label class="text-sm font-medium text-textPrimary">Número do WhatsApp <span class="text-danger">*</span></label>
+          <input id="s-whatsapp" type="tel" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="5511999999999">
+        </div>
+        <p class="text-xs text-textSecondary mt-2"><i data-lucide="info" class="w-3 h-3 inline"></i> Exemplo: Brasil (55) + DDD (11) + número (999999999) = <strong>5511999999999</strong></p>
+      </div>
+
+      <!-- Entrega -->
+      <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm">
+        <div class="flex items-center gap-2 mb-1">
+          <i data-lucide="truck" class="w-5 h-5 text-textPrimary"></i>
+          <h3 class="text-base font-semibold text-textPrimary">Configuração de Entrega</h3>
+        </div>
+        <p class="text-sm text-textSecondary mb-6">Define se há taxa de entrega e valor mínimo para frete grátis.</p>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-textPrimary">Taxa de Entrega (R$)</label>
+            <input id="s-delivery-fee" type="number" step="0.01" min="0" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent disabled:opacity-50" placeholder="0 = grátis">
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-textPrimary">Frete Grátis acima de (R$)</label>
+            <input id="s-delivery-free" type="number" step="0.01" min="0" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent disabled:opacity-50" placeholder="Ex: 50">
+          </div>
+        </div>
+        <label class="flex items-center gap-2 cursor-pointer w-max">
+          <input type="checkbox" id="s-delivery-combine" onchange="toggleCombineDelivery(this.checked)" class="w-4 h-4 rounded border-borderColor text-accent focus:ring-accent">
+          <span class="text-sm font-medium text-textPrimary">Entrega a combinar com o lojista</span>
+        </label>
+      </div>
+
+      <!-- Entrega por Região (Premium) -->
+      <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm" id="delivery-regional-card" style="display:none;"></div>
+
+      <!-- Domínio Próprio (Enterprise) -->
+      <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm" id="custom-domain-card" style="display:none;"></div>
+
+      <!-- Pagamentos Online -->
+      <!-- Container injetado pelo PaymentSettingsModule. Visível apenas para planos Pro/Enterprise. -->
+      <!-- A seção não interfere com nenhuma funcionalidade existente. -->
+      <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm" id="payment-settings-card"></div>
+
+      <!-- Segurança -->
+      <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm">
+        <div class="flex items-center gap-2 mb-1">
+          <i data-lucide="shield" class="w-5 h-5 text-textPrimary"></i>
+          <h3 class="text-base font-semibold text-textPrimary">Segurança do Painel</h3>
+        </div>
+        <p class="text-sm text-textSecondary mb-6">Altere seu e-mail e senha de acesso ao painel. <strong>Deixe em branco</strong> o que não deseja alterar.</p>
+        
+        <div autocomplete="off" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-textPrimary">Novo E-mail de Acesso</label>
+            <input id="s-auth-email" type="email" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="novo@email.com" autocomplete="off" value="">
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-textPrimary">Nova Senha</label>
+            <input id="s-auth-pass" type="password" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Deixe vazio para não alterar" autocomplete="new-password" value="">
+          </div>
+        </div>
+        <p class="text-xs text-textSecondary mt-3">⚠️ Ao alterar o e-mail, você precisará fazer login novamente.</p>
+      </div>
+
+      <button class="w-max px-6 py-2.5 bg-textPrimary text-white rounded-lg text-sm font-semibold hover:bg-black transition-colors flex items-center gap-2" onclick="saveAll()">
+        <i data-lucide="save" class="w-4 h-4"></i> Salvar Configurações
+      </button>
+
+      <!-- Zona de Perigo -->
+      <div class="border border-danger/20 bg-danger/5 rounded-xl p-6 mt-4">
+        <div class="flex items-center gap-2 mb-1">
+          <i data-lucide="alert-triangle" class="w-5 h-5 text-danger"></i>
+          <h3 class="text-base font-semibold text-danger">Zona de Perigo</h3>
+        </div>
+        <p class="text-sm text-danger/80 mb-4">Estas ações são irreversíveis. Use com cuidado.</p>
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-danger/10 border border-danger/20 rounded-lg">
+          <div>
+            <h4 class="text-sm font-bold text-danger">Limpar Pedidos</h4>
+            <p class="text-xs text-danger/80 mt-0.5">Remove todos os pedidos, mantendo produtos e configurações.</p>
+          </div>
+          <button class="px-4 py-2 bg-danger text-white rounded-lg text-sm font-semibold hover:bg-danger/90 transition-colors flex items-center gap-2" onclick="clearOrders()">
+            <i data-lucide="trash-2" class="w-4 h-4"></i> Limpar
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Modal Região -->
+<div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2000] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200" id="region-modal">
+  <div class="bg-cardBg border border-borderColor rounded-xl w-full max-w-[480px] shadow-xl transform translate-y-4 transition-transform duration-200" id="region-modal-container">
+    <div class="flex items-center justify-between p-5 border-b border-borderColor">
+      <h3 class="text-base font-bold text-textPrimary" id="modal-region-title">Nova Região</h3>
+      <button class="text-textSecondary hover:text-textPrimary transition-colors" onclick="closeRegionModal()">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <div class="p-5 flex flex-col gap-4">
+      <input type="hidden" id="region-id">
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium text-textPrimary">Nome da Região / Bairro <span class="text-danger">*</span></label>
+        <input id="reg-name" type="text" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Ex: Centro, Jardim das Flores">
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-textPrimary">Taxa de Entrega (R$) <span class="text-danger">*</span></label>
+          <input id="reg-fee" type="number" step="0.01" min="0" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="0 = grátis">
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-textPrimary">Pedido Mínimo (R$)</label>
+          <input id="reg-min" type="number" step="0.01" min="0" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Ex: 20">
+        </div>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium text-textPrimary">Prazo Estimado</label>
+        <input id="reg-time" type="text" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Ex: 30-50 min">
+      </div>
+      <label class="flex items-center gap-2 cursor-pointer mt-1">
+        <input type="checkbox" id="reg-active" checked class="w-4 h-4 rounded border-borderColor text-accent focus:ring-accent">
+        <span class="text-sm font-medium text-textPrimary">Região ativa</span>
+      </label>
+    </div>
+    <div class="flex justify-end gap-3 p-4 border-t border-borderColor bg-bgPrimary rounded-b-xl">
+      <button class="px-4 py-2 border border-borderColor rounded-lg text-sm font-medium hover:bg-cardBg transition-colors" onclick="closeRegionModal()">Cancelar</button>
+      <button class="px-4 py-2 bg-textPrimary text-white rounded-lg text-sm font-medium hover:bg-black transition-colors" onclick="saveRegion()">Salvar Região</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/supabase.js"></script>
+<script src="/js/core/helpers.js"></script>
+<script src="/js/core/supabaseClient.js"></script>
+<script src="/js/core/api.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="../js/modules/subscription.js"></script>
+<script src="/js/auth/authGuard.js"></script>
+<script src="/js/modules/store.js"></script>
+<script src="/js/ui/components.js"></script>
+<script src="/js/storage.js"></script>
+<script src="/js/modules/payment-settings.js"></script>
+<script src="/js/admin-common.js"></script>
+<script>
+  lucide.createIcons();
+  let _store = null;
+  let _pendingLogoFile = null;
+
+  async function load() {
+    _store = await StoreModule.getActive();
+    if (!_store) return;
+
+    const storeUrl = StoreModule.getStoreUrl(_store);
+    const linkEl = document.getElementById('loja-link');
+    if (linkEl) {
+      linkEl.textContent = storeUrl;
+      linkEl.parentElement.onclick = () => window.open(storeUrl, '_blank');
+    }
+
+    document.getElementById('s-name').value          = _store.name          || '';
+    document.getElementById('s-slogan').value        = _store.slogan        || '';
+    document.getElementById('s-address').value       = _store.address       || '';
+    document.getElementById('s-hours').value         = _store.hours         || '';
+    document.getElementById('s-seo-title').value     = _store.seo_title      || '';
+    document.getElementById('s-seo-description').value = _store.seo_description || '';
+    document.getElementById('s-seo-keywords').value  = _store.seo_keywords  || '';
+    const bt = _store.banner_text || '';
+    if (bt.trim().startsWith('[')) {
+      document.getElementById('s-banner').style.display = 'none';
+      document.getElementById('banner-json-notice').style.display = 'block';
+    } else {
+      document.getElementById('s-banner').value = bt;
+    }
+    
+    document.getElementById('s-whatsapp').value      = _store.whatsapp      || '';
+    
+    const isCombine = _store.delivery_fee === -1;
+    document.getElementById('s-delivery-combine').checked = isCombine;
+    document.getElementById('s-delivery-fee').value  = isCombine ? '' : (_store.delivery_fee  || 0);
+    document.getElementById('s-delivery-free').value = isCombine ? '' : (_store.delivery_free || 0);
+    toggleCombineDelivery(isCombine);
+
+    renderLogoPreviewer(_store);
+    await loadDeliveryRegions(_store);
+    await loadCustomDomain(_store);
+    // Fase 2: inicializa a seção de Pagamentos Online (módulo independente)
+    if (window.PaymentSettingsModule) await PaymentSettingsModule.init(_store);
+  }
+
+  function renderLogoPreviewer(store) {
+    const imgEl         = document.getElementById('logo-preview-img');
+    const placeholder   = document.getElementById('logo-placeholder');
+    if (store.logo_url) {
+      imgEl.src = store.logo_url;
+      imgEl.style.display = 'block';
+      placeholder.style.display = 'none';
+    } else {
+      imgEl.style.display = 'none';
+      placeholder.style.display = 'block';
+      placeholder.textContent = (store.name || 'L').charAt(0).toUpperCase();
+    }
+  }
+
+  function handleLogoSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const err = StorageModule.validateFile(file);
+    const statusEl = document.getElementById('logo-status');
+    if (err) {
+      statusEl.textContent = '❌ ' + err;
+      statusEl.className = 'text-xs text-danger mt-1';
+      return;
+    }
+
+    _pendingLogoFile = file;
+    statusEl.textContent = '✅ Logo selecionada. Clique em Salvar para confirmar.';
+    statusEl.className = 'text-xs text-success mt-1';
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imgEl       = document.getElementById('logo-preview-img');
+      const placeholder = document.getElementById('logo-placeholder');
+      imgEl.src = e.target.result;
+      imgEl.style.display = 'block';
+      placeholder.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function uploadPendingLogo() {
+    if (!_pendingLogoFile || !_store) return null;
+
+    const progressWrap = document.getElementById('logo-progress-wrap');
+    const progressFill = document.getElementById('logo-progress-fill');
+    const progressPct  = document.getElementById('logo-progress-pct');
+    const statusEl     = document.getElementById('logo-status');
+
+    progressWrap.classList.remove('hidden');
+    progressWrap.classList.add('flex');
+
+    try {
+      const { publicUrl, path } = await StorageModule.uploadLogo(
+        _pendingLogoFile,
+        _store.id,
+        (pct) => {
+          progressFill.style.width = pct + '%';
+          progressPct.textContent = pct + '%';
+        }
+      );
+
+      if (_store.logo_path) await StorageModule.deleteLogo(_store.logo_path);
+
+      _pendingLogoFile = null;
+      progressWrap.classList.add('hidden');
+      progressWrap.classList.remove('flex');
+      return { logo_url: publicUrl, logo_path: path };
+    } catch (e) {
+      statusEl.textContent = '❌ Erro no upload: ' + e.message;
+      statusEl.className = 'text-xs text-danger mt-1';
+      progressWrap.classList.add('hidden');
+      return null;
+    }
+  }
+
+  function toggleCombineDelivery(checked) {
+    const feeInput = document.getElementById('s-delivery-fee');
+    const freeInput = document.getElementById('s-delivery-free');
+    if (checked) {
+      feeInput.disabled = true; feeInput.placeholder = 'A combinar'; feeInput.value = '';
+      freeInput.disabled = true; freeInput.placeholder = 'A combinar'; freeInput.value = '';
+    } else {
+      feeInput.disabled = false; feeInput.placeholder = '0 = grátis';
+      freeInput.disabled = false; freeInput.placeholder = 'Ex: 50';
+    }
+  }
+
+  async function saveAll() {
+    try {
+      const name = document.getElementById('s-name').value.trim();
+      const wa   = document.getElementById('s-whatsapp').value.trim();
+      if (!name) { showToast('Informe o nome da loja.', 'error'); return; }
+      if (!wa || wa.replace(/\D/g,'').length < 10) { showToast('Informe um número de WhatsApp válido.', 'error'); return; }
+
+      const isCombine = document.getElementById('s-delivery-combine').checked;
+      const logoData = await uploadPendingLogo();
+
+      const storePayload = {
+        name,
+        slogan:          document.getElementById('s-slogan').value.trim(),
+        address:         document.getElementById('s-address').value.trim(),
+        hours:           document.getElementById('s-hours').value.trim(),
+        seo_title:       document.getElementById('s-seo-title').value.trim() || null,
+        seo_description: document.getElementById('s-seo-description').value.trim() || null,
+        seo_keywords:    document.getElementById('s-seo-keywords').value.trim() || null,
+        whatsapp:        wa,
+        delivery_fee:    isCombine ? -1 : (parseFloat(document.getElementById('s-delivery-fee').value) || 0),
+        delivery_free:   isCombine ? 0 : (parseFloat(document.getElementById('s-delivery-free').value) || 0),
+      };
+
+      // Preservar JSON do banner se estiver escondido
+      const sBannerInput = document.getElementById('s-banner');
+      if (sBannerInput.style.display !== 'none') {
+        storePayload.banner_text = sBannerInput.value.trim();
+      }
+
+      if (logoData) {
+        storePayload.logo_url  = logoData.logo_url;
+        storePayload.logo_path = logoData.logo_path;
+      }
+
+      const isEnterprise = (_store.plan || '').toLowerCase() === 'enterprise';
+      if (isEnterprise) {
+         let cd = document.getElementById('s-custom-domain')?.value;
+         if (cd !== undefined) {
+            cd = cd.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+            
+            // Bloquear domínios reservados do sistema
+            const RESERVED_DOMAINS = ['encartshop.com', 'www.encartshop.com', 'api.encartshop.com', 'admin.encartshop.com'];
+            if (cd && (RESERVED_DOMAINS.includes(cd) || cd.endsWith('.encartshop.com'))) {
+               showToast('Não é possível usar um domínio interno do sistema.', 'error');
+               return;
+            }
+            
+            storePayload.custom_domain = cd || null;
+         }
+      }
+
+      const { success, error } = await StoreModule.save(storePayload);
+      if (!success) { showToast(error || 'Falha ao salvar.', 'error'); return; }
+
+      const newEmail = document.getElementById('s-auth-email').value.trim();
+      const newPass  = document.getElementById('s-auth-pass').value;
+      if (newEmail || newPass) {
+        const { error: authErr } = await AuthService.updateCredentials({
+          email:    newEmail || undefined,
+          password: newPass  || undefined,
+        });
+        if (authErr) { showToast('Configurações salvas, mas falha ao atualizar credenciais: ' + authErr, 'warning'); return; }
+        if (newEmail) { showToast('E-mail atualizado. Faça login novamente.', 'info'); await AuthService.logout(); window.location.replace('index.html'); return; }
+      }
+
+      const nameEl = document.getElementById('sidebar-store-name');
+      if (nameEl) nameEl.textContent = name;
+
+      const statusEl = document.getElementById('logo-status');
+      if (logoData) {
+        statusEl.textContent = '✅ Logo salva com sucesso!';
+        statusEl.className = 'text-xs text-success mt-1';
+      }
+
+      showToast('Configurações salvas com sucesso!', 'success');
+      await load();
+    } catch (err) {
+      console.error('Erro ao salvar configurações:', err);
+      showToast('Erro inesperado ao salvar.', 'error');
+    }
+  }
+
+  function copyLink() {
+    if (!_store) return;
+    const url = StoreModule.getStoreUrl(_store);
+    navigator.clipboard.writeText(url).then(() => showToast('Link copiado!', 'success'));
+  }
+
+  async function clearOrders() {
+    if (!confirm('Tem certeza que deseja excluir TODOS os pedidos?\nEsta ação não pode ser desfeita.')) return;
+    await EncartAPI.OrderAPI.clearByStore(AuthService.getActiveStoreId());
+    showToast('Todos os pedidos foram removidos.', 'info');
+  }
+
+  // Delivery Regional
+  let _regions = [];
+  let _editingRegionId = null;
+
+  const _isPro = (store) => {
+    const plan = (store?.plan || '').toLowerCase();
+    return plan === 'pro' || plan === 'enterprise';
+  };
+
+  async function loadDeliveryRegions(store) {
+    const card = document.getElementById('delivery-regional-card');
+    if (!card) return;
+    card.style.display = 'block';
+
+    if (!_isPro(store)) {
+      _renderPaywall(card);
+      return;
+    }
+
+    try {
+      _regions = await EncartAPI.DeliveryAPI.getAllByStore(store.id);
+      _renderRegionsPanel(card);
+    } catch (e) {
+      console.error('Erro ao carregar regiões:', e);
+      _renderRegionsPanel(card);
+    }
+  }
+
+  function _renderPaywall(card) {
+    card.innerHTML = `
+      <div class="relative overflow-hidden p-8 rounded-xl bg-gradient-to-br from-bgPrimary to-bgSecondary border border-borderColor flex flex-col items-center text-center gap-4">
+        <div class="bg-gradient-to-r from-warning to-yellow-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide flex items-center gap-1.5"><i data-lucide="star" class="w-3.5 h-3.5"></i> Recurso PRO</div>
+        <i data-lucide="map" class="w-12 h-12 text-textSecondary opacity-80"></i>
+        <h3 class="text-lg font-bold text-textPrimary">Taxas de Entrega por Região</h3>
+        <p class="text-sm text-textSecondary max-w-md">Configure taxas e prazos de entrega diferentes para cada bairro ou região que sua loja atende.</p>
+        <a href="pagamento.html" class="mt-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-lg hover:brightness-110 transition-all shadow-md flex items-center gap-2">
+          <i data-lucide="zap" class="w-4 h-4"></i> Fazer Upgrade
+        </a>
+      </div>`;
+    setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
+  }
+
+  function _renderRegionsPanel(card) {
+    const fmt = (v) => 'R$ ' + Number(v || 0).toFixed(2).replace('.', ',');
+    let listHTML = '';
+
+    if (!_regions.length) {
+      listHTML = `<div class="text-center p-8 border-2 border-dashed border-borderColor rounded-lg text-textSecondary text-sm"><i data-lucide="map-pin" class="w-6 h-6 mx-auto mb-2 opacity-50"></i> Nenhuma região cadastrada.</div>`;
+    } else {
+      listHTML = `<div class="flex flex-col gap-3 mt-4">` +
+        _regions.map(z => `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-bgPrimary border border-borderColor rounded-lg hover:border-accent transition-colors gap-4">
+            <div class="flex flex-col gap-1">
+              <span class="font-bold text-sm text-textPrimary">${escapeHTML(z.region_name)}</span>
+              <div class="flex items-center flex-wrap gap-3 text-xs text-textSecondary">
+                <span class="flex items-center gap-1"><i data-lucide="dollar-sign" class="w-3.5 h-3.5"></i> ${z.delivery_fee == 0 ? '<span class="text-success font-semibold">Grátis</span>' : fmt(z.delivery_fee)}</span>
+                ${z.minimum_order ? `<span class="flex items-center gap-1"><i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Mín. ${fmt(z.minimum_order)}</span>` : ''}
+                ${z.estimated_time ? `<span class="flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> ${escapeHTML(z.estimated_time)}</span>` : ''}
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <label class="switch" title="${z.active ? 'Desativar' : 'Ativar'} região">
+                <input type="checkbox" ${z.active ? 'checked' : ''} onchange="toggleRegionActive('${z.id}', this.checked)">
+                <span class="slider"></span>
+              </label>
+              <button class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-cardBg text-textSecondary transition-colors" onclick="openRegionModal('${z.id}')"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+              <button class="w-8 h-8 flex items-center justify-center rounded-md hover:bg-danger/10 text-danger transition-colors" onclick="deleteRegion('${z.id}')"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+          </div>`).join('') +
+        `</div>`;
+    }
+
+    card.innerHTML = `
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <i data-lucide="map" class="w-5 h-5 text-textPrimary"></i>
+          <h3 class="text-base font-semibold text-textPrimary flex items-center gap-2">Entrega por Região <span class="bg-gradient-to-r from-warning to-yellow-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">PRO</span></h3>
+        </div>
+        <button class="px-3 py-1.5 bg-cardBg border border-borderColor rounded-md text-xs font-semibold hover:bg-bgPrimary transition-colors flex items-center gap-1.5" onclick="openRegionModal(null)"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Região</button>
+      </div>
+      <p class="text-sm text-textSecondary mb-4">Gerencie taxas e prazos de entrega para cada bairro ou região.</p>
+      ${listHTML}`;
+      
+    setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
+  }
+
+  function openRegionModal(regionId) {
+    _editingRegionId = regionId;
+    const modal = document.getElementById('region-modal');
+    const container = document.getElementById('region-modal-container');
+    const titleEl = document.getElementById('modal-region-title');
+
+    if (regionId) {
+      const z = _regions.find(r => r.id === regionId);
+      if (!z) return;
+      titleEl.textContent = 'Editar Região';
+      document.getElementById('region-id').value     = z.id;
+      document.getElementById('reg-name').value      = z.region_name || '';
+      document.getElementById('reg-fee').value       = z.delivery_fee ?? '';
+      document.getElementById('reg-min').value       = z.minimum_order ?? '';
+      document.getElementById('reg-time').value      = z.estimated_time || '';
+      document.getElementById('reg-active').checked  = z.active !== false;
+    } else {
+      titleEl.textContent = 'Nova Região';
+      document.getElementById('region-id').value    = '';
+      document.getElementById('reg-name').value     = '';
+      document.getElementById('reg-fee').value      = '';
+      document.getElementById('reg-min').value      = '';
+      document.getElementById('reg-time').value     = '';
+      document.getElementById('reg-active').checked = true;
+    }
+
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    container.classList.remove('translate-y-4');
+  }
+
+  function closeRegionModal() {
+    const modal = document.getElementById('region-modal');
+    const container = document.getElementById('region-modal-container');
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    container.classList.add('translate-y-4');
+    _editingRegionId = null;
+  }
+
+  async function saveRegion() {
+    const name = document.getElementById('reg-name').value.trim();
+    const fee  = document.getElementById('reg-fee').value;
+    if (!name) { showToast('Informe o nome da região.', 'warning'); document.getElementById('reg-name').focus(); return; }
+    if (fee === '') { showToast('Informe a taxa de entrega.', 'warning'); document.getElementById('reg-fee').focus(); return; }
+
+    const existingId = document.getElementById('region-id').value;
+    const zoneData = {
+      store_id:       _store.id,
+      region_name:    name,
+      delivery_fee:   parseFloat(fee) || 0,
+      minimum_order:  parseFloat(document.getElementById('reg-min').value) || 0,
+      estimated_time: document.getElementById('reg-time').value.trim() || null,
+      active:         document.getElementById('reg-active').checked,
+    };
+    if (existingId) zoneData.id = existingId;
+
+    try {
+      const saved = await EncartAPI.DeliveryAPI.save(zoneData);
+      if (existingId) {
+        _regions = _regions.map(r => r.id === existingId ? saved : r);
+        showToast('Região atualizada!', 'success');
+      } else {
+        _regions.push(saved);
+        showToast('Região adicionada!', 'success');
+      }
+      closeRegionModal();
+      _renderRegionsPanel(document.getElementById('delivery-regional-card'));
+    } catch (e) {
+      showToast('Erro ao salvar região: ' + e.message, 'error');
+    }
+  }
+
+  async function toggleRegionActive(regionId, active) {
+    const z = _regions.find(r => r.id === regionId);
+    if (!z) return;
+    try {
+      const updated = await EncartAPI.DeliveryAPI.save({ ...z, active });
+      _regions = _regions.map(r => r.id === regionId ? updated : r);
+      showToast(`Região ${active ? 'ativada' : 'desativada'}.`, 'success');
+    } catch (e) {
+      showToast('Erro ao atualizar.', 'error');
+      _renderRegionsPanel(document.getElementById('delivery-regional-card'));
+    }
+  }
+
+  async function deleteRegion(regionId) {
+    const z = _regions.find(r => r.id === regionId);
+    if (!z) return;
+    if (!confirm(`Excluir a região "${z.region_name}"?`)) return;
+    try {
+      await EncartAPI.DeliveryAPI.delete(regionId);
+      _regions = _regions.filter(r => r.id !== regionId);
+      showToast('Região removida.', 'info');
+      _renderRegionsPanel(document.getElementById('delivery-regional-card'));
+    } catch (e) {
+      showToast('Erro ao excluir.', 'error');
+    }
+  }
+
+  document.getElementById('region-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeRegionModal();
+  });
+
+  // Custom Domain
+  async function loadCustomDomain(store) {
+    const card = document.getElementById('custom-domain-card');
+    if (!card) return;
+    card.style.display = 'block';
+
+    const isEnterprise = (store?.plan || '').toLowerCase() === 'enterprise';
+    if (!isEnterprise) {
+      _renderCustomDomainPaywall(card);
+      return;
+    }
+
+    _renderCustomDomainPanel(card, store);
+  }
+
+  function _renderCustomDomainPaywall(card) {
+    card.innerHTML = `
+      <div class="relative overflow-hidden p-8 rounded-xl bg-gradient-to-br from-bgPrimary to-bgSecondary border border-borderColor flex flex-col items-center text-center gap-4">
+        <div class="bg-gradient-to-r from-gray-800 to-black text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide flex items-center gap-1.5"><i data-lucide="globe" class="w-3.5 h-3.5"></i> Recurso Enterprise</div>
+        <i data-lucide="globe" class="w-12 h-12 text-textSecondary opacity-80"></i>
+        <h3 class="text-lg font-bold text-textPrimary">Domínio Próprio</h3>
+        <p class="text-sm text-textSecondary max-w-md">Conecte seu domínio personalizado (ex: www.suamarca.com.br) para que seus clientes acessem sua loja com ainda mais credibilidade.</p>
+        <a href="pagamento.html" class="mt-2 px-5 py-2.5 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-all shadow-md flex items-center gap-2">
+          Falar com Consultor
+        </a>
+      </div>`;
+    setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
+  }
+
+  function _renderCustomDomainPanel(card, store) {
+    const domain = store.custom_domain || '';
+    const verified = store.custom_domain_verified;
+
+    let statusHtml = '';
+    if (!domain) {
+       statusHtml = '<span class="text-xs font-semibold text-textSecondary bg-cardBg px-2 py-1 rounded-md border border-borderColor">Não configurado</span>';
+    } else if (verified) {
+       statusHtml = '<span class="text-xs font-semibold text-success bg-success/10 px-2 py-1 rounded-md border border-success/20">Verificado</span>';
+    } else {
+       statusHtml = '<span class="text-xs font-semibold text-warning bg-warning/10 px-2 py-1 rounded-md border border-warning/20">Aguardando DNS</span>';
+    }
+
+    const defaultStoreUrl = StoreModule.getStoreUrl(store);
+
+    card.innerHTML = `
+      <div class="flex items-center justify-between mb-1">
+        <div class="flex items-center gap-2">
+          <i data-lucide="globe" class="w-5 h-5 text-textPrimary"></i>
+          <h3 class="text-base font-semibold text-textPrimary flex items-center gap-2">Domínio Próprio <span class="bg-black text-white text-[10px] font-bold px-2 py-0.5 rounded-full">ENTERPRISE</span></h3>
+        </div>
+        ${statusHtml}
+      </div>
+      <p class="text-sm text-textSecondary mb-6">Conecte seu domínio personalizado para que seus clientes acessem sua loja através do seu endereço próprio.</p>
+      
+      <div class="flex flex-col gap-4">
+         
+         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+           <div class="p-3 border border-borderColor rounded-lg bg-bgPrimary">
+             <span class="text-xs font-medium text-textSecondary block mb-1">Sua Loja (Padrão)</span>
+             <span class="text-sm font-semibold text-textPrimary break-all">${defaultStoreUrl}</span>
+           </div>
+           <div class="p-3 border border-accent/30 rounded-lg bg-accent/5">
+             <span class="text-xs font-medium text-accent block mb-1">Domínio Personalizado</span>
+             <span class="text-sm font-semibold text-accent break-all">${domain ? 'https://' + domain : 'Não configurado'}</span>
+           </div>
+         </div>
+
+         <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-textPrimary">Seu Domínio</label>
+            <input id="s-custom-domain" type="text" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="www.minhaloja.com.br" value="${domain}">
+            <span class="text-xs text-textSecondary mt-1">Ex: www.minhaloja.com.br. Salve a página para aplicar as alterações.</span>
+         </div>
+
+         ${domain ? `
+         <div class="mt-4 p-5 bg-bgPrimary border border-borderColor rounded-xl">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+               <div>
+                 <h4 class="text-sm font-semibold text-textPrimary">Instruções DNS</h4>
+                 <p class="text-xs text-textSecondary">Siga os passos abaixo para conectar seu domínio.</p>
+               </div>
+               <button id="btn-verify-domain" onclick="verifyCustomDomain('${store.id}')" class="w-full sm:w-auto px-4 py-2 bg-textPrimary text-white rounded-lg text-sm font-medium hover:bg-black transition-colors flex items-center justify-center gap-2">
+                 <i data-lucide="refresh-cw" class="w-4 h-4" id="icon-verify"></i> Verificar Configuração
+               </button>
+            </div>
+            
+            <ol class="list-decimal list-inside text-sm text-textSecondary flex flex-col gap-3">
+              <li>Acesse o painel onde seu domínio foi registrado (Registro.br, HostGator, etc.).</li>
+              <li>Encontre a seção de <strong>Zonas de DNS</strong>.</li>
+              <li>Crie um novo registro do tipo <strong>CNAME</strong>.</li>
+              <li>Configure o registro com os seguintes dados:
+                 <div class="mt-2 ml-4 p-3 bg-cardBg border border-borderColor rounded-lg flex flex-col gap-2 font-mono text-xs text-textPrimary">
+                   <div><span class="text-textSecondary">Tipo:</span> CNAME</div>
+                   <div><span class="text-textSecondary">Nome/Host:</span> www</div>
+                   <div><span class="text-textSecondary">Destino/Valor:</span> lojas.encartshop.com</div>
+                 </div>
+              </li>
+              <li>Aguarde a propagação. <span class="text-warning font-medium">A propagação DNS pode levar de alguns minutos até 24 horas dependendo do provedor.</span></li>
+              <li>Clique em "Verificar Configuração" acima.</li>
+            </ol>
+         </div>
+         ` : ''}
+      </div>`;
+    setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 10);
+  }
+
+  async function verifyCustomDomain(storeId) {
+    const btn = document.getElementById('btn-verify-domain');
+    const icon = document.getElementById('icon-verify');
+    btn.disabled = true;
+    icon.classList.add('animate-spin');
+    
+    try {
+      const { session } = await window.sb.auth.getSession();
+      const token = session?.access_token;
+      
+      const res = await fetch('/api/verify-domain', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ storeId })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        showToast(data.error || 'Erro na verificação', 'error');
+      } else {
+        if (data.verified) {
+           showToast('Domínio verificado com sucesso!', 'success');
+           await load(); // reload state
+        } else {
+           showToast('Aguardando DNS. Verifique se o CNAME está correto.', 'warning');
+        }
+      }
+    } catch (e) {
+      showToast('Erro ao tentar verificar.', 'error');
+    } finally {
+      btn.disabled = false;
+      icon.classList.remove('animate-spin');
+    }
+  }
+
+  load();
+</script>
+</body>
+</html>

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Importar & Exportar Produtos — EncartShop</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/assets/output.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    .fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(10px); }
+    @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+    .drop-zone { transition: all 0.2s ease; border: 2px dashed var(--border-color); }
+    .drop-zone.active { background: var(--bg-primary); border-color: var(--accent); }
+  </style>
+</head>
+<body data-page="import-export" class="bg-bgPrimary text-textPrimary antialiased selection:bg-accent selection:text-white">
+
+<div class="admin-layout flex min-h-screen">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content flex-1 ml-0 md:ml-[256px] flex flex-col min-h-screen transition-all duration-300">
+    
+    <header class="h-[64px] bg-cardBg/80 backdrop-blur-md border-b border-borderColor sticky top-0 z-50 px-4 md:px-8 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <h2 class="text-sm font-semibold text-textPrimary leading-tight hidden md:block">Importar & Exportar Produtos</h2>
+      </div>
+      <div class="flex items-center gap-3">
+        <button class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-bgPrimary transition-colors relative">
+          <i data-lucide="bell" class="w-5 h-5 text-textSecondary"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="flex-1 p-4 md:p-8 flex flex-col gap-6 max-w-[1200px] w-full mx-auto fade-in-up">
+      
+      <!-- Grid de 3 cards principais -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Card 1: Importar -->
+        <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm hover:shadow-card-hover transition-shadow cursor-pointer" onclick="openImportModal()">
+          <div class="flex items-center justify-center w-12 h-12 rounded-lg bg-blue-500/10 mb-4">
+            <i data-lucide="upload" class="w-6 h-6 text-blue-600"></i>
+          </div>
+          <h3 class="text-lg font-bold text-textPrimary mb-2">Importar Produtos</h3>
+          <p class="text-sm text-textSecondary mb-4">Upload de planilha Excel para atualizar ou criar produtos em massa.</p>
+          <button class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+            <i data-lucide="upload" class="w-4 h-4"></i> Selecionar Arquivo
+          </button>
+        </div>
+
+        <!-- Card 2: Exportar -->
+        <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm hover:shadow-card-hover transition-shadow cursor-pointer" onclick="handleExport()">
+          <div class="flex items-center justify-center w-12 h-12 rounded-lg bg-green-500/10 mb-4">
+            <i data-lucide="download" class="w-6 h-6 text-green-600"></i>
+          </div>
+          <h3 class="text-lg font-bold text-textPrimary mb-2">Exportar Produtos</h3>
+          <p class="text-sm text-textSecondary mb-4">Baixar todos os produtos da sua loja em formato Excel.</p>
+          <button class="w-full px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+            <i data-lucide="download" class="w-4 h-4"></i> Exportar
+          </button>
+        </div>
+
+        <!-- Card 3: Modelo -->
+        <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm hover:shadow-card-hover transition-shadow cursor-pointer" onclick="handleDownloadTemplate()">
+          <div class="flex items-center justify-center w-12 h-12 rounded-lg bg-purple-500/10 mb-4">
+            <i data-lucide="file-text" class="w-6 h-6 text-purple-600"></i>
+          </div>
+          <h3 class="text-lg font-bold text-textPrimary mb-2">Baixar Modelo</h3>
+          <p class="text-sm text-textSecondary mb-4">Baixar planilha modelo para referência e criar novos produtos.</p>
+          <button class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors flex items-center justify-center gap-2">
+            <i data-lucide="file-text" class="w-4 h-4"></i> Baixar
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Info section -->
+      <div class="bg-blue-500/5 border border-blue-500/20 rounded-xl p-6">
+        <div class="flex items-start gap-3">
+          <i data-lucide="info" class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"></i>
+          <div>
+            <h4 class="font-semibold text-textPrimary mb-2">Como funciona?</h4>
+            <ul class="text-sm text-textSecondary space-y-1">
+              <li>✓ <strong>Exportar:</strong> Gera um arquivo Excel com todos os seus produtos.</li>
+              <li>✓ <strong>Editar:</strong> Faça alterações em massa no Excel (preços, estoque, nomes, etc).</li>
+              <li>✓ <strong>Importar:</strong> Suba o arquivo e o sistema fará as atualizações automaticamente.</li>
+              <li>✓ <strong>Validação:</strong> O sistema valida os dados antes de processar.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Modal Importação -->
+<div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2000] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200" id="import-modal">
+  <div class="bg-cardBg border border-borderColor rounded-xl w-full max-w-[600px] shadow-xl transform translate-y-4 transition-transform duration-200" id="import-modal-container">
+    <div class="flex items-center justify-between p-5 border-b border-borderColor">
+      <h3 class="text-lg font-bold text-textPrimary">Importar Produtos</h3>
+      <button class="text-textSecondary hover:text-textPrimary transition-colors" onclick="closeImportModal()">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <div class="p-6 flex flex-col gap-4">
+      
+      <!-- Drop Zone -->
+      <div class="drop-zone border-2 border-dashed border-borderColor rounded-lg p-8 text-center cursor-pointer hover:bg-bgPrimary/50 transition-colors" id="drop-zone" ondrop="handleFileDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+        <i data-lucide="upload-cloud" class="w-10 h-10 text-textSecondary mx-auto mb-3 opacity-50"></i>
+        <p class="text-sm font-medium text-textPrimary mb-1">Selecione um arquivo ou arraste aqui</p>
+        <p class="text-xs text-textSecondary mb-4">Apenas arquivos .xlsx (Excel)</p>
+        <input type="file" id="import-file" accept=".xlsx" style="display:none" onchange="handleFileSelect(event)">
+        <button onclick="document.getElementById('import-file').click()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
+          Escolher Arquivo
+        </button>
+      </div>
+
+      <!-- Status -->
+      <div id="import-status" style="display:none;" class="text-sm p-3 rounded-lg bg-blue-500/10 text-blue-600 border border-blue-500/20">
+        <div class="flex items-center gap-2">
+          <i data-lucide="check-circle" class="w-4 h-4"></i>
+          <span id="import-status-text">Arquivo selecionado</span>
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div id="import-preview" style="display:none;">
+        <h4 class="text-sm font-semibold text-textPrimary mb-3">Prévia dos dados:</h4>
+        <div id="preview-content" class="bg-bgPrimary rounded-lg p-3 max-h-[300px] overflow-y-auto text-xs font-mono text-textSecondary"></div>
+      </div>
+
+    </div>
+    <div class="flex justify-end gap-3 p-4 border-t border-borderColor bg-bgPrimary rounded-b-xl">
+      <button class="px-4 py-2 border border-borderColor rounded-lg text-sm font-medium hover:bg-cardBg transition-colors" onclick="closeImportModal()">Cancelar</button>
+      <button id="import-confirm-btn" disabled class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onclick="confirmImport()">Importar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/supabase.js"></script>
+<script src="/js/core/helpers.js"></script>
+<script src="/js/core/supabaseClient.js"></script>
+<script src="/js/core/api.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="../js/modules/subscription.js"></script>
+<script src="/js/auth/authGuard.js"></script>
+<script src="/js/modules/store.js"></script>
+<script src="/js/ui/components.js"></script>
+<script src="/js/storage.js"></script>
+<script src="/js/admin-common.js"></script>
+
+<script>
+  lucide.createIcons();
+  let _pendingFile = null;
+  let _previewData = null;
+
+  function openImportModal() {
+    const modal = document.getElementById('import-modal');
+    const container = document.getElementById('import-modal-container');
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    container.classList.remove('translate-y-4');
+  }
+
+  function closeImportModal() {
+    const modal = document.getElementById('import-modal');
+    const container = document.getElementById('import-modal-container');
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    container.classList.add('translate-y-4');
+    _pendingFile = null;
+    _previewData = null;
+    document.getElementById('import-file').value = '';
+    document.getElementById('import-status').style.display = 'none';
+    document.getElementById('import-preview').style.display = 'none';
+    document.getElementById('import-confirm-btn').disabled = true;
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('drop-zone').classList.add('active');
+  }
+
+  function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('drop-zone').classList.remove('active');
+  }
+
+  function handleFileDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('drop-zone').classList.remove('active');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      document.getElementById('import-file').files = files;
+      handleFileSelect({ target: { files } });
+    }
+  }
+
+  function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.xlsx')) {
+      showToast('Por favor, selecione um arquivo .xlsx', 'error');
+      return;
+    }
+
+    _pendingFile = file;
+    
+    // Simular preview (em produção, usar biblioteca like-xlsx para ler)
+    document.getElementById('import-status').style.display = 'block';
+    document.getElementById('import-status-text').textContent = `✓ Arquivo ${file.name} selecionado (${(file.size / 1024).toFixed(1)} KB)`;
+    document.getElementById('import-preview').style.display = 'block';
+    document.getElementById('preview-content').textContent = `Arquivo pronto para importação.\nNome: ${file.name}\nTamanho: ${(file.size / 1024).toFixed(1)} KB\n\nClique em "Importar" para processar...`;
+    document.getElementById('import-confirm-btn').disabled = false;
+  }
+
+  async function confirmImport() {
+    if (!_pendingFile) return;
+    
+    const btn = document.getElementById('import-confirm-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"><\/i> Processando...';
+    lucide.createIcons();
+
+    try {
+      // Ler o arquivo como base64 para envio confiável na Vercel
+      const arrayBuffer = await _pendingFile.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+      const base64 = btoa(binary);
+
+      const token = await AuthService.getToken();
+
+      const res = await fetch('/api/import-products', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ file: base64, filename: _pendingFile.name })
+      });
+
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); }
+      catch(e) { throw new Error('Resposta inválida do servidor: ' + text.substring(0, 100)); }
+
+      if (data.success) {
+        showToast('✓ ' + data.summary, 'success');
+        closeImportModal();
+      } else {
+        const errMsg = data.error || (data.errors && data.errors[0]) || 'Erro desconhecido ao importar';
+        showToast('Erro: ' + errMsg, 'error');
+        console.error('Detalhes do erro:', data);
+      }
+    } catch (err) {
+      console.error('Erro ao importar:', err);
+      showToast('Erro: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="upload" class="w-4 h-4"></i> Importar';
+      lucide.createIcons();
+    }
+  }
+
+  async function handleExport() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Exportando...';
+    lucide.createIcons();
+
+    try {
+      const token = await AuthService.getToken();
+      const response = await fetch('/api/export-products', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Erro ao exportar');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `produtos-encartshop-${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+
+      showToast('✓ Exportação concluída', 'success');
+    } catch (err) {
+      console.error('Erro:', err);
+      showToast('Erro ao exportar produtos', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="download" class="w-4 h-4"></i> Exportar';
+      lucide.createIcons();
+    }
+  }
+
+  async function handleDownloadTemplate() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Gerando...';
+    lucide.createIcons();
+
+    try {
+      const token = await AuthService.getToken();
+      const response = await fetch('/api/template-products', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Erro ao baixar modelo');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'modelo-produtos.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+
+      showToast('✓ Modelo baixado com sucesso', 'success');
+    } catch (err) {
+      console.error('Erro:', err);
+      showToast('Erro ao baixar modelo', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="file-text" class="w-4 h-4"></i> Baixar';
+      lucide.createIcons();
+    }
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,450 @@
+/**
+ * EncartShop — API Centralizada v2
+ * Versão robusta com try/catch e segurança reforçada.
+ */
+
+const StoreAPI = {
+  async getAll() {
+    try {
+      const { data, error } = await window.sb.from('stores').select('*');
+      if (error) { console.error('StoreAPI.getAll:', error); return []; }
+      return data || [];
+    } catch (e) { console.error('StoreAPI.getAll:', e); return []; }
+  },
+  async getByUser(userId) {
+    if (!userId) return [];
+    try {
+      const { data, error } = await window.sb.from('stores').select('*').eq('user_id', userId);
+      if (error) { console.error('StoreAPI.getByUser:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async getById(id) {
+    if (!id) return null;
+    // Validação básica de UUID para evitar erro 400 ruidoso no log do Supabase
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+    if (!isUUID) return null; 
+
+    try {
+      const { data, error } = await window.sb.from('stores').select('*').eq('id', id).maybeSingle();
+      if (error) { console.error('StoreAPI.getById:', error); return null; }
+      return data || null;
+    } catch (e) { return null; }
+  },
+  // Busca por slug: usa a coluna 'slug' do banco de dados
+  async getBySlug(slug) {
+    if (!slug) return null;
+    try {
+      const { data, error } = await window.sb.from('stores')
+        .select('*').eq('slug', slug).maybeSingle();
+      if (error) { console.error('StoreAPI.getBySlug:', error); return null; }
+      return data || null;
+    } catch (e) { return null; }
+  },
+  // Busca por custom_domain
+  async getByDomain(domain) {
+    if (!domain) return null;
+    try {
+      const { data, error } = await window.sb.from('stores')
+        .select('*').eq('custom_domain', domain).maybeSingle();
+      if (error) { console.error('StoreAPI.getByDomain:', error); return null; }
+      return data || null;
+    } catch (e) { return null; }
+  },
+  async create(storeData) {
+    try {
+      const { data, error } = await window.sb.from('stores').insert([storeData]).select().single();
+      if (error) throw error;
+      return data;
+    } catch (e) { throw e; }
+  },
+  async update(id, storeData) {
+    if (!id) throw new Error('ID obrigatório');
+    try {
+      const { data, error } = await window.sb.from('stores').update(storeData).eq('id', id).select().single();
+      if (error) {
+        if (error.code === '23505' && error.message.includes('custom_domain')) {
+          throw new Error('Este domínio já está sendo utilizado por outra loja.');
+        }
+        throw new Error(error.message || 'Erro ao atualizar loja');
+      }
+      return data;
+    } catch (e) { throw e; }
+  },
+  async delete(id) {
+    if (!id) return false;
+    try {
+      const { error } = await window.sb.from('stores').delete().eq('id', id);
+      if (error) { console.error('StoreAPI.delete:', error); return false; }
+      return true;
+    } catch (e) { return false; }
+  }
+};
+
+const ProductAPI = {
+  async getByStore(storeId) {
+    if (!storeId) return [];
+    try {
+      const { data, error } = await window.sb.from('products')
+        .select('*').eq('store_id', storeId).order('name', { ascending: true });
+      if (error) { console.error('ProductAPI.getByStore:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async getActiveByStore(storeId) {
+    if (!storeId) return [];
+    try {
+      const { data, error } = await window.sb.from('products')
+        .select('*').eq('store_id', storeId).eq('active', true).order('name', { ascending: true });
+      if (error) { console.error('ProductAPI.getActiveByStore:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async add(storeId, productData) {
+    if (!storeId) throw new Error('store_id obrigatório');
+    try {
+      const { data, error } = await window.sb.from('products')
+        .insert([{ ...productData, store_id: storeId }]).select().single();
+      if (error) throw error;
+      return { data };
+    } catch (e) { throw e; }
+  },
+  async update(id, productData) {
+    if (!id) throw new Error('ID obrigatório');
+    try {
+      const { data, error } = await window.sb.from('products')
+        .update(productData).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    } catch (e) { throw e; }
+  },
+  async delete(id) {
+    if (!id) return false;
+    try {
+      const { error } = await window.sb.from('products').delete().eq('id', id);
+      if (error) { console.error('ProductAPI.delete:', error); return false; }
+      return true;
+    } catch (e) { return false; }
+  }
+};
+
+const OrderAPI = {
+  async getByStore(storeId, startDate = null, endDate = null) {
+    if (!storeId) return [];
+    try {
+      let query = window.sb.from('orders').select('*').eq('store_id', storeId);
+      if (startDate) query = query.gte('created_at', startDate + 'T00:00:00.000Z');
+      if (endDate) query = query.lte('created_at', endDate + 'T23:59:59.999Z');
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
+      if (error) { console.error('OrderAPI.getByStore:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async create(storeId, orderData) {
+    if (!storeId) throw new Error('store_id obrigatório');
+    try {
+      // customer_phone e customer_address são opcionais — o trigger no banco cria/atualiza o cliente automaticamente
+      const { error } = await window.sb.from('orders').insert([{ ...orderData, store_id: storeId }]);
+      if (error) throw error;
+      return true;
+    } catch (e) { throw e; }
+  },
+  async updateStatus(id, newStatus) {
+    if (!id || !newStatus) throw new Error('ID e status obrigatórios');
+    try {
+      const { data, error } = await window.sb.from('orders')
+        .update({ status: newStatus }).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    } catch (e) { throw e; }
+  },
+  async delete(id) {
+    if (!id) return false;
+    try {
+      const { error } = await window.sb.from('orders').delete().eq('id', id);
+      if (error) { console.error('OrderAPI.delete:', error); return false; }
+      return true;
+    } catch (e) { return false; }
+  },
+  async clearByStore(storeId) {
+    if (!storeId) return false;
+    try {
+      const { error } = await window.sb.from('orders').delete().eq('store_id', storeId);
+      if (error) { console.error('OrderAPI.clearByStore:', error); return false; }
+      return true;
+    } catch (e) { return false; }
+  }
+};
+
+const AsaasAPI = {
+  async createPayment(storeId, cpfCnpj, planValue) {
+    if (!storeId) throw new Error('Store ID é obrigatório');
+    try {
+      const { data, error } = await window.sb.functions.invoke('asaas-payment', {
+        body: { action: 'createPayment', storeId, cpfCnpj, planValue }
+      });
+      if (error) throw error;
+      if (data?.success === false) throw new Error(data.error || 'Erro interno');
+      return data;
+    } catch (e) { throw e; }
+  },
+  async getPaymentStatus(paymentId) {
+    if (!paymentId) return null;
+    try {
+      const { data, error } = await window.sb.functions.invoke('asaas-payment', {
+        body: { action: 'getPaymentStatus', paymentId }
+      });
+      if (error) { console.error('AsaasAPI.getPaymentStatus:', error); return null; }
+      return data;
+    } catch (e) { return null; }
+  }
+};
+
+const DeliveryAPI = {
+  async getActiveByStore(storeId) {
+    if (!storeId) return [];
+    try {
+      const { data, error } = await window.sb.from('delivery_zones')
+        .select('*')
+        .eq('store_id', storeId)
+        .eq('active', true)
+        .order('region_name', { ascending: true });
+      if (error) { console.error('DeliveryAPI.getActiveByStore:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async getAllByStore(storeId) {
+    if (!storeId) return [];
+    try {
+      const { data, error } = await window.sb.from('delivery_zones')
+        .select('*')
+        .eq('store_id', storeId)
+        .order('region_name', { ascending: true });
+      if (error) { console.error('DeliveryAPI.getAllByStore:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async save(zoneData) {
+    if (!zoneData.store_id) throw new Error('store_id obrigatório');
+    try {
+      const { data, error } = await window.sb.from('delivery_zones')
+        .upsert([zoneData])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } catch (e) { throw e; }
+  },
+  async delete(zoneId) {
+    if (!zoneId) return false;
+    try {
+      const { error } = await window.sb.from('delivery_zones')
+        .delete()
+        .eq('id', zoneId);
+      if (error) { console.error('DeliveryAPI.delete:', error); return false; }
+      return true;
+    } catch (e) { return false; }
+  }
+};
+
+const CampaignAPI = {
+  async getActiveByStore(storeId) {
+    if (!storeId) return [];
+    try {
+      const { data, error } = await window.sb.from('store_campaigns')
+        .select('*')
+        .eq('store_id', storeId)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (error) { console.error('CampaignAPI.getActiveByStore:', error); return []; }
+      
+      const now = new Date().toISOString();
+      return (data || []).filter(c => {
+        const startOk = !c.starts_at || c.starts_at <= now;
+        const endOk = !c.ends_at || c.ends_at >= now;
+        return startOk && endOk;
+      });
+    } catch (e) { return []; }
+  },
+  async getAllByStore(storeId) {
+    if (!storeId) return [];
+    try {
+      const { data, error } = await window.sb.from('store_campaigns')
+        .select('*')
+        .eq('store_id', storeId)
+        .order('sort_order', { ascending: true });
+      if (error) { console.error('CampaignAPI.getAllByStore:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async save(campaignData) {
+    if (!campaignData.store_id) throw new Error('store_id obrigatório');
+    try {
+      const { data, error } = await window.sb.from('store_campaigns')
+        .upsert([campaignData])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } catch (e) { throw e; }
+  },
+  async delete(campaignId) {
+    if (!campaignId) return false;
+    try {
+      const { error } = await window.sb.from('store_campaigns')
+        .delete()
+        .eq('id', campaignId);
+      if (error) { console.error('CampaignAPI.delete:', error); return false; }
+      return true;
+    } catch (e) { return false; }
+  },
+  async registerView(campaignId) {
+    if (!campaignId) return;
+    try {
+      const { data } = await window.sb.from('store_campaigns').select('views_count').eq('id', campaignId).single();
+      if (data) {
+        await window.sb.from('store_campaigns').update({ views_count: (data.views_count || 0) + 1 }).eq('id', campaignId);
+      }
+    } catch (e) { console.warn('Failed to register view', e); }
+  },
+  async registerClick(campaignId) {
+    if (!campaignId) return;
+    try {
+      const { data } = await window.sb.from('store_campaigns').select('clicks_count').eq('id', campaignId).single();
+      if (data) {
+        await window.sb.from('store_campaigns').update({ clicks_count: (data.clicks_count || 0) + 1 }).eq('id', campaignId);
+      }
+    } catch (e) { console.warn('Failed to register click', e); }
+  }
+};
+
+const CustomerAPI = {
+  async getByStore(storeId, { limit = 50, offset = 0, orderBy = 'ultimo_pedido', ascending = false } = {}) {
+    if (!storeId) return [];
+    try {
+      const { data, error } = await window.sb.from('clientes')
+        .select('*')
+        .eq('store_id', storeId)
+        .order(orderBy, { ascending })
+        .range(offset, offset + limit - 1);
+      if (error) { console.error('CustomerAPI.getByStore:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async getById(id) {
+    if (!id) return null;
+    try {
+      const { data, error } = await window.sb.from('clientes').select('*').eq('id', id).maybeSingle();
+      if (error) { console.error('CustomerAPI.getById:', error); return null; }
+      return data || null;
+    } catch (e) { return null; }
+  },
+  async getOrdersByCustomer(customerId, storeId) {
+    if (!customerId || !storeId) return [];
+    try {
+      const { data, error } = await window.sb.from('orders')
+        .select('*')
+        .eq('cliente_id', customerId)
+        .eq('store_id', storeId)
+        .order('created_at', { ascending: false });
+      if (error) { console.error('CustomerAPI.getOrdersByCustomer:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async search(storeId, query) {
+    if (!storeId || !query) return [];
+    try {
+      const q = query.trim();
+      const { data, error } = await window.sb.from('clientes')
+        .select('*')
+        .eq('store_id', storeId)
+        .or(`nome.ilike.%${q}%,telefone.ilike.%${q}%`)
+        .order('ultimo_pedido', { ascending: false })
+        .limit(50);
+      if (error) { console.error('CustomerAPI.search:', error); return []; }
+      return data || [];
+    } catch (e) { return []; }
+  },
+  async countByStore(storeId) {
+    if (!storeId) return 0;
+    try {
+      const { count, error } = await window.sb.from('clientes')
+        .select('*', { count: 'exact', head: true })
+        .eq('store_id', storeId);
+      if (error) return 0;
+      return count || 0;
+    } catch (e) { return 0; }
+  }
+};
+
+/**
+ * OrderPaymentAPI
+ * Camada de acesso exclusiva ao status financeiro dos pedidos.
+ * Nenhuma tela consulta order_payments diretamente — tudo passa por aqui.
+ */
+const OrderPaymentAPI = {
+  /**
+   * Busca o resumo financeiro de múltiplos pedidos em UMA única query (anti N+1).
+   * Para cada order_id retorna a cobrança válida mais recente.
+   *
+   * Retorna um Map: orderId → { status, billing_type, amount, paid_at, gateway, gateway_payment_id }
+   * Pedidos sem cobrança não aparecem no Map (ausência = sem pagamento online).
+   *
+   * @param {string} storeId
+   * @param {string[]} orderIds - array de UUIDs
+   * @returns {Promise<Map<string, object>>}
+   */
+  async getSummaryByOrders(storeId, orderIds) {
+    if (!storeId || !orderIds || !orderIds.length) return new Map();
+    // Remove nulls e deduplicata
+    const ids = [...new Set(orderIds.filter(Boolean))];
+    if (!ids.length) return new Map();
+    try {
+      const { data, error } = await window.sb
+        .from('order_payments')
+        .select('id, order_id, status, billing_type, amount, paid_at, gateway, gateway_payment_id, created_at')
+        .eq('store_id', storeId)
+        .in('order_id', ids)
+        // Campos sensíveis (pix_code, qr_code, customer_document) excluídos intencionalmente
+        .order('created_at', { ascending: false });
+
+      if (error) { console.error('OrderPaymentAPI.getSummaryByOrders:', error.message); return new Map(); }
+
+      // Agrupa por order_id, mantendo apenas a cobrança mais recente por pedido
+      // (a query já vem ordenada por created_at DESC, então o primeiro encontrado é o mais recente)
+      const map = new Map();
+      for (const row of (data || [])) {
+        if (row.order_id && !map.has(row.order_id)) {
+          map.set(row.order_id, {
+            id:                 row.id,
+            status:             row.status,
+            billing_type:       row.billing_type,
+            amount:             row.amount,
+            paid_at:            row.paid_at,
+            gateway:            row.gateway,
+            gateway_payment_id: row.gateway_payment_id,
+            created_at:         row.created_at,
+          });
+        }
+      }
+      return map;
+    } catch (e) { console.error('OrderPaymentAPI.getSummaryByOrders:', e.message); return new Map(); }
+  },
+
+  /**
+   * Retorna o resumo financeiro de um único pedido.
+   * Usa getSummaryByOrders internamente para consistência.
+   *
+   * @param {string} storeId
+   * @param {string} orderId
+   * @returns {Promise<object|null>}
+   */
+  async getSummary(storeId, orderId) {
+    if (!storeId || !orderId) return null;
+    const map = await OrderPaymentAPI.getSummaryByOrders(storeId, [orderId]);
+    return map.get(orderId) ?? null;
+  },
+};
+
+window.EncartAPI = { StoreAPI, ProductAPI, OrderAPI, AsaasAPI, DeliveryAPI, CampaignAPI, CustomerAPI, OrderPaymentAPI };
