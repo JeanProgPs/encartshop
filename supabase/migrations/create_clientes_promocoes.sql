@@ -57,7 +57,7 @@ DROP POLICY IF EXISTS "clientes_select_own" ON clientes;
 CREATE POLICY "clientes_select_own"
   ON clientes FOR SELECT
   USING (
-    store_id = (SELECT id FROM stores WHERE user_id = auth.uid() LIMIT 1)
+    auth.uid() = (SELECT user_id FROM stores WHERE id = store_id LIMIT 1)
   );
 
 -- Policy: INSERT — Apenas loja proprietária
@@ -65,7 +65,7 @@ DROP POLICY IF EXISTS "clientes_insert_own" ON clientes;
 CREATE POLICY "clientes_insert_own"
   ON clientes FOR INSERT
   WITH CHECK (
-    store_id = (SELECT id FROM stores WHERE user_id = auth.uid() LIMIT 1)
+    auth.uid() = (SELECT user_id FROM stores WHERE id = store_id LIMIT 1)
   );
 
 -- Policy: UPDATE — Apenas loja proprietária
@@ -73,10 +73,10 @@ DROP POLICY IF EXISTS "clientes_update_own" ON clientes;
 CREATE POLICY "clientes_update_own"
   ON clientes FOR UPDATE
   USING (
-    store_id = (SELECT id FROM stores WHERE user_id = auth.uid() LIMIT 1)
+    auth.uid() = (SELECT user_id FROM stores WHERE id = store_id LIMIT 1)
   )
   WITH CHECK (
-    store_id = (SELECT id FROM stores WHERE user_id = auth.uid() LIMIT 1)
+    auth.uid() = (SELECT user_id FROM stores WHERE id = store_id LIMIT 1)
   );
 
 -- Policy: DELETE — Apenas loja proprietária
@@ -84,7 +84,7 @@ DROP POLICY IF EXISTS "clientes_delete_own" ON clientes;
 CREATE POLICY "clientes_delete_own"
   ON clientes FOR DELETE
   USING (
-    store_id = (SELECT id FROM stores WHERE user_id = auth.uid() LIMIT 1)
+    auth.uid() = (SELECT user_id FROM stores WHERE id = store_id LIMIT 1)
   );
 
 -- ============================================================
@@ -144,7 +144,7 @@ CREATE POLICY "promocoes_select_own"
   ON promocoes FOR SELECT
   USING (
     -- Dono: pode ver todas suas promoções
-    store_id = (SELECT id FROM stores WHERE user_id = auth.uid() LIMIT 1)
+    auth.uid() = (SELECT user_id FROM stores WHERE id = store_id LIMIT 1)
     OR
     -- Público: pode ver promoções ativas e válidas
     (
@@ -160,7 +160,7 @@ DROP POLICY IF EXISTS "promocoes_insert_own" ON promocoes;
 CREATE POLICY "promocoes_insert_own"
   ON promocoes FOR INSERT
   WITH CHECK (
-    store_id = (SELECT id FROM stores WHERE user_id = auth.uid() LIMIT 1)
+    auth.uid() = (SELECT user_id FROM stores WHERE id = store_id LIMIT 1)
   );
 
 -- Policy: UPDATE — Apenas loja proprietária
@@ -168,10 +168,10 @@ DROP POLICY IF EXISTS "promocoes_update_own" ON promocoes;
 CREATE POLICY "promocoes_update_own"
   ON promocoes FOR UPDATE
   USING (
-    store_id = (SELECT id FROM stores WHERE user_id = auth.uid() LIMIT 1)
+    auth.uid() = (SELECT user_id FROM stores WHERE id = store_id LIMIT 1)
   )
   WITH CHECK (
-    store_id = (SELECT id FROM stores WHERE user_id = auth.uid() LIMIT 1)
+    auth.uid() = (SELECT user_id FROM stores WHERE id = store_id LIMIT 1)
   );
 
 -- Policy: DELETE — Apenas loja proprietária
@@ -179,7 +179,7 @@ DROP POLICY IF EXISTS "promocoes_delete_own" ON promocoes;
 CREATE POLICY "promocoes_delete_own"
   ON promocoes FOR DELETE
   USING (
-    store_id = (SELECT id FROM stores WHERE user_id = auth.uid() LIMIT 1)
+    auth.uid() = (SELECT user_id FROM stores WHERE id = store_id LIMIT 1)
   );
 
 -- ============================================================

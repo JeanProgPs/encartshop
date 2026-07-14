@@ -198,7 +198,7 @@ CREATE POLICY "storage_products_insert_own_store"
   WITH CHECK (
     bucket_id = 'products'
     AND auth.role() = 'authenticated'
-    AND (text_to_array(name, '/'::text))[1] = (SELECT id::text FROM stores WHERE user_id = auth.uid() LIMIT 1)
+    AND (text_to_array(name, '/'::text))[1] IN (SELECT id::text FROM stores WHERE user_id = auth.uid())
   );
 
 -- Política de update: apenas autenticados, restrito à pasta do próprio store_id (dono logado)
@@ -209,7 +209,7 @@ CREATE POLICY "storage_products_update_own_store"
   USING (
     bucket_id = 'products'
     AND auth.role() = 'authenticated'
-    AND (text_to_array(name, '/'::text))[1] = (SELECT id::text FROM stores WHERE user_id = auth.uid() LIMIT 1)
+    AND (text_to_array(name, '/'::text))[1] IN (SELECT id::text FROM stores WHERE user_id = auth.uid())
   );
 
 -- Política de delete: apenas autenticados, restrito à pasta do próprio store_id (dono logado)
@@ -220,7 +220,7 @@ CREATE POLICY "storage_products_delete_own_store"
   USING (
     bucket_id = 'products'
     AND auth.role() = 'authenticated'
-    AND (text_to_array(name, '/'::text))[1] = (SELECT id::text FROM stores WHERE user_id = auth.uid() LIMIT 1)
+    AND (text_to_array(name, '/'::text))[1] IN (SELECT id::text FROM stores WHERE user_id = auth.uid())
   );
 
 -- ============================================================

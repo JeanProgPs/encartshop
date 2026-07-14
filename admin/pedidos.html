@@ -368,6 +368,44 @@
     showToast('Pedido excluído.', 'info');
   }
 
+  // ── Notificação via WhatsApp ───────────────────────────────────────────
+  window.handleWhatsAppNotify = function(id) {
+    const o = allOrders.find(order => order.id === id);
+    if (!o) return;
+
+    if (!o.customer_phone) {
+      if (window.showToast) showToast('Este pedido não possui telefone cadastrado.', 'warning');
+      return;
+    }
+
+    let phone = String(o.customer_phone).replace(/\D/g, '');
+    if (phone.length === 10 || phone.length === 11) {
+      phone = '55' + phone; // Adiciona DDI do Brasil caso não tenha
+    } else if (phone.length < 10) {
+      if (window.showToast) showToast('Telefone inválido para o WhatsApp.', 'warning');
+      return;
+    }
+
+    const customerName = o.customer_name ? String(o.customer_name).split(' ')[0] : 'Cliente';
+    const orderRef = String(o.id).slice(-5).toUpperCase();
+
+    // Mensagem inteligente baseada no status
+    let msg = `Olá ${customerName}, tudo bem? Aqui é da loja.\n`;
+    if (o.status === 'em_entrega') {
+      msg += `Temos uma ótima notícia: o seu pedido #${orderRef} acabou de sair para entrega! 🛵💨\nLogo chegará até você!`;
+    } else if (o.status === 'confirmado') {
+      msg += `O seu pedido #${orderRef} foi confirmado e já está sendo preparado com muito carinho! 📦✨`;
+    } else if (o.status === 'novo') {
+      msg += `Recebemos o seu pedido #${orderRef} com sucesso! Vamos iniciar o preparo em breve. ✅`;
+    } else {
+      msg += `Gostaríamos de atualizar você sobre o seu pedido #${orderRef}.\nStatus atual: *${OrderModule.getStatusLabel(o.status)}*.`;
+    }
+
+    const encodedMsg = encodeURIComponent(msg);
+    const waUrl = `https://wa.me/${phone}?text=${encodedMsg}`;
+    window.open(waUrl, '_blank');
+  };
+
   // ── Impressão de cupom ─────────────────────────────────────────────────
   window.handlePrintOrder = function(id) {
     const o = allOrders.find(order => order.id === id);

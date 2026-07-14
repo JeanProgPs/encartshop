@@ -202,6 +202,9 @@ const UIRender = (() => {
             ${actionButtons}
           </div>
           <div class="flex items-center gap-2 ml-auto">
+            <button class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-green-500/10 text-textSecondary hover:text-green-500 transition-colors" onclick="handleWhatsAppNotify('${o.id}')" title="Notificar via WhatsApp">
+              <i data-lucide="message-circle" class="w-4 h-4"></i>
+            </button>
             <button class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-accent/10 text-textSecondary hover:text-accent transition-colors" onclick="handlePrintOrder('${o.id}')" title="Imprimir Pedido">
               <i data-lucide="printer" class="w-4 h-4"></i>
             </button>
