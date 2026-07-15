@@ -193,9 +193,9 @@ window.StoreUI = (() => {
             <div class="cart-item-price">${fmt(item.price * item.qty)}</div>
           </div>
           <div class="cart-qty-control">
-            <button class="cart-qty-btn remove" onclick="window.changeQty('${item.id}',-1)" title="Remover">−</button>
+            <button class="cart-qty-btn remove" onclick="window.changeQty('${escapeHTML(item.id)}',-1)" title="Remover">−</button>
             <span class="cart-qty-num">${qtyLabel}</span>
-            <button class="cart-qty-btn" onclick="window.changeQty('${item.id}',1)" title="Adicionar">+</button>
+            <button class="cart-qty-btn" onclick="window.changeQty('${escapeHTML(item.id)}',1)" title="Adicionar">+</button>
           </div>
         </div>`;
     }).join('');
