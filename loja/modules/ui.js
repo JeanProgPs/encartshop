@@ -186,7 +186,7 @@ window.StoreUI = (() => {
       const img = escapeHTML(item.image) || defaultImg;
       return `
         <div class="cart-item-row">
-          <img class="cart-item-img" src="${img}" alt="${escapeHTML(item.name)}" onerror="this.src='${defaultImg}'">
+          <img class="cart-item-img" src="${img}" alt="${escapeHTML(item.name)}" onerror="this.src='${escapeHTML(defaultImg)}'"
           <div class="cart-item-info">
             <div class="cart-item-name">${escapeHTML(item.name)}</div>
             <div class="cart-item-unit-price">${fmt(item.price)} / ${escapeHTML(item.unit || 'un')}</div>

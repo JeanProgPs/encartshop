@@ -451,7 +451,7 @@ function renderCartBody() {
       : `${item.qty}x`;
     return `
       <div class="cart-item-row">
-        <img class="cart-item-img" src="${item.image || defaultImg}" alt="${item.name}" onerror="this.src='${defaultImg}'">
+        <img class="cart-item-img" src="${item.image || defaultImg}" alt="${item.name}" onerror="this.src='${escapeHTML(defaultImg)}'">
         <div class="cart-item-info">
           <div class="cart-item-name">${item.name}</div>
           <div class="cart-item-unit-price">${fmt(item.price)} / ${item.unit || 'un'}</div>
