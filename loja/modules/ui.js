@@ -6,6 +6,11 @@
 window.StoreUI = (() => {
   let activeCategory = 'Todos';
   let store = null;
+  // Cache local do carrinho — única fonte de verdade para renderização da UI.
+  // Atualizado exclusivamente via evento CART_UPDATED.
+  // openCart() usa este cache em vez de chamar CartManager.getCart() diretamente,
+  // eliminando a race condition de inicialização.
+  let _cartCache = [];
 
   async function init() {
     EventBus.log('StoreUI', 'Aguardando inicialização da UI...');
@@ -65,13 +70,18 @@ window.StoreUI = (() => {
       });
     }
 
-    // 4. Quando o Carrinho for atualizado -> Redesenha Modal, Bolha e Header
+    // 4. Quando o Carrinho for atualizado -> Atualiza cache e redesenha tudo
+    // Esta é a única função que atualiza _cartCache.
+    // Atualiza indicadores sempre. Atualiza o body do modal sempre que ele
+    // estiver visível — e também quando estiver fechado, para garantir
+    // que ao abrir ele já esteja renderizado corretamente.
     EventBus.on(EventBus.EVENTS.CART_UPDATED, ({ cart }) => {
-      _updateCartIndicators(cart);
-      const modal = document.getElementById('cart-modal');
-      if (modal && !modal.classList.contains('hidden')) {
-        _renderCartBody(cart);
-      }
+      _cartCache = Array.isArray(cart) ? cart : [];
+      _updateCartIndicators(_cartCache);
+      // Renderiza o body do modal independentemente de estar aberto ou fechado.
+      // Custo mínimo (DOM oculto não causa reflow visível) e garante
+      // que ao openCart() o conteúdo já esteja correto.
+      _renderCartBody(_cartCache);
     });
   }
 
@@ -251,8 +261,10 @@ window.StoreUI = (() => {
     if (modal) {
       modal.classList.remove('hidden');
       document.body.style.overflow = 'hidden';
-      const cart = window.CartManager ? window.CartManager.getCart() : [];
-      _renderCartBody(cart);
+      // Usa o cache atualizado pelo EventBus — não chama CartManager diretamente.
+      // Isso elimina a race condition: _cartCache é sempre atualizado por CART_UPDATED,
+      // que é emitido pelo CartManager após cada operação (add, change, load).
+      _renderCartBody(_cartCache);
     }
   };
 
