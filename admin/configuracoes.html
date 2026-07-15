@@ -514,13 +514,23 @@
 
       const newEmail = document.getElementById('s-auth-email').value.trim();
       const newPass  = document.getElementById('s-auth-pass').value;
+
       if (newEmail || newPass) {
-        const { error: authErr } = await AuthService.updateCredentials({
-          email:    newEmail || undefined,
-          password: newPass  || undefined,
-        });
-        if (authErr) { showToast('Configurações salvas, mas falha ao atualizar credenciais: ' + authErr, 'warning'); return; }
-        if (newEmail) { showToast('E-mail atualizado. Faça login novamente.', 'info'); await AuthService.logout(); window.location.replace('index.html'); return; }
+        // Busca o e-mail atual para evitar erro "already registered" ao salvar sem mudar o e-mail
+        const currentUser = await AuthService.getUser();
+        const currentEmail = currentUser?.email || '';
+        const emailChanged = newEmail && newEmail.toLowerCase() !== currentEmail.toLowerCase();
+
+        const credPayload = {};
+        if (emailChanged)  credPayload.email    = newEmail;
+        if (newPass)       credPayload.password = newPass;
+
+        // Só chama se há algo para mudar de verdade
+        if (Object.keys(credPayload).length > 0) {
+          const { error: authErr } = await AuthService.updateCredentials(credPayload);
+          if (authErr) { showToast('Configurações salvas, mas falha ao atualizar credenciais: ' + authErr, 'warning'); return; }
+          if (emailChanged) { showToast('E-mail atualizado. Faça login novamente.', 'info'); await AuthService.logout(); window.location.replace('index.html'); return; }
+        }
       }
 
       const nameEl = document.getElementById('sidebar-store-name');
