@@ -73,7 +73,18 @@ window.DeliveryModule = (() => {
     if (!isActive) return;
     selectedZone = zones.find(z => z.id === zoneId) || null;
     EventBus.log('DeliveryModule', 'Região alterada', { zoneId });
+    if (selectedZone && window.CartManager) {
+        window.CartManager.clearCorreios();
+    }
     EventBus.emit('loja:delivery_region_changed', { selectedZone });
+    _renderDeliveryUI();
+    EventBus.emit(EventBus.EVENTS.CART_UPDATED, { cart: window.CartManager ? window.CartManager.getCart() : [] });
+  }
+
+  function clearZone() {
+    selectedZone = null;
+    const selectEl = document.querySelector('.delivery-module-select');
+    if (selectEl) selectEl.value = '';
     _renderDeliveryUI();
   }
 
@@ -147,5 +158,5 @@ window.DeliveryModule = (() => {
     document.head.appendChild(style);
   }
 
-  return { init, getState, setZone };
+  return { init, getState, setZone, clearZone };
 })();

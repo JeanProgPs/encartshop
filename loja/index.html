@@ -468,6 +468,13 @@
 
     <div class="cart-drawer-footer">
       <div id="delivery-module-area"></div>
+      <div id="correios-module-area" style="display:none; margin-bottom: 12px;">
+        <label class="cart-name-label">Calcular Frete (Correios)</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="cart-zip-input" class="cart-name-input" placeholder="00000-000" maxlength="9" style="flex: 1;" onkeyup="window.CartManager && window.CartManager.handleZipChange(this.value)">
+        </div>
+        <div id="correios-options" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
       <div class="cart-summary" id="cart-subtotals"></div>
 
       <!-- form autocomplete="off" suprime a barra de AutoFill do iOS (chave/cartão/localização) -->

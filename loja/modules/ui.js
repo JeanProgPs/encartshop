@@ -199,34 +199,46 @@ window.StoreUI = (() => {
     }
 
     const subtotal     = cart.reduce((s, i) => s + i.price * i.qty, 0);
-    const deliveryFee  = Number(store.delivery_fee)  || 0;
-    const deliveryFree = Number(store.delivery_free) || 0;
-    const isCombine    = deliveryFee === -1;
-    const hasFreeShip  = deliveryFree > 0 && subtotal >= deliveryFree;
-    const feeCharged   = isCombine ? 0 : (hasFreeShip ? 0 : deliveryFee);
-    const total        = subtotal + feeCharged;
-
-    let progressHTML = '';
-    if (deliveryFree > 0 && !hasFreeShip && !isCombine) {
-      const pct = Math.min(100, Math.round((subtotal / deliveryFree) * 100));
-      progressHTML = `
-        <div class="cart-progress-wrap">
-          <div class="cart-progress-bar">
-            <div class="cart-progress-fill" style="width:${pct}%"></div>
-          </div>
-          <div class="cart-progress-label">Faltam ${fmt(deliveryFree - subtotal)} para frete grátis!</div>
-        </div>`;
-    } else if (hasFreeShip) {
-      progressHTML = `<div class="cart-free-ship">🎉 Você ganhou frete grátis!</div>`;
-    }
-
+    const correios     = window.CartManager && window.CartManager.getSelectedCorreios();
+    
+    let feeCharged = 0;
     let deliveryLine = '';
-    if (isCombine) {
-      deliveryLine = `<div class="cart-summary-row"><span>Entrega</span><span style="color:#f59e0b;font-weight:600">A combinar</span></div>`;
-    } else if (deliveryFee > 0) {
-      deliveryLine = hasFreeShip
-        ? `<div class="cart-summary-row"><span>Entrega</span><span style="color:#22c55e;font-weight:600">Grátis 🎉</span></div>`
-        : `<div class="cart-summary-row"><span>Entrega</span><span>${fmt(deliveryFee)}</span></div>`;
+    let progressHTML = '';
+    let isCombine = false;
+    let total = subtotal;
+
+    if (correios) {
+      feeCharged = correios.price;
+      total += feeCharged;
+      deliveryLine = `<div class="cart-summary-row"><span>Entrega (Correios)</span><span>${fmt(feeCharged)}</span></div>`;
+    } else {
+      const deliveryFee  = Number(store.delivery_fee)  || 0;
+      const deliveryFree = Number(store.delivery_free) || 0;
+      isCombine    = deliveryFee === -1;
+      const hasFreeShip  = deliveryFree > 0 && subtotal >= deliveryFree;
+      feeCharged   = isCombine ? 0 : (hasFreeShip ? 0 : deliveryFee);
+      total        = subtotal + feeCharged;
+
+      if (deliveryFree > 0 && !hasFreeShip && !isCombine) {
+        const pct = Math.min(100, Math.round((subtotal / deliveryFree) * 100));
+        progressHTML = `
+          <div class="cart-progress-wrap">
+            <div class="cart-progress-bar">
+              <div class="cart-progress-fill" style="width:${pct}%"></div>
+            </div>
+            <div class="cart-progress-label">Faltam ${fmt(deliveryFree - subtotal)} para frete grátis!</div>
+          </div>`;
+      } else if (hasFreeShip) {
+        progressHTML = `<div class="cart-free-ship">🎉 Você ganhou frete grátis!</div>`;
+      }
+
+      if (isCombine) {
+        deliveryLine = `<div class="cart-summary-row"><span>Entrega</span><span style="color:#f59e0b;font-weight:600">A combinar</span></div>`;
+      } else if (deliveryFee > 0) {
+        deliveryLine = hasFreeShip
+          ? `<div class="cart-summary-row"><span>Entrega</span><span style="color:#22c55e;font-weight:600">Grátis 🎉</span></div>`
+          : `<div class="cart-summary-row"><span>Entrega</span><span>${fmt(deliveryFee)}</span></div>`;
+      }
     }
 
     footer.innerHTML = `

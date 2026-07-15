@@ -196,6 +196,10 @@
             <input id="s-delivery-free" type="number" step="0.01" min="0" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent disabled:opacity-50" placeholder="Ex: 50">
           </div>
         </div>
+        <div class="flex flex-col gap-1.5 mb-4 max-w-sm">
+          <label class="text-sm font-medium text-textPrimary">CEP de Origem (Para cálculo de Correios)</label>
+          <input id="s-origin-zip" type="text" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Ex: 01001-000">
+        </div>
         <label class="flex items-center gap-2 cursor-pointer w-max">
           <input type="checkbox" id="s-delivery-combine" onchange="toggleCombineDelivery(this.checked)" class="w-4 h-4 rounded border-borderColor text-accent focus:ring-accent">
           <span class="text-sm font-medium text-textPrimary">Entrega a combinar com o lojista</span>
@@ -350,6 +354,7 @@
     }
     
     document.getElementById('s-whatsapp').value      = _store.whatsapp      || '';
+    document.getElementById('s-origin-zip').value    = _store.origin_zip    || '';
     
     const isCombine = _store.delivery_fee === -1;
     document.getElementById('s-delivery-combine').checked = isCombine;
@@ -471,6 +476,7 @@
         seo_description: document.getElementById('s-seo-description').value.trim() || null,
         seo_keywords:    document.getElementById('s-seo-keywords').value.trim() || null,
         whatsapp:        wa,
+        origin_zip:      document.getElementById('s-origin-zip').value.replace(/\D/g, '') || null,
         delivery_fee:    isCombine ? -1 : (parseFloat(document.getElementById('s-delivery-fee').value) || 0),
         delivery_free:   isCombine ? 0 : (parseFloat(document.getElementById('s-delivery-free').value) || 0),
       };

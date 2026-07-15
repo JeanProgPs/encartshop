@@ -6,12 +6,21 @@
 window.CartManager = (() => {
   let cart = [];
   let store = null;
+  let storeZip = null;
+  let currentZip = '';
+  let selectedCorreios = null;
 
   async function init() {
     EventBus.log('CartManager', 'Aguardando StoreContext...');
     
     EventBus.on(EventBus.EVENTS.STORE_LOADED, (data) => {
       store = data.store;
+      storeZip = store.origin_zip || null;
+      if (storeZip) {
+        const area = document.getElementById('correios-module-area');
+        if (area) area.style.display = 'block';
+      }
+
       try {
         cart = _loadCart();
         EventBus.log('CartManager', 'Carrinho recuperado', { items: cart.length });
@@ -91,12 +100,15 @@ window.CartManager = (() => {
     let finalTotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
     const subtotal = finalTotal;
 
-    if (window.DeliveryModule) {
+    if (selectedCorreios) {
+      finalTotal += selectedCorreios.price;
+      deliveryMsg = `\n*Entrega:* Correios (${selectedCorreios.type})\n*Taxa:* ${UIRender.fmtPrice(selectedCorreios.price)}\n*Prazo:* Aprox. ${selectedCorreios.days} dias úteis\n`;
+    } else if (window.DeliveryModule) {
       const state = window.DeliveryModule.getState();
       if (state && state.active) {
         if (!state.canCheckout) {
           if (state.reason === 'region_missing') {
-            if (window.showToast) window.showToast('Selecione uma região de entrega.', 'warning');
+            if (window.showToast) window.showToast('Selecione uma região de entrega ou calcule o frete.', 'warning');
             return;
           }
           if (state.reason === 'minimum_not_met') {
@@ -171,6 +183,55 @@ window.CartManager = (() => {
   function _loadCart() {
     try { return JSON.parse(localStorage.getItem(`encart_cart_${store.id}`) || '[]'); } catch { return []; }
   }
+
+  // Correios methods
+  window.CartManager.handleZipChange = async function(val) {
+    val = val.replace(/\D/g, '');
+    if (val.length === 8 && val !== currentZip) {
+      currentZip = val;
+      const optsDiv = document.getElementById('correios-options');
+      if (optsDiv) optsDiv.innerHTML = '<span style="font-size: 0.8rem">Calculando frete...</span>';
+      try {
+        const res = await fetch(`/api/shipping?origin=${storeZip}&dest=${val}`);
+        const data = await res.json();
+        if (data.options && data.options.length > 0) {
+          if (optsDiv) optsDiv.innerHTML = data.options.map(o => `
+            <label style="font-size:0.85rem; display:flex; align-items:center; gap:6px;">
+              <input type="radio" name="correios_opt" value='${JSON.stringify(o)}' onchange="window.CartManager.selectCorreios(this.value)">
+              ${o.type} - R$ ${o.price.toFixed(2).replace('.', ',')} (Aprox. ${o.days} dias)
+            </label>
+          `).join('');
+        } else {
+          if (optsDiv) optsDiv.innerHTML = '<span style="font-size: 0.8rem; color: #ef4444">CEP inválido ou sem opções de entrega.</span>';
+        }
+      } catch (e) {
+        if (optsDiv) optsDiv.innerHTML = '<span style="font-size: 0.8rem; color: #ef4444">Erro ao calcular frete.</span>';
+      }
+    } else if (val.length < 8) {
+      currentZip = '';
+      selectedCorreios = null;
+      const optsDiv = document.getElementById('correios-options');
+      if (optsDiv) optsDiv.innerHTML = '';
+      EventBus.emit(EventBus.EVENTS.CART_UPDATED, { cart });
+    }
+  };
+
+  window.CartManager.selectCorreios = function(valStr) {
+    selectedCorreios = JSON.parse(valStr);
+    if (window.DeliveryModule) window.DeliveryModule.clearZone();
+    EventBus.emit(EventBus.EVENTS.CART_UPDATED, { cart });
+  };
+
+  window.CartManager.clearCorreios = function() {
+    selectedCorreios = null;
+    const radios = document.querySelectorAll('input[name="correios_opt"]');
+    radios.forEach(r => r.checked = false);
+    EventBus.emit(EventBus.EVENTS.CART_UPDATED, { cart });
+  };
+
+  window.CartManager.getSelectedCorreios = function() {
+    return selectedCorreios;
+  };
 
   return { init, getCart };
 })();
