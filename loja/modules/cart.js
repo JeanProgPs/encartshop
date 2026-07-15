@@ -178,9 +178,11 @@ window.CartManager = (() => {
   };
 
   function _saveCart() {
+    if (!store || !store.id) return;
     try { localStorage.setItem(`encart_cart_${store.id}`, JSON.stringify(cart)); } catch { }
   }
   function _loadCart() {
+    if (!store || !store.id) return [];
     try { return JSON.parse(localStorage.getItem(`encart_cart_${store.id}`) || '[]'); } catch { return []; }
   }
 

@@ -170,9 +170,10 @@ window.StoreUI = (() => {
     const defaultImg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="%23e2e8f0"><rect width="100%" height="100%"/></svg>';
 
     body.innerHTML = cart.map(item => {
+      const qty = parseFloat(item.qty) || 0;
       const qtyLabel = item.unit === 'kg'
-        ? (item.qty < 1 ? `${item.qty * 1000}g` : `${item.qty.toFixed(1).replace('.', ',')}kg`)
-        : `${item.qty}x`;
+        ? (qty < 1 ? `${qty * 1000}g` : `${qty.toFixed(1).replace('.', ',')}kg`)
+        : `${qty}x`;
       const img = escapeHTML(item.image) || defaultImg;
       return `
         <div class="cart-item-row">
@@ -180,7 +181,7 @@ window.StoreUI = (() => {
           <div class="cart-item-info">
             <div class="cart-item-name">${escapeHTML(item.name)}</div>
             <div class="cart-item-unit-price">${fmt(item.price)} / ${escapeHTML(item.unit || 'un')}</div>
-            <div class="cart-item-price">${fmt(item.price * item.qty)}</div>
+            <div class="cart-item-price">${fmt(item.price * qty)}</div>
           </div>
           <div class="cart-qty-control">
             <button class="cart-qty-btn remove" onclick="window.changeQty('${item.id}',-1)" title="Remover">−</button>
