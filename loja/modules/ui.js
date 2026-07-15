@@ -70,7 +70,11 @@ window.StoreUI = (() => {
       _updateCartIndicators(cart);
       const modal = document.getElementById('cart-modal');
       if (modal && !modal.classList.contains('hidden')) {
-        _renderCartBody(cart);
+        try {
+          _renderCartBody(cart);
+        } catch(e) {
+          console.error('[CART_UPDATED] Erro ao renderizar:', e);
+        }
       }
     });
   }
@@ -169,27 +173,35 @@ window.StoreUI = (() => {
     const fmt = v => UIRender.fmtPrice(v);
     const defaultImg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="%23e2e8f0"><rect width="100%" height="100%"/></svg>';
 
-    body.innerHTML = cart.map(item => {
-      const qty = parseFloat(item.qty) || 0;
-      const qtyLabel = item.unit === 'kg'
-        ? (qty < 1 ? `${qty * 1000}g` : `${qty.toFixed(1).replace('.', ',')}kg`)
-        : `${qty}x`;
-      const img = escapeHTML(item.image) || defaultImg;
-      return `
-        <div class="cart-item-row">
-          <img class="cart-item-img" src="${img}" alt="${escapeHTML(item.name)}" onerror="this.src='${defaultImg}'">
-          <div class="cart-item-info">
-            <div class="cart-item-name">${escapeHTML(item.name)}</div>
-            <div class="cart-item-unit-price">${fmt(item.price)} / ${escapeHTML(item.unit || 'un')}</div>
-            <div class="cart-item-price">${fmt(item.price * qty)}</div>
-          </div>
-          <div class="cart-qty-control">
-            <button class="cart-qty-btn remove" onclick="window.changeQty('${item.id}',-1)" title="Remover">−</button>
-            <span class="cart-qty-num">${qtyLabel}</span>
-            <button class="cart-qty-btn" onclick="window.changeQty('${item.id}',1)" title="Adicionar">+</button>
-          </div>
-        </div>`;
-    }).join('');
+    try {
+      body.innerHTML = cart.map(item => {
+        const qty = parseFloat(item.qty) || 0;
+        const qtyLabel = item.unit === 'kg'
+          ? (qty < 1 ? `${qty * 1000}g` : `${qty.toFixed(1).replace('.', ',')}kg`)
+          : `${qty}x`;
+        const img = (typeof escapeHTML === 'function' ? escapeHTML(item.image) : item.image) || defaultImg;
+        const nameEsc = typeof escapeHTML === 'function' ? escapeHTML(item.name) : item.name;
+        const unitEsc = typeof escapeHTML === 'function' ? escapeHTML(item.unit || 'un') : (item.unit || 'un');
+        
+        return `
+          <div class="cart-item-row">
+            <img class="cart-item-img" src="${img}" alt="${nameEsc}" onerror="this.src='${defaultImg}'">
+            <div class="cart-item-info">
+              <div class="cart-item-name">${nameEsc}</div>
+              <div class="cart-item-unit-price">${fmt(item.price)} / ${unitEsc}</div>
+              <div class="cart-item-price">${fmt(item.price * qty)}</div>
+            </div>
+            <div class="cart-qty-control">
+              <button class="cart-qty-btn remove" onclick="window.changeQty('${item.id}',-1)" title="Remover">−</button>
+              <span class="cart-qty-num">${qtyLabel}</span>
+              <button class="cart-qty-btn" onclick="window.changeQty('${item.id}',1)" title="Adicionar">+</button>
+            </div>
+          </div>`;
+      }).join('');
+    } catch (e) {
+      console.error('Crash renderizando cart', e, cart);
+      body.innerHTML = `<div style="padding: 20px; color: red;">Erro ao processar itens do carrinho. Limpe seus dados de navegação ou atualize a página.</div>`;
+    }
 
     if (!footer) return;
 
@@ -213,8 +225,9 @@ window.StoreUI = (() => {
       total += feeCharged;
       deliveryLine = `<div class="cart-summary-row"><span>Entrega (Correios)</span><span>${fmt(feeCharged)}</span></div>`;
     } else {
-      const deliveryFee  = Number(store.delivery_fee)  || 0;
-      const deliveryFree = Number(store.delivery_free) || 0;
+      const storeRef = (window.StoreContext && window.StoreContext.getStore()) || store || {};
+      const deliveryFee  = Number(storeRef.delivery_fee)  || 0;
+      const deliveryFree = Number(storeRef.delivery_free) || 0;
       isCombine    = deliveryFee === -1;
       const hasFreeShip  = deliveryFree > 0 && subtotal >= deliveryFree;
       feeCharged   = isCombine ? 0 : (hasFreeShip ? 0 : deliveryFee);
@@ -264,8 +277,13 @@ window.StoreUI = (() => {
     if (modal) {
       modal.classList.remove('hidden');
       document.body.style.overflow = 'hidden';
-      const cart = window.CartManager ? window.CartManager.getCart() : [];
-      _renderCartBody(cart);
+      // Sempre obtém o carrinho do CartManager e tenta renderizar
+      const currentCart = window.CartManager ? window.CartManager.getCart() : [];
+      try {
+        _renderCartBody(currentCart);
+      } catch(e) {
+        console.error('[openCart] Erro ao renderizar carrinho:', e);
+      }
     }
   };
 
