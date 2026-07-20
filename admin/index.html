@@ -136,6 +136,8 @@
     if (!stores.length) {
       list.innerHTML = '';
       noStores.classList.remove('hidden');
+      document.getElementById('step-password').classList.add('hidden');
+      document.getElementById('step-select').classList.remove('hidden');
       return;
     }
 
