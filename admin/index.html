@@ -188,6 +188,10 @@
     const { success, data, error } = await AuthService.login(email, password);
 
     if (success && data.user) {
+      if (data.user.email === 'admin@encartshop.com') {
+        window.location.href = 'lojas.html';
+        return;
+      }
       // Login OK, agora busca as lojas desse usuário
       await renderUserStores(data.user.id);
     } else {

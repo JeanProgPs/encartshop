@@ -219,7 +219,12 @@
     const user = await AuthService.getUser();
     if (!user) return;
 
-    const stores = await EncartAPI.StoreAPI.getByUser(user.id);
+    let stores = [];
+    if (user.email === 'admin@encartshop.com') {
+      stores = await EncartAPI.StoreAPI.getAll();
+    } else {
+      stores = await EncartAPI.StoreAPI.getByUser(user.id);
+    }
     window._loadedStores = stores || [];
     const activeId = AuthService.getActiveStoreId();
 
