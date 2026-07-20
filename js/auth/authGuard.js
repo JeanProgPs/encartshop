@@ -20,6 +20,12 @@ const AuthGuard = (() => {
       return false;
     }
 
+    const isLojasPage = window.location.pathname.includes('lojas.html');
+    if (!activeStoreId && !isLojasPage) {
+      window.location.replace('lojas.html');
+      return false;
+    }
+
     // 2. Verifica estado da assinatura (não bloqueia pending — apenas expirado+carência)
     if (!window.location.pathname.includes('pagamento.html')) {
       try {
@@ -52,8 +58,8 @@ const AuthGuard = (() => {
   async function checkAlreadyLoggedIn() {
     try {
       const user = await AuthService.getUser();
-      if (user && user.app_metadata?.role === 'SUPER_ADMIN') {
-        window.location.replace('/platform');
+      if (user && (user.app_metadata?.role === 'SUPER_ADMIN' || user.email === 'admin@encartshop.com')) {
+        window.location.replace('lojas.html');
         return;
       }
       

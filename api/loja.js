@@ -162,7 +162,6 @@ export default async (req, res) => {
     if (activeProducts.length > 0) {
       const staticCardsHTML = activeProducts.map(p => {
         const isPromo = !!p.promo_price;
-        const discountPct = isPromo && p.price > p.promo_price ? Math.round(((p.price - p.promo_price) / p.price) * 100) : 0;
         const unit = p.unit || 'un';
         const defaultImg = 'https://images.placeholders.dev/?width=400&height=400&text=Sem%20Imagem&bgColor=%23f1f5f9&textColor=%2364748b';
         const img = escapeHTML(p.image) || defaultImg;
@@ -176,7 +175,6 @@ export default async (req, res) => {
           <img src="${img}" alt="${nameEscaped}" loading="lazy">
           ${isPromo ? `<div class="promo-badge">🔥 OFERTA</div>` : ''}
         </div>
-        ${isPromo && discountPct > 0 ? `<div class="discount-banner">-${discountPct}% OFF</div>` : ''}
         <div class="product-info">
           <div class="product-name" title="${nameEscaped}">${nameEscaped}</div>
           <div class="product-price-row">

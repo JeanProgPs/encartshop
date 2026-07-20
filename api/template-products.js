@@ -22,6 +22,7 @@ export default async function handler(req, res) {
       { header: 'Categoria',        key: 'category',    width: 20 },
       { header: 'Preço',            key: 'price',       width: 12 },
       { header: 'Preço Promocional',key: 'promo_price', width: 18 },
+      { header: 'Estoque',          key: 'stock',       width: 12 },
       { header: 'Status',           key: 'active',      width: 10 },
       { header: 'Imagem',           key: 'image',       width: 50 },
     ];
@@ -41,6 +42,7 @@ export default async function handler(req, res) {
       category:    'Camisetas',
       price:       49.90,
       promo_price: 39.90,
+      stock:       100,
       active:      'Ativo',            // "Ativo" ou "Inativo"
       image:       'https://exemplo.com/imagem.jpg',
     });
