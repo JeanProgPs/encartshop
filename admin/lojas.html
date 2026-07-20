@@ -239,31 +239,21 @@
       return;
     }
 
-    // Carrega contadores em paralelo
-    const [productsData, ordersData] = await Promise.all([
-      Promise.all(stores.map(s => EncartAPI.ProductAPI.getByStore(s.id))),
-      Promise.all(stores.map(s => EncartAPI.OrderAPI.getByStore(s.id)))
-    ]);
-
-    grid.innerHTML = stores.map((s, i) => {
-      const prods       = productsData[i] || [];
-      const orders      = ordersData[i]   || [];
-      const activeProds = prods.filter(p => p.active).length;
-      const newOrders   = orders.filter(o => o.status === 'novo').length;
+    // Renderiza as lojas imediatamente com os contadores vazios/carregando
+    grid.innerHTML = stores.map((s) => {
       const isActive    = s.id === activeId;
       const lojaUrl     = getStoreUrl(s);
       const color       = s.color || '#4f46e5';
-      const sub         = SubscriptionModule.getStatus(s.expires_at);
 
       const badges = [];
       if (isActive) badges.push(`<span class="store-card-tag">✓ Loja Atual</span>`);
-      if (newOrders > 0) badges.push(`<span class="store-card-tag danger">🛒 ${newOrders} novo(s)</span>`);
+      // O badge de novos pedidos será injetado depois
 
       return `
         <div class="store-card" id="store-card-${s.id}">
           <div class="store-card-header" style="background: linear-gradient(135deg, ${color} 0%, ${color}cc 100%);">
             <div class="store-card-logo">🏪</div>
-            <div class="store-card-badges">${badges.join('')}</div>
+            <div class="store-card-badges" id="badges-${s.id}">${badges.join('')}</div>
           </div>
 
           ${getStatusBar(s)}
@@ -277,15 +267,15 @@
 
             <div class="store-card-stats">
               <div class="store-stat">
-                <div class="store-stat-num" style="color:${color};">${activeProds}</div>
+                <div class="store-stat-num" id="stat-prods-${s.id}" style="color:${color};">...</div>
                 <div class="store-stat-label">Produtos</div>
               </div>
               <div class="store-stat">
-                <div class="store-stat-num">${orders.length}</div>
+                <div class="store-stat-num" id="stat-orders-${s.id}">...</div>
                 <div class="store-stat-label">Pedidos</div>
               </div>
               <div class="store-stat">
-                <div class="store-stat-num" style="color:${newOrders > 0 ? 'var(--warning)' : 'inherit'};">${newOrders}</div>
+                <div class="store-stat-num" id="stat-news-${s.id}">...</div>
                 <div class="store-stat-label">Novos</div>
               </div>
             </div>
@@ -304,6 +294,35 @@
           </div>
         </div>`;
     }).join('');
+
+    // Busca contadores de forma assíncrona para não travar a tela principal (e sem Promise.all gigante)
+    for (const s of stores) {
+      // Fazemos isso solto para cada loja (não bloqueante)
+      Promise.all([
+        EncartAPI.ProductAPI.getByStore(s.id),
+        EncartAPI.OrderAPI.getByStore(s.id)
+      ]).then(([prods, orders]) => {
+        const activeProds = (prods || []).filter(p => p.active).length;
+        const newOrders   = (orders || []).filter(o => o.status === 'novo').length;
+        const totalOrders = (orders || []).length;
+        
+        const elProds = document.getElementById(`stat-prods-${s.id}`);
+        const elOrders = document.getElementById(`stat-orders-${s.id}`);
+        const elNews = document.getElementById(`stat-news-${s.id}`);
+        const elBadges = document.getElementById(`badges-${s.id}`);
+
+        if (elProds) elProds.textContent = activeProds;
+        if (elOrders) elOrders.textContent = totalOrders;
+        if (elNews) {
+          elNews.textContent = newOrders;
+          if (newOrders > 0) elNews.style.color = 'var(--warning)';
+        }
+
+        if (newOrders > 0 && elBadges) {
+          elBadges.innerHTML += `<span class="store-card-tag danger">🛒 ${newOrders} novo(s)</span>`;
+        }
+      }).catch(err => console.warn('Erro ao carregar stats da loja', s.id, err));
+    }
   }
 
   renderStores();
