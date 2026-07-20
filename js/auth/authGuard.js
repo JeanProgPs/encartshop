@@ -13,10 +13,16 @@ const AuthGuard = (() => {
     const user = await AuthService.getUser();
     const activeStoreId = AuthService.getActiveStoreId();
 
-    if (!user || !activeStoreId) {
+    if (!user) {
       AuthService.clearActiveStoreId();
       try { sessionStorage.setItem('redirect_after_login', window.location.pathname); } catch {}
       window.location.replace('index.html');
+      return false;
+    }
+
+    const isLojasPage = window.location.pathname.includes('lojas.html');
+    if (!activeStoreId && !isLojasPage) {
+      window.location.replace('lojas.html');
       return false;
     }
 
@@ -52,6 +58,10 @@ const AuthGuard = (() => {
   async function checkAlreadyLoggedIn() {
     try {
       const user = await AuthService.getUser();
+      if (user && user.email === 'admin@encartshop.com') {
+        window.location.replace('lojas.html');
+        return;
+      }
       const activeStoreId = AuthService.getActiveStoreId();
       if (user && activeStoreId) {
         window.location.replace('dashboard.html');
