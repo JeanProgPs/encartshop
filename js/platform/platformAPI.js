@@ -64,7 +64,11 @@ const PlatformAPI = (() => {
     return await fetchFromEdge('stores_overview', { page, search, filter });
   }
 
-  return { getStats, getRecentClients, getClients, getClientDetail, getStoresOverview };
+  async function releaseStore(storeId) {
+    return await fetchFromEdge('release_store', { store_id: storeId });
+  }
+
+  return { getStats, getRecentClients, getClients, getClientDetail, getStoresOverview, releaseStore };
 })();
 
 window.PlatformAPI = PlatformAPI;

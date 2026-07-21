@@ -404,6 +404,23 @@ Deno.serve(async (req) => {
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
+    if (action === 'release_store') {
+      const storeId = url.searchParams.get('store_id')
+      if (!storeId) throw new Error('store_id is required')
+
+      const newExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabaseAdmin
+        .from('stores')
+        .update({ status: 'active', expires_at: newExpiry })
+        .eq('id', storeId)
+        .select()
+        .single()
+        
+      if (error) throw error
+
+      return new Response(JSON.stringify({ success: true, data }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
     return new Response(JSON.stringify({ error: 'Invalid action' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   } catch (err) {

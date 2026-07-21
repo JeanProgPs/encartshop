@@ -533,13 +533,9 @@
         lucide.createIcons();
       }
 
-      const newExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-      const { error } = await window.sb
-        .from('stores')
-        .update({ status: 'active', expires_at: newExpiry })
-        .eq('id', storeId);
-        
-      if (error) throw error;
+      // Chama a Edge Function para contornar RLS usando permissão de SUPER_ADMIN
+      const res = await PlatformAPI.releaseStore(storeId);
+      if (!res || !res.success) throw new Error('Falha ao atualizar via Edge Function');
       
       showToast('Acesso liberado com sucesso!', 'success');
       // Recarrega o drawer atual e a listagem de trás
