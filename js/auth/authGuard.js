@@ -13,7 +13,7 @@ const AuthGuard = (() => {
     const user = await AuthService.getUser();
     const activeStoreId = AuthService.getActiveStoreId();
 
-    if (!user || !activeStoreId) {
+    if (!user) {
       AuthService.clearActiveStoreId();
       try { sessionStorage.setItem('redirect_after_login', window.location.pathname); } catch {}
       window.location.replace('index.html');
@@ -21,7 +21,10 @@ const AuthGuard = (() => {
     }
 
     const isLojasPage = window.location.pathname.includes('lojas.html');
-    if (!activeStoreId && !isLojasPage) {
+    const isSetupPage = window.location.pathname.includes('setup.html');
+    
+    // Se não tem loja ativa e não está na página de seleção/criação, redireciona para lojas
+    if (!activeStoreId && !isLojasPage && !isSetupPage) {
       window.location.replace('lojas.html');
       return false;
     }
@@ -58,14 +61,18 @@ const AuthGuard = (() => {
   async function checkAlreadyLoggedIn() {
     try {
       const user = await AuthService.getUser();
-      if (user && (user.app_metadata?.role === 'SUPER_ADMIN' || user.email === 'admin@encartshop.com')) {
-        window.location.replace('lojas.html');
+      if (!user) return;
+
+      if (user.app_metadata?.role === 'SUPER_ADMIN') {
+        window.location.replace('/platform');
         return;
       }
       
       const activeStoreId = AuthService.getActiveStoreId();
-      if (user && activeStoreId) {
+      if (activeStoreId) {
         window.location.replace('dashboard.html');
+      } else {
+        window.location.replace('lojas.html');
       }
     } catch { /* ignora */ }
   }
