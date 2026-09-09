@@ -5,7 +5,7 @@
  */
 (function (global) {
   const SUPABASE_URL = 'https://mhlxxxzuyfllnauhewnb.supabase.co';
-  const SUPABASE_ANON_KEY = 'sb_publishable_DlDsDwmZCJxd4lIYh19Idg_7Ve-xAef';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1obHh4eHp1eWZsbG5hdWhld25iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczODc4NjYsImV4cCI6MjA5Mjk2Mzg2Nn0.b7Z6-RLC1HgkKqnP8tE4yAM7hhueBdt_m_07BQTAxSg';
 
   function createClient(supabaseSDK) {
     const sdk = supabaseSDK || (typeof window !== 'undefined' ? window.supabase : null);
