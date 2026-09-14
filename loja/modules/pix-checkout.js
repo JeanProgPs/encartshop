@@ -335,7 +335,11 @@ window.PixCheckoutModule = (() => {
    */
   function _buildWhatsAppUrl(name, phoneRaw, addressRaw, cartItems, finalTotal, subtotal, orderRef) {
     try {
-      const wa = (_store.whatsapp || '').replace(/\D/g, '');
+      const waRaw = (_store.whatsapp || _store.phone || _store.whatsapp_phone || '');
+      let wa = waRaw.replace(/\D/g, '');
+      if (wa.length >= 10 && wa.length <= 11 && !wa.startsWith('55')) {
+        wa = '55' + wa;
+      }
       if (!wa) return null;
 
       const itemsText = cartItems.map(i =>
@@ -348,7 +352,7 @@ window.PixCheckoutModule = (() => {
 
       const msg = `🛒 *Novo Pedido — ${_store.name}*\n\n*Ref:* #${orderRef}\n*Cliente:* ${name}${phoneMsg}${addressMsg}\n\n*Itens:*\n${itemsText}\n\n*Subtotal:* ${UIRender.fmtPrice(subtotal)}\n*Total:* ${UIRender.fmtPrice(finalTotal)}\n${logoLink}\n🔗 *Gerenciar no Painel:* ${window.location.origin}/admin/pedidos.html?ref=${orderRef}\n\n_Enviado via EncartShop_`;
 
-      return `https://api.whatsapp.com/send?phone=${wa}&text=${encodeURIComponent(msg)}`;
+      return `https://wa.me/${wa}?text=${encodeURIComponent(msg)}`;
     } catch { return null; }
   }
 
