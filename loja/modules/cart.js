@@ -39,10 +39,40 @@ window.CartManager = (() => {
     if (!store) {
       store = (window.StoreContext && window.StoreContext.getStore()) || null;
     }
-    if (!window.ProductCatalog) return;
+    if (!window.ProductCatalog) {
+      if (window.showToast) window.showToast('Loja carregando, um instante...', 'info');
+      return;
+    }
     const allProducts = window.ProductCatalog.getProducts() || [];
-    const product = allProducts.find(p => String(p.id) === String(id));
-    if (!product) return;
+    let product = allProducts.find(p => String(p.id) === String(id));
+
+    // Fallback: se o cliente clicou rápido no SSR antes do fetch da API concluir
+    if (!product) {
+      const card = document.getElementById(`prod-static-${id}`) || document.getElementById(`prod-${id}`);
+      if (card) {
+        const nameEl = card.querySelector('.product-name');
+        const priceEl = card.querySelector('.price-normal') || card.querySelector('.price-regular');
+        const imgEl = card.querySelector('img');
+        const unitEl = card.querySelector('.product-unit-label');
+
+        if (nameEl && priceEl) {
+          const priceStr = priceEl.textContent.replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
+          product = {
+            id: id,
+            name: nameEl.textContent.trim(),
+            price: parseFloat(priceStr) || 0,
+            image: imgEl ? imgEl.src : '',
+            unit: unitEl ? unitEl.textContent.replace('/', '').trim() : 'un',
+            promo_price: null
+          };
+        }
+      }
+    }
+
+    if (!product) {
+      if (window.showToast) window.showToast('Aguarde o carregamento do catálogo.', 'warning');
+      return;
+    }
 
     const isKg  = product.unit?.toLowerCase() === 'kg';
     const step  = isKg ? 0.5 : 1;
