@@ -36,15 +36,18 @@ window.CartManager = (() => {
 
   // ── Retrocompatibilidade: Métodos chamados pelo HTML ──────────
   window.addToCart = function(id) {
+    if (!store) {
+      store = (window.StoreContext && window.StoreContext.getStore()) || null;
+    }
     if (!window.ProductCatalog) return;
-    const allProducts = window.ProductCatalog.getProducts();
-    const product = allProducts.find(p => p.id === id);
+    const allProducts = window.ProductCatalog.getProducts() || [];
+    const product = allProducts.find(p => String(p.id) === String(id));
     if (!product) return;
 
     const isKg  = product.unit?.toLowerCase() === 'kg';
     const step  = isKg ? 0.5 : 1;
     const price = Number(product.promo_price) || Number(product.price) || 0;
-    const existing = cart.find(c => c.id === id);
+    const existing = cart.find(c => String(c.id) === String(id));
 
     if (existing) {
       existing.qty += step;
@@ -60,13 +63,19 @@ window.CartManager = (() => {
   };
 
   window.changeQty = function(id, delta) {
-    const item = cart.find(c => c.id === id);
+    if (!store) {
+      store = (window.StoreContext && window.StoreContext.getStore()) || null;
+    }
+    const item = cart.find(c => String(c.id) === String(id));
     if (!item) return;
     const isKg = item.unit?.toLowerCase() === 'kg';
     const step = isKg ? 0.5 : 1;
     item.qty  += delta * step;
     if (isKg) item.qty = Math.round(item.qty * 100) / 100;
-    if (item.qty <= 0) cart.splice(cart.indexOf(item), 1);
+    if (item.qty <= 0) {
+      const idx = cart.findIndex(c => String(c.id) === String(id));
+      if (idx !== -1) cart.splice(idx, 1);
+    }
     
     _saveCart();
     EventBus.emit(EventBus.EVENTS.CART_UPDATED, { cart });
@@ -201,12 +210,14 @@ window.CartManager = (() => {
     }
 
   function _saveCart() {
-    if (!store || !store.id) return;
-    try { localStorage.setItem(`encart_cart_${store.id}`, JSON.stringify(cart)); } catch { }
+    const s = store || (window.StoreContext && window.StoreContext.getStore());
+    if (!s || !s.id) return;
+    try { localStorage.setItem(`encart_cart_${s.id}`, JSON.stringify(cart)); } catch { }
   }
   function _loadCart() {
-    if (!store || !store.id) return [];
-    try { return JSON.parse(localStorage.getItem(`encart_cart_${store.id}`) || '[]'); } catch { return []; }
+    const s = store || (window.StoreContext && window.StoreContext.getStore());
+    if (!s || !s.id) return [];
+    try { return JSON.parse(localStorage.getItem(`encart_cart_${s.id}`) || '[]'); } catch { return []; }
   }
 
   // Correios methods

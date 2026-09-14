@@ -238,20 +238,21 @@ window.ProductCatalog = (() => {
   }
 
   // ── Atualização pontual do HTML do grid ─────────────────────
-  function _refreshAllProductCards(cart) {
-    // Para performance, atualizamos pontualmente cada card no DOM se ele existir
+  function _refreshAllProductCards(cartList) {
+    const currentCart = Array.isArray(cartList) ? cartList : (window.CartManager ? window.CartManager.getCart() : []);
     allProducts.forEach(p => {
       const el = document.getElementById(`prod-${p.id}`);
       if (el) {
         const tmp = document.createElement('div');
-        tmp.innerHTML = UIRender.productStoreCard(p, _cartQty(p.id, cart));
+        tmp.innerHTML = UIRender.productStoreCard(p, _cartQty(p.id, currentCart), storeSegment);
         if (tmp.firstElementChild) el.replaceWith(tmp.firstElementChild);
       }
     });
   }
 
-  function _cartQty(id, cart) {
-    const item = cart.find(c => c.id === id);
+  function _cartQty(id, cartList) {
+    if (!Array.isArray(cartList)) return 0;
+    const item = cartList.find(c => String(c.id) === String(id));
     return item ? item.qty : 0;
   }
 
