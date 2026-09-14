@@ -22,7 +22,25 @@ window.CartManager = (() => {
       }
 
       try {
-        cart = _loadCart();
+        const savedCart = _loadCart();
+
+        // Merge: mantém itens adicionados antes da loja carregar (SSR race condition)
+        // e combina com o que estava no localStorage
+        if (cart.length > 0 && savedCart.length > 0) {
+          // Itens do storage que não estão no cart em memória
+          savedCart.forEach(saved => {
+            const existing = cart.find(c => String(c.id) === String(saved.id));
+            if (!existing) cart.push(saved);
+          });
+        } else if (cart.length === 0) {
+          // Nenhum item em memória, usa o storage normalmente
+          cart = savedCart;
+        }
+        // Se cart.length > 0 e savedCart.length === 0: mantém o cart em memória
+
+        // Persiste imediatamente (garante que itens SSR sejam salvos)
+        _saveCart();
+
         EventBus.log('CartManager', 'Carrinho recuperado', { items: cart.length });
         EventBus.emit(EventBus.EVENTS.CART_UPDATED, { cart });
       } catch (err) {
