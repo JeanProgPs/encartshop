@@ -119,6 +119,21 @@ const AuthService = (() => {
     } catch { /* ignora */ }
   }
 
+  async function resetPassword(email) {
+    try {
+      const redirectTo = `${window.location.origin}/admin/reset-password.html`;
+      const { error } = await window.sb.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) {
+        console.error('AuthService.resetPassword erro:', error);
+        return { error: error.message };
+      }
+      return { error: null };
+    } catch (e) {
+      console.error('AuthService.resetPassword exceção:', e);
+      return { error: e.message || 'Erro ao enviar e-mail de recuperação.' };
+    }
+  }
+
   async function updateCredentials(data) {
     try {
       const { error } = await window.sb.auth.updateUser(data);
@@ -153,6 +168,7 @@ const AuthService = (() => {
     loginWithStore,
     logout,
     getUser,
+    resetPassword,
     updateCredentials,
     getToken,
     getActiveStoreId,

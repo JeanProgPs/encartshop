@@ -71,8 +71,8 @@
   </div>
 
   <div class="login-card">
-    <h2 id="card-title">Selecione sua loja</h2>
-    <p class="sub" id="card-sub">Escolha a loja que deseja gerenciar.</p>
+    <h2 id="card-title">Bem-vindo de volta</h2>
+    <p class="sub" id="card-sub">Faça login para gerenciar sua loja.</p>
     <div id="error-msg" class="error-msg"></div>
 
     <!-- Step 1: Email + Senha -->
@@ -83,7 +83,10 @@
           <input id="login-email" type="email" class="form-input" placeholder="seu@email.com" autocomplete="email">
         </div>
         <div class="form-group">
-          <label class="form-label">Senha</label>
+          <label class="form-label" style="display:flex;justify-content:space-between;align-items:center;">
+            Senha
+            <a href="#" id="forgot-link" onclick="showForgot(event)" style="font-size:0.8rem;font-weight:600;color:var(--brand);">Esqueci minha senha</a>
+          </label>
           <input id="login-password" type="password" class="form-input" placeholder="••••••••" autocomplete="current-password">
         </div>
         <button id="login-btn" class="btn btn-primary w-full btn-lg" onclick="doLogin()">Entrar no Painel</button>
@@ -96,6 +99,22 @@
       <div id="no-stores" class="no-stores-hint hidden">
         <div class="icon">🏪</div>
         Nenhuma loja vinculada a este e-mail.<br>Crie sua primeira loja abaixo!
+      </div>
+    </div>
+
+    <!-- Step 3: Recuperação de senha -->
+    <div id="step-forgot" class="hidden">
+      <div class="form-stack">
+        <div style="text-align:center;padding:8px 0 16px;">
+          <div style="width:48px;height:48px;border-radius:14px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:1.4rem;">🔐</div>
+          <p style="font-size:0.875rem;color:var(--text-muted);line-height:1.6;">Digite seu e-mail cadastrado e enviaremos um link para você criar uma nova senha.</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">E-mail cadastrado</label>
+          <input id="forgot-email" type="email" class="form-input" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <button id="forgot-btn" class="btn btn-primary w-full btn-lg" onclick="doForgot()">Enviar link de recuperação</button>
+        <button class="btn w-full" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);" onclick="showLogin()">← Voltar ao login</button>
       </div>
     </div>
   </div>
@@ -206,8 +225,75 @@
     }
   }
 
+  function showForgot(e) {
+    if (e) e.preventDefault();
+    // Pré-preenche o e-mail se já foi digitado
+    const loginEmail = document.getElementById('login-email').value.trim();
+    if (loginEmail) document.getElementById('forgot-email').value = loginEmail;
+    document.getElementById('error-msg').style.display = 'none';
+    document.getElementById('card-title').textContent = 'Recuperar senha';
+    document.getElementById('card-sub').textContent   = 'Vamos te ajudar a acessar sua conta.';
+    document.getElementById('step-password').classList.add('hidden');
+    document.getElementById('step-select').classList.add('hidden');
+    document.getElementById('step-forgot').classList.remove('hidden');
+    document.getElementById('forgot-email').focus();
+  }
+
+  function showLogin() {
+    document.getElementById('error-msg').style.display = 'none';
+    document.getElementById('card-title').textContent = 'Bem-vindo de volta';
+    document.getElementById('card-sub').textContent   = 'Faça login para gerenciar sua loja.';
+    document.getElementById('step-forgot').classList.add('hidden');
+    document.getElementById('step-select').classList.add('hidden');
+    document.getElementById('step-password').classList.remove('hidden');
+    document.getElementById('login-email').focus();
+  }
+
+  async function doForgot() {
+    const email  = document.getElementById('forgot-email').value.trim();
+    const errEl  = document.getElementById('error-msg');
+    const btn    = document.getElementById('forgot-btn');
+
+    if (!email) {
+      errEl.textContent = 'Informe seu e-mail para continuar.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    errEl.style.display = 'none';
+    btn.textContent = 'Enviando...';
+    btn.disabled = true;
+
+    const { error } = await AuthService.resetPassword(email);
+
+    btn.textContent = 'Enviar link de recuperação';
+    btn.disabled = false;
+
+    if (error) {
+      errEl.textContent = 'Não foi possível enviar o e-mail. Verifique o endereço informado.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    // Sucesso — mostra feedback inline
+    document.getElementById('step-forgot').innerHTML = `
+      <div style="text-align:center;padding:12px 0;">
+        <div style="font-size:2.5rem;margin-bottom:12px;">✉️</div>
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:8px;">E-mail enviado!</h3>
+        <p style="font-size:0.875rem;color:var(--text-muted);line-height:1.6;margin-bottom:20px;">
+          Verifique sua caixa de entrada em <strong>${escapeHTML(email)}</strong>.<br>
+          O link expira em 1 hora.
+        </p>
+        <button class="btn btn-primary w-full" onclick="showLogin()">← Voltar ao login</button>
+      </div>
+    `;
+  }
+
   document.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !document.getElementById('step-password').classList.contains('hidden')) doLogin();
+    if (e.key === 'Enter') {
+      if (!document.getElementById('step-password').classList.contains('hidden')) doLogin();
+      if (!document.getElementById('step-forgot').classList.contains('hidden'))   doForgot();
+    }
   });
 </script>
 </body>

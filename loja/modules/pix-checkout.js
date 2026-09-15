@@ -346,11 +346,43 @@ window.PixCheckoutModule = (() => {
         `• ${i.qty}${i.unit === 'kg' ? 'kg' : 'x'} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`
       ).join('\n');
 
-      const phoneMsg   = phoneRaw   ? `\n*WhatsApp:* ${phoneRaw}`   : '';
-      const addressMsg = addressRaw ? `\n*Endereço:* ${addressRaw}` : '';
-      const logoLink   = _store.logo_url ? `\n🖼 *Sua Loja:* ${_store.logo_url}\n` : '';
+      const phoneMsg   = phoneRaw   ? `\n📱 *WhatsApp:* ${phoneRaw}`   : '';
+      const addressMsg = addressRaw ? `\n📍 *Endereço:* ${addressRaw}` : '';
 
-      const msg = `🛒 *Novo Pedido — ${_store.name}*\n\n*Ref:* #${orderRef}\n*Cliente:* ${name}${phoneMsg}${addressMsg}\n\n*Itens:*\n${itemsText}\n\n*Subtotal:* ${UIRender.fmtPrice(subtotal)}\n*Total:* ${UIRender.fmtPrice(finalTotal)}\n${logoLink}\n🔗 *Gerenciar no Painel:* ${window.location.origin}/admin/pedidos.html?ref=${orderRef}\n\n_Enviado via EncartShop_`;
+      // ── Cupom monospace ──────────────────────────────────────────
+      const COL = 28;
+      function rLine(label, value) {
+        const v = String(value);
+        const l = String(label).substring(0, COL - v.length - 1);
+        return l + ' '.repeat(Math.max(1, COL - l.length - v.length)) + v;
+      }
+      function truncName(n) { return n.length > COL - 2 ? n.substring(0, COL - 3) + '...' : n; }
+      const DIV  = '-'.repeat(COL);
+      const DIV2 = '='.repeat(COL);
+      const itemLines = cartItems.map(i => {
+        const qty   = `${i.qty}${i.unit === 'kg' ? 'kg' : 'x'}`;
+        const price = UIRender.fmtPrice(i.price * i.qty);
+        const line1 = `${qty} ${truncName(i.name)}`;
+        if ((line1 + ' ' + price).length <= COL) return rLine(line1, price);
+        return truncName(i.name) + '\n' + rLine(`  ${qty}`, price);
+      }).join('\n');
+      const now = new Date();
+      const receipt = [
+        truncName(_store.name).toUpperCase().padStart(Math.floor((COL + truncName(_store.name).length) / 2)),
+        DIV2,
+        rLine('Pedido #' + orderRef, now.toLocaleDateString('pt-BR')),
+        rLine('Hora', now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })),
+        rLine('Cliente', truncName(name)),
+        DIV, 'ITENS', DIV,
+        itemLines,
+        DIV,
+        rLine('Subtotal', UIRender.fmtPrice(subtotal)),
+        DIV2,
+        rLine('TOTAL', UIRender.fmtPrice(finalTotal)),
+        DIV2,
+      ].join('\n');
+
+      const msg = `🧾 *Novo Pedido*${phoneMsg}${addressMsg}\n\n\`\`\`\n${receipt}\n\`\`\`\n\n🔗 *Gerenciar no Painel:*\n${window.location.origin}/admin/pedidos.html?ref=${orderRef}\n\n_Enviado via EncartShop_ ⚡`;
 
       return `https://wa.me/${wa}?text=${encodeURIComponent(msg)}`;
     } catch { return null; }

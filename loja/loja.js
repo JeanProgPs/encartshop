@@ -282,9 +282,10 @@ async function checkout() {
 
   if (!wa) { alert('Loja sem WhatsApp configurado.'); return; }
 
+  const orderRef = Math.random().toString(36).substring(2, 7).toUpperCase();
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const itemsText = cart.map(i => `• ${i.qty}${i.unit==='kg'?'kg':'x'} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`).join('\n');
-  const message = `🛒 *Novo Pedido - ${storeObj.name || 'Loja'}*\n\n*Cliente:* ${name}\n\n*Itens:*\n${itemsText}\n\n*Total:* ${UIRender.fmtPrice(subtotal)}\n\n_Enviado via EncartShop_`;
+  const message = `🛒 *Novo Pedido — ${storeObj.name || 'Loja'}*\n━━━━━━━━━━━━━━━━━━\n📋 *Ref:* #${orderRef}\n👤 *Cliente:* ${name}\n\n🛍 *Itens:*\n${itemsText}\n\n━━━━━━━━━━━━━━━━━━\n✅ *Total:* ${UIRender.fmtPrice(subtotal)}\n\n_Enviado via EncartShop_ ⚡`;
   
   window.location.href = `https://wa.me/${wa}?text=${encodeURIComponent(message)}`;
 }

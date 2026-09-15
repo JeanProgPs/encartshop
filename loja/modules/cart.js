@@ -170,13 +170,17 @@ window.CartManager = (() => {
     const addressRaw = document.getElementById('customer-address')?.value?.trim() || '';
 
     // ── DeliveryModule PRO Integration ──
-    let deliveryMsg = '';
     let finalTotal = currentCart.reduce((s, i) => s + i.price * i.qty, 0);
     const subtotal = finalTotal;
+    // deliveryReceiptLines: array de { label, value } para o bloco monospace do cupom
+    let deliveryReceiptLines = [];
 
     if (selectedCorreios) {
       finalTotal += selectedCorreios.price;
-      deliveryMsg = `\n*Entrega:* Correios (${selectedCorreios.type})\n*Taxa:* ${UIRender.fmtPrice(selectedCorreios.price)}\n*Prazo:* Aprox. ${selectedCorreios.days} dias úteis\n`;
+      deliveryReceiptLines = [
+        { label: `Correios (${selectedCorreios.type})`, value: UIRender.fmtPrice(selectedCorreios.price) },
+        { label: `Prazo aprox.`, value: `${selectedCorreios.days} d.u.` },
+      ];
     } else if (window.DeliveryModule) {
       const state = window.DeliveryModule.getState();
       if (state && state.active) {
@@ -193,7 +197,10 @@ window.CartManager = (() => {
           }
         }
         finalTotal = state.total;
-        deliveryMsg = `\n*Entrega:* ${state.selectedZone.region_name}\n*Taxa:* ${state.fee > 0 ? UIRender.fmtPrice(state.fee) : 'Grátis'}\n${state.selectedZone.estimated_time ? `*Prazo:* ${state.selectedZone.estimated_time}\n` : ''}`;
+        deliveryReceiptLines = [
+          { label: `Entrega (${state.selectedZone.region_name})`, value: state.fee > 0 ? UIRender.fmtPrice(state.fee) : 'Gratis' },
+          ...(state.selectedZone.estimated_time ? [{ label: 'Prazo', value: state.selectedZone.estimated_time }] : []),
+        ];
       } else {
         // Lógica de fallback para Lojas Básicas (taxa fixa do store)
         const dFee = Number(storeObj.delivery_fee) || 0;
@@ -202,7 +209,13 @@ window.CartManager = (() => {
         const hasFreeShip = dFree > 0 && subtotal >= dFree;
         const feeCharged = isCombine ? 0 : (hasFreeShip ? 0 : dFee);
         if (!isCombine) finalTotal += feeCharged;
-        deliveryMsg = isCombine ? '\n*Entrega:* A combinar\n' : (feeCharged > 0 ? `\n*Taxa de Entrega:* ${UIRender.fmtPrice(feeCharged)}\n` : (hasFreeShip ? '\n*Entrega:* Grátis\n' : '\n'));
+        if (isCombine) {
+          deliveryReceiptLines = [{ label: 'Entrega', value: 'A combinar' }];
+        } else if (feeCharged > 0) {
+          deliveryReceiptLines = [{ label: 'Entrega', value: UIRender.fmtPrice(feeCharged) }];
+        } else if (hasFreeShip) {
+          deliveryReceiptLines = [{ label: 'Entrega', value: 'Gratis' }];
+        }
       }
     }
 
@@ -213,17 +226,63 @@ window.CartManager = (() => {
       const orderRef = Math.random().toString(36).substring(2, 7).toUpperCase();
       const finalCustomerName = `${name} [#${orderRef}]`;
 
-      const itemsText = currentCart.map(i =>
-        `• ${i.qty}${i.unit === 'kg' ? 'kg' : 'x'} ${i.name} — ${UIRender.fmtPrice(i.price * i.qty)}`
-      ).join('\n');
+      // ── Helpers para o cupom monospace ──────────────────────────────
+      const COL = 28; // largura total da linha do cupom
+      /** Linha alinhada: texto à esquerda, valor à direita */
+      function rLine(label, value) {
+        const v = String(value);
+        const l = String(label).substring(0, COL - v.length - 1);
+        return l + ' '.repeat(Math.max(1, COL - l.length - v.length)) + v;
+      }
+      /** Trunca nome longo com '…' */
+      function truncName(n) { return n.length > COL - 2 ? n.substring(0, COL - 3) + '...' : n; }
+      const DIV  = '-'.repeat(COL);
+      const DIV2 = '='.repeat(COL);
 
-      const logoLink = storeObj.logo_url ? `\n🖼 *Sua Loja:* ${storeObj.logo_url}\n` : '';
+      // ── Linhas de itens ─────────────────────────────────────────────
+      const itemLines = currentCart.map(i => {
+        const qty   = `${i.qty}${i.unit === 'kg' ? 'kg' : 'x'}`;
+        const price = UIRender.fmtPrice(i.price * i.qty);
+        const line1 = `${qty} ${truncName(i.name)}`;
+        // Se a linha cabe, alinha preço na mesma linha; caso contrário, quebra
+        if ((line1 + ' ' + price).length <= COL) {
+          return rLine(line1, price);
+        }
+        return truncName(i.name) + '\n' + rLine(`  ${qty}`, price);
+      }).join('\n');
 
-      // Linhas opcionais na mensagem do WhatsApp (só aparecem se preenchidas)
-      const phoneMsg   = phoneRaw   ? `\n*WhatsApp:* ${phoneRaw}`   : '';
-      const addressMsg = addressRaw ? `\n*Endereço:* ${addressRaw}` : '';
+      // ── Linhas de entrega ────────────────────────────────────────────
+      const deliveryLines = deliveryReceiptLines.map(d => rLine(d.label, d.value)).join('\n');
 
-      const msg = `🛒 *Novo Pedido — ${storeObj.name}*\n\n*Ref:* #${orderRef}\n*Cliente:* ${name}${phoneMsg}${addressMsg}\n\n*Itens:*\n${itemsText}\n${deliveryMsg}\n*Subtotal:* ${UIRender.fmtPrice(subtotal)}\n*Total:* ${UIRender.fmtPrice(finalTotal)}\n${logoLink}\n🔗 *Gerenciar no Painel:* ${window.location.origin}/admin/pedidos.html?ref=${orderRef}\n\n_Enviado via EncartShop_`;
+      // ── Data/hora ────────────────────────────────────────────────────
+      const now = new Date();
+      const datePart = now.toLocaleDateString('pt-BR');
+      const timePart = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+      // ── Campos opcionais (fora do bloco monospace) ───────────────────
+      const phoneMsg   = phoneRaw   ? `\n📱 *WhatsApp:* ${phoneRaw}`   : '';
+      const addressMsg = addressRaw ? `\n📍 *Endereço:* ${addressRaw}` : '';
+
+      // ── Bloco monospace: cupom impresso ──────────────────────────────
+      const receipt = [
+        truncName(storeObj.name).toUpperCase().padStart(Math.floor((COL + truncName(storeObj.name).length) / 2)),
+        DIV2,
+        rLine('Pedido #' + orderRef, datePart),
+        rLine('Hora', timePart),
+        rLine('Cliente', truncName(name)),
+        DIV,
+        'ITENS',
+        DIV,
+        itemLines,
+        DIV,
+        ...(deliveryLines ? [deliveryLines, DIV] : []),
+        rLine('Subtotal', UIRender.fmtPrice(subtotal)),
+        DIV2,
+        rLine('TOTAL', UIRender.fmtPrice(finalTotal)),
+        DIV2,
+      ].join('\n');
+
+      const msg = `🧾 *Novo Pedido*${phoneMsg}${addressMsg}\n\n\`\`\`\n${receipt}\n\`\`\`\n\n🔗 *Gerenciar no Painel:*\n${window.location.origin}/admin/pedidos.html?ref=${orderRef}\n\n_Enviado via EncartShop_ ⚡`;
 
       // Monta dados do pedido
       const orderPayload = {

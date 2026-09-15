@@ -354,9 +354,12 @@
       try {
         await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
           name: nome,
+          from_name: nome,
           title: assunto,
-          email,
-          mensagem,
+          assunto: assunto,
+          email: email,
+          message: mensagem,
+          mensagem: mensagem,
           reply_to: email,
         });
 
