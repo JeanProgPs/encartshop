@@ -329,7 +329,7 @@ window.CartManager = (() => {
   }
 
   // Correios methods
-  window.CartManager.handleZipChange = async function(val) {
+  async function handleZipChange(val) {
     val = val.replace(/\D/g, '');
     if (val.length === 8 && val !== currentZip) {
       currentZip = val;
@@ -377,5 +377,5 @@ window.CartManager = (() => {
     return selectedCorreios;
   }
 
-  return { init, getCart, selectCorreios, clearCorreios, getSelectedCorreios };
+  return { init, getCart, handleZipChange, selectCorreios, clearCorreios, getSelectedCorreios };
 })();
