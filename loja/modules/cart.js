@@ -360,22 +360,22 @@ window.CartManager = (() => {
     }
   };
 
-  window.CartManager.selectCorreios = function(valStr) {
+  function selectCorreios(valStr) {
     selectedCorreios = JSON.parse(valStr);
     if (window.DeliveryModule) window.DeliveryModule.clearZone();
     EventBus.emit(EventBus.EVENTS.CART_UPDATED, { cart });
-  };
+  }
 
-  window.CartManager.clearCorreios = function() {
+  function clearCorreios() {
     selectedCorreios = null;
     const radios = document.querySelectorAll('input[name="correios_opt"]');
     radios.forEach(r => r.checked = false);
     EventBus.emit(EventBus.EVENTS.CART_UPDATED, { cart });
-  };
+  }
 
-  window.CartManager.getSelectedCorreios = function() {
+  function getSelectedCorreios() {
     return selectedCorreios;
-  };
+  }
 
-  return { init, getCart };
+  return { init, getCart, selectCorreios, clearCorreios, getSelectedCorreios };
 })();
