@@ -25,7 +25,7 @@ CREATE POLICY "stores_select_own"
 -- SELECT PÚBLICO: loja pública pode buscar por id se estiver ativa ou pertencer ao dono autenticado
 CREATE POLICY "stores_select_public_by_id"
   ON stores FOR SELECT
-  USING (status = 'active' OR auth.uid() = user_id);
+  USING (status IN ('active', 'maintenance') OR auth.uid() = user_id);
 -- Nota: a proteção real contra enumeração em lojas públicas é feita via
 -- busca por UUID (impossível de adivinhar). A policy acima permite que
 -- a loja pública funcione. Para ambientes de maior segurança, usar uma
