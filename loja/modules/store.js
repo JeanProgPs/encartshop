@@ -383,6 +383,10 @@ window.StoreContext = (() => {
       title = "Assinatura Vencida";
       desc  = "Esta loja suspendeu as atividades temporariamente. Tente novamente mais tarde.";
       icon  = "⌛";
+    } else if (reason === 'maintenance') {
+      title = "Loja Temporariamente Desativada";
+      desc  = "Nossa loja está temporariamente desativada. Voltamos em breve!";
+      icon  = "🚧";
     }
 
     document.body.innerHTML = `

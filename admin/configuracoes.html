@@ -71,6 +71,22 @@
         </div>
       </div>
 
+      <!-- Status da Loja -->
+      <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm" id="maintenance-container" style="display:none;">
+        <div class="flex items-center gap-2 mb-1">
+          <i data-lucide="power" class="w-5 h-5 text-textPrimary"></i>
+          <h3 class="text-base font-semibold text-textPrimary">Status da Loja</h3>
+        </div>
+        <p class="text-sm text-textSecondary mb-4">Você pode desativar sua loja temporariamente. Clientes verão uma página de manutenção.</p>
+        <label class="flex items-center gap-3 cursor-pointer w-max">
+          <div class="switch">
+            <input type="checkbox" id="s-maintenance">
+            <span class="slider"></span>
+          </div>
+          <span class="text-sm font-medium text-textPrimary">Manutenção (Loja Desativada)</span>
+        </label>
+      </div>
+
       <!-- Identidade Visual -->
       <div class="bg-cardBg border border-borderColor rounded-xl p-6 shadow-sm">
         <div class="flex items-center gap-2 mb-1">
@@ -338,6 +354,13 @@
       linkEl.parentElement.onclick = () => window.open(storeUrl, '_blank');
     }
 
+    if (_store.status !== 'pending') {
+      document.getElementById('s-maintenance').checked = _store.status === 'maintenance';
+      document.getElementById('maintenance-container').style.display = 'block';
+    } else {
+      document.getElementById('maintenance-container').style.display = 'none';
+    }
+
     document.getElementById('s-name').value          = _store.name          || '';
     document.getElementById('s-slogan').value        = _store.slogan        || '';
     document.getElementById('s-address').value       = _store.address       || '';
@@ -480,6 +503,10 @@
         delivery_fee:    isCombine ? -1 : (parseFloat(document.getElementById('s-delivery-fee').value) || 0),
         delivery_free:   isCombine ? 0 : (parseFloat(document.getElementById('s-delivery-free').value) || 0),
       };
+
+      if (_store.status !== 'pending') {
+        storePayload.status = document.getElementById('s-maintenance').checked ? 'maintenance' : 'active';
+      }
 
       // Preservar JSON do banner se estiver escondido
       const sBannerInput = document.getElementById('s-banner');

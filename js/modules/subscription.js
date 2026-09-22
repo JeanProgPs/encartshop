@@ -59,6 +59,10 @@ const SubscriptionModule = (() => {
       return { available: false, reason: 'pending' };
     }
 
+    if (store.status === 'maintenance') {
+      return { available: false, reason: 'maintenance' };
+    }
+
     // Loja expirada + carência esgotada
     const subStatus = getStatus(store.expires_at);
     if (subStatus.blocked) {
