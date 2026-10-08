@@ -288,16 +288,18 @@
           textClass: 'text-emerald-500',
           bgClass: 'bg-emerald-500/10',
           borderClass: 'border-emerald-500/20',
-          barBgClass: 'bg-emerald-500'
+          barBgClass: 'bg-emerald-500',
+          color: 'emerald'
         },
         expiring: {
           label: 'Vence em Breve',
           icon: 'clock',
-          barPct: Math.max(10, Math.min(100, (expiresInDays / 30) * 100)),
+          barPct: Math.max(10, Math.min(100, ((expiresInDays || 0) / 30) * 100)),
           textClass: 'text-amber-500',
           bgClass: 'bg-amber-500/10',
           borderClass: 'border-amber-500/20',
-          barBgClass: 'bg-amber-500'
+          barBgClass: 'bg-amber-500',
+          color: 'amber'
         },
         grace: {
           label: 'Período de Carência',
@@ -306,7 +308,8 @@
           textClass: 'text-orange-500',
           bgClass: 'bg-orange-500/10',
           borderClass: 'border-orange-500/20',
-          barBgClass: 'bg-orange-500'
+          barBgClass: 'bg-orange-500',
+          color: 'orange'
         },
         blocked: {
           label: 'Loja Bloqueada',
@@ -315,7 +318,8 @@
           textClass: 'text-red-500',
           bgClass: 'bg-red-500/10',
           borderClass: 'border-red-500/20',
-          barBgClass: 'bg-red-500'
+          barBgClass: 'bg-red-500',
+          color: 'red'
         },
         expired: {
           label: 'Assinatura Expirada',
@@ -324,7 +328,8 @@
           textClass: 'text-red-500',
           bgClass: 'bg-red-500/10',
           borderClass: 'border-red-500/20',
-          barBgClass: 'bg-red-500'
+          barBgClass: 'bg-red-500',
+          color: 'red'
         }
       };
       const subCfg = subConfigs[subStatus] || subConfigs.active;
