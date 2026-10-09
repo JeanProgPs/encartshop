@@ -426,9 +426,10 @@ class MercadoPagoProvider implements PaymentProvider {
 
   // ── validateCredentials ────────────────────────────────────
   async validateCredentials(): Promise<string> {
-    const data = await this.request('GET', '/v1/users/me') as Record<string, unknown>
-    const name = String(data?.first_name ?? data?.nickname ?? 'conta Mercado Pago')
-    return name
+    // Mercado Pago não tem endpoint /users/me simples em api.mercadopago.com.
+    // Usamos /v1/payment_methods para testar se o token é válido (retorna 401 se inválido).
+    await this.request('GET', '/v1/payment_methods')
+    return 'conta Mercado Pago (Autenticada)'
   }
 
   // ── ensureCustomer ─────────────────────────────────────────
