@@ -22,7 +22,7 @@ const PaymentSettingsModule = (() => {
 
   const GATEWAYS = [
     { value: 'asaas',       label: 'Asaas',        enabled: true  },
-    { value: 'mercadopago', label: 'Mercado Pago',  enabled: false },
+    { value: 'mercadopago', label: 'Mercado Pago',  enabled: true },
     { value: 'pagbank',     label: 'PagBank',       enabled: false },
     { value: 'stripe',      label: 'Stripe',        enabled: false },
   ];
@@ -50,16 +50,21 @@ const PaymentSettingsModule = (() => {
      * Busca as configurações sem retornar a asaas_api_key.
      * Retorna apenas metadados seguros para o frontend.
      */
-    async getByStore(storeId) {
+    async getByStore(storeId, provider = null) {
       if (!storeId) return null;
       try {
-        // Seleciona apenas campos não-sensíveis
-        const { data, error } = await window.sb
+        let query = window.sb
           .from('store_payment_settings')
           .select('id, store_id, payment_provider, environment, payment_enabled, payment_methods, created_at, updated_at')
           .eq('store_id', storeId)
-          .eq('payment_provider', 'asaas')
-          .maybeSingle();
+          .order('payment_enabled', { ascending: false })
+          .order('updated_at', { ascending: false });
+        
+        if (provider) {
+           query = query.eq('payment_provider', provider);
+        }
+        
+        const { data, error } = await query.limit(1).maybeSingle();
         if (error) { console.error('[PaymentSettings] getByStore:', error.message); return null; }
         return data || null;
       } catch (e) {
@@ -72,18 +77,17 @@ const PaymentSettingsModule = (() => {
      * Verifica apenas se existe uma API Key salva (sem retornar o valor).
      * Retorna boolean.
      */
-    async hasApiKey(storeId) {
+    async hasApiKey(storeId, provider = 'asaas') {
       if (!storeId) return false;
       try {
         const { data, error } = await window.sb
           .from('store_payment_settings')
-          .select('id')
+          .select('has_asaas_key, has_mp_key')
           .eq('store_id', storeId)
-          .eq('payment_provider', 'asaas')
-          .not('asaas_api_key', 'is', null)
+          .eq('payment_provider', provider)
           .maybeSingle();
-        if (error) return false;
-        return !!data;
+        if (error || !data) return false;
+        return provider === 'asaas' ? data.has_asaas_key : data.has_mp_key;
       } catch { return false; }
     },
 
@@ -94,23 +98,28 @@ const PaymentSettingsModule = (() => {
     async saveSettings(storeId, payload) {
       if (!storeId) return { success: false, error: 'store_id obrigatório' };
       try {
-        const upsertData = {
+        const rpcPayload = {
           store_id:         storeId,
           payment_provider: payload.payment_provider || 'asaas',
           environment:      payload.environment      || 'sandbox',
           payment_enabled:  payload.payment_enabled  ?? false,
           payment_methods:  payload.payment_methods  || ['PIX'],
-          updated_at:       new Date().toISOString(),
         };
 
-        // API Key só incluída se explicitamente fornecida (usuário alterou)
-        if (payload.asaas_api_key && payload.asaas_api_key.trim()) {
-          upsertData.asaas_api_key = payload.asaas_api_key.trim();
+        if (rpcPayload.payment_provider === 'asaas') {
+          if (payload.asaas_api_key && payload.asaas_api_key.trim()) {
+            rpcPayload.asaas_api_key = payload.asaas_api_key.trim();
+          }
+        } else if (rpcPayload.payment_provider === 'mercadopago') {
+          if (payload.mp_access_token && payload.mp_access_token.trim()) {
+            rpcPayload.mp_access_token = payload.mp_access_token.trim();
+          }
+          if (payload.mp_public_key && payload.mp_public_key.trim()) {
+            rpcPayload.mp_public_key = payload.mp_public_key.trim();
+          }
         }
 
-        const { error } = await window.sb
-          .from('store_payment_settings')
-          .upsert([upsertData], { onConflict: 'store_id,payment_provider' });
+        const { error } = await window.sb.rpc('save_store_payment_settings', { payload: rpcPayload });
 
         if (error) {
           console.error('[PaymentSettings] saveSettings:', error.message);
@@ -126,14 +135,10 @@ const PaymentSettingsModule = (() => {
      * Remove as configurações de pagamento da loja.
      * Desativa o módulo e apaga a API Key.
      */
-    async removeSettings(storeId) {
+    async removeSettings(storeId, provider = 'asaas') {
       if (!storeId) return { success: false, error: 'store_id obrigatório' };
       try {
-        const { error } = await window.sb
-          .from('store_payment_settings')
-          .delete()
-          .eq('store_id', storeId)
-          .eq('payment_provider', 'asaas');
+        const { error } = await window.sb.rpc('delete_store_payment_settings', { p_store_id: storeId, p_provider: provider });
         if (error) {
           console.error('[PaymentSettings] removeSettings:', error.message);
           return { success: false, error: error.message };
@@ -279,11 +284,12 @@ const PaymentSettingsModule = (() => {
         <div class="flex flex-col gap-1.5">
           <label class="text-sm font-medium text-textPrimary">Gateway de Pagamento</label>
           <select id="pm-provider"
+            onchange="PaymentSettingsModule._onProviderChange()"
             class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm text-textPrimary focus:outline-none focus:border-accent appearance-none"
             style="background-image:url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e\");background-repeat:no-repeat;background-position:right 12px center;background-size:16px;">
             ${gatewayOptions}
           </select>
-          <p class="text-xs text-textSecondary">Somente Asaas disponível nesta versão. Novos gateways em breve.</p>
+          
         </div>
 
         <!-- Ambiente -->
@@ -305,35 +311,56 @@ const PaymentSettingsModule = (() => {
           </div>
         </div>
 
-        <!-- API Key -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-medium text-textPrimary flex items-center gap-1.5">
-            API Key Asaas
-            <i data-lucide="lock" class="w-3.5 h-3.5 text-textSecondary"></i>
-          </label>
-          <div class="flex gap-2">
-            <input type="password" id="pm-api-key" autocomplete="new-password"
-              placeholder="${escapeHTML(keyPlaceholder)}"
-              oninput="PaymentSettingsModule._onApiKeyInput()"
-              class="flex-1 bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm font-mono text-textPrimary focus:outline-none focus:border-accent">
-            <button type="button" id="pm-toggle-key"
-              onclick="PaymentSettingsModule._toggleKeyVisibility()"
-              title="Mostrar/ocultar chave"
-              class="w-9 h-9 flex items-center justify-center border border-borderColor rounded-lg text-textSecondary hover:text-textPrimary hover:bg-bgPrimary transition-colors flex-shrink-0">
-              <i data-lucide="eye" class="w-4 h-4" id="pm-eye-icon"></i>
-            </button>
-            ${hasKey ? `
-            <button type="button" id="pm-remove-key"
-              onclick="PaymentSettingsModule._confirmRemoveKey()"
-              title="Remover chave"
-              class="px-3 py-2 border border-danger/30 rounded-lg text-xs font-semibold text-danger hover:bg-danger/10 transition-colors flex-shrink-0">
-              Remover
-            </button>` : ''}
-          </div>
-          ${keyHint}
-          <div id="pm-key-changed-notice" class="hidden mt-1 text-xs text-warning flex items-center gap-1.5">
-            <i data-lucide="alert-circle" class="w-3 h-3"></i>
-            Nova chave digitada. Salve para aplicar.
+        <!-- Chaves de API (Dinâmico por provedor) -->
+        <div class="flex flex-col gap-3 mb-5">
+          ${provider === 'asaas' ? `
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-textPrimary flex items-center gap-1.5">
+                API Key Asaas
+                <i data-lucide="lock" class="w-3.5 h-3.5 text-textSecondary"></i>
+              </label>
+              <div class="flex gap-2">
+                <input type="password" id="pm-api-key" autocomplete="new-password"
+                  placeholder="${hasKey ? '••••••••••••••••ABCD' : 'aact_XXXXXXXXXXXXXXXXXXXXXXXX'}"
+                  oninput="PaymentSettingsModule._onApiKeyInput()"
+                  class="flex-1 bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm font-mono text-textPrimary focus:outline-none focus:border-accent">
+                <button type="button" onclick="PaymentSettingsModule._toggleKeyVisibility('pm-api-key', 'pm-eye-icon')" class="w-9 h-9 flex items-center justify-center border border-borderColor rounded-lg text-textSecondary hover:text-textPrimary hover:bg-bgPrimary transition-colors flex-shrink-0">
+                  <i data-lucide="eye" class="w-4 h-4" id="pm-eye-icon"></i>
+                </button>
+              </div>
+              <p class="text-xs text-textSecondary mt-1.5">${hasKey ? 'Chave salva.' : 'Encontre sua chave em: Asaas → Minha Conta → Integrações → API Key'}</p>
+            </div>
+          ` : `
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-textPrimary flex items-center gap-1.5">Access Token (Mercado Pago) <i data-lucide="lock" class="w-3.5 h-3.5 text-textSecondary"></i></label>
+              <div class="flex gap-2">
+                <input type="password" id="pm-mp-access" autocomplete="new-password"
+                  placeholder="${hasKey ? '••••••••••••••••ABCD' : 'APP_USR-XXXXXXXXXXXXXXXXX'}"
+                  oninput="PaymentSettingsModule._onApiKeyInput()"
+                  class="flex-1 bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm font-mono text-textPrimary focus:outline-none focus:border-accent">
+                <button type="button" onclick="PaymentSettingsModule._toggleKeyVisibility('pm-mp-access', 'pm-eye-icon-access')" class="w-9 h-9 flex items-center justify-center border border-borderColor rounded-lg text-textSecondary hover:text-textPrimary hover:bg-bgPrimary transition-colors flex-shrink-0">
+                  <i data-lucide="eye" class="w-4 h-4" id="pm-eye-icon-access"></i>
+                </button>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-sm font-medium text-textPrimary flex items-center gap-1.5">Public Key (Mercado Pago)</label>
+              <div class="flex gap-2">
+                <input type="password" id="pm-mp-public" autocomplete="new-password"
+                  placeholder="${hasKey ? '••••••••••••••••ABCD' : 'APP_USR-XXXXX'}"
+                  oninput="PaymentSettingsModule._onApiKeyInput()"
+                  class="flex-1 bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm font-mono text-textPrimary focus:outline-none focus:border-accent">
+                <button type="button" onclick="PaymentSettingsModule._toggleKeyVisibility('pm-mp-public', 'pm-eye-icon-public')" class="w-9 h-9 flex items-center justify-center border border-borderColor rounded-lg text-textSecondary hover:text-textPrimary hover:bg-bgPrimary transition-colors flex-shrink-0">
+                  <i data-lucide="eye" class="w-4 h-4" id="pm-eye-icon-public"></i>
+                </button>
+              </div>
+              <p class="text-xs text-textSecondary mt-1.5">${hasKey ? 'Chaves salvas.' : 'No painel do MP, acesse Suas Integrações → Credenciais de Produção.'}</p>
+            </div>
+          `}
+          
+          <div class="flex items-center gap-3 mt-1">
+            ${hasKey ? `<button type="button" id="pm-remove-key" onclick="PaymentSettingsModule._confirmRemoveKey()" class="px-3 py-2 border border-danger/30 rounded-lg text-xs font-semibold text-danger hover:bg-danger/10 transition-colors">Remover Chave(s)</button>` : ''}
+            <div id="pm-key-changed-notice" class="hidden text-xs text-warning flex items-center gap-1.5"><i data-lucide="alert-circle" class="w-3 h-3"></i>Nova chave digitada. Salve para aplicar.</div>
           </div>
         </div>
 
@@ -387,6 +414,25 @@ const PaymentSettingsModule = (() => {
 
   // ── Handlers de interação ────────────────────────────────────
 
+  async function _onProviderChange() {
+    const select = document.getElementById('pm-provider');
+    if (!select || !_store) return;
+    const newProvider = select.value;
+    
+    const container = document.getElementById(CONTAINER_ID);
+    if(container) container.style.opacity = '0.5';
+
+    _settings = await StorePaymentAPI.getByStore(_store.id, newProvider);
+    if (!_settings) {
+       _settings = { payment_provider: newProvider, environment: 'sandbox', payment_enabled: false, payment_methods: ['PIX'] };
+    }
+    const hasKey = await StorePaymentAPI.hasApiKey(_store.id, newProvider);
+    
+    _apiKeyChanged = false;
+    _renderSettingsCard(document.getElementById(CONTAINER_ID), _settings, hasKey);
+    if(container) container.style.opacity = '1';
+  }
+
   function _onApiKeyInput() {
     _apiKeyChanged = true;
     const notice = document.getElementById('pm-key-changed-notice');
@@ -421,9 +467,9 @@ const PaymentSettingsModule = (() => {
     }
   }
 
-  function _toggleKeyVisibility() {
-    const input   = document.getElementById('pm-api-key');
-    const icon    = document.getElementById('pm-eye-icon');
+  function _toggleKeyVisibility(inputId = 'pm-api-key', iconId = 'pm-eye-icon') {
+    const input   = document.getElementById(inputId);
+    const icon    = document.getElementById(iconId);
     if (!input) return;
     const isHidden = input.type === 'password';
     input.type = isHidden ? 'text' : 'password';
@@ -439,7 +485,8 @@ const PaymentSettingsModule = (() => {
     const btn = document.getElementById('pm-remove-key');
     if (btn) { btn.disabled = true; btn.textContent = 'Removendo...'; }
 
-    const result = await StorePaymentAPI.removeSettings(_store.id);
+    const provider = _settings ? _settings.payment_provider : 'asaas';
+    const result = await StorePaymentAPI.removeSettings(_store.id, provider);
     if (result.success) {
       _settings      = null;
       _apiKeyChanged = false;
@@ -520,7 +567,8 @@ const PaymentSettingsModule = (() => {
 
     // Carrega configurações existentes (sem expor a chave)
     _settings = await StorePaymentAPI.getByStore(store.id);
-    const hasKey = await StorePaymentAPI.hasApiKey(store.id);
+    const provider = _settings ? _settings.payment_provider : 'asaas';
+    const hasKey = await StorePaymentAPI.hasApiKey(store.id, provider);
 
     _renderSettingsCard(container, _settings, hasKey);
   }
@@ -537,29 +585,29 @@ const PaymentSettingsModule = (() => {
     if (btn) UIComponents.setLoading(btn, true, 'Salvando...');
 
     try {
-      const apiKeyInput   = document.getElementById('pm-api-key');
       const enableToggle  = document.getElementById('pm-enabled');
       const provider      = document.getElementById('pm-provider')?.value || 'asaas';
       const environment   = _getEnvironment();
       const methods       = _getSelectedMethods();
       const paymentEnabled = enableToggle?.checked ?? false;
+      
+      const apiKeyInput   = document.getElementById('pm-api-key');
+      const mpAccessInput = document.getElementById('pm-mp-access');
+      const mpPublicInput = document.getElementById('pm-mp-public');
 
-      // Validação: não pode ativar sem ter chave
-      const hasKey = await StorePaymentAPI.hasApiKey(_store.id);
-      if (paymentEnabled && !hasKey && (!_apiKeyChanged || !apiKeyInput?.value?.trim())) {
-        showToast('Informe uma API Key antes de ativar o módulo.', 'warning');
-        if (btn) UIComponents.setLoading(btn, false);
-        return;
+      const hasKey = await StorePaymentAPI.hasApiKey(_store.id, provider);
+      
+      let newKeysProvided = false;
+      if (provider === 'asaas') {
+        newKeysProvided = !!(apiKeyInput?.value?.trim());
+      } else if (provider === 'mercadopago') {
+        newKeysProvided = !!(mpAccessInput?.value?.trim() && mpPublicInput?.value?.trim());
       }
 
-      // Validação básica da chave quando fornecida
-      if (_apiKeyChanged && apiKeyInput?.value?.trim()) {
-        const key = apiKeyInput.value.trim();
-        if (key.length < 10) {
-          showToast('A API Key parece inválida. Verifique e tente novamente.', 'warning');
-          if (btn) UIComponents.setLoading(btn, false);
-          return;
-        }
+      if (paymentEnabled && !hasKey && (!_apiKeyChanged || !newKeysProvided)) {
+        showToast('Informe as credenciais do provedor antes de ativar.', 'warning');
+        if (btn) UIComponents.setLoading(btn, false);
+        return;
       }
 
       const payload = {
@@ -569,9 +617,13 @@ const PaymentSettingsModule = (() => {
         payment_methods:  methods.length > 0 ? methods : ['PIX'],
       };
 
-      // Inclui API Key apenas se foi alterada nesta sessão
-      if (_apiKeyChanged && apiKeyInput?.value?.trim()) {
-        payload.asaas_api_key = apiKeyInput.value.trim();
+      if (provider === 'asaas') {
+        if (_apiKeyChanged && apiKeyInput?.value?.trim()) payload.asaas_api_key = apiKeyInput.value.trim();
+      } else if (provider === 'mercadopago') {
+        if (_apiKeyChanged) {
+          if (mpAccessInput?.value?.trim()) payload.mp_access_token = mpAccessInput.value.trim();
+          if (mpPublicInput?.value?.trim()) payload.mp_public_key = mpPublicInput.value.trim();
+        }
       }
 
       const result = await StorePaymentAPI.saveSettings(_store.id, payload);
@@ -582,8 +634,8 @@ const PaymentSettingsModule = (() => {
         if (apiKeyInput) apiKeyInput.value = '';
         showToast('Configurações de pagamento salvas!', 'success');
         // Re-renderiza para refletir novo estado (especialmente o indicador de chave)
-        _settings = await StorePaymentAPI.getByStore(_store.id);
-        const hasKeyNow = await StorePaymentAPI.hasApiKey(_store.id);
+        _settings = await StorePaymentAPI.getByStore(_store.id, provider);
+        const hasKeyNow = await StorePaymentAPI.hasApiKey(_store.id, provider);
         _renderSettingsCard(document.getElementById(CONTAINER_ID), _settings, hasKeyNow);
       } else {
         showToast('Erro ao salvar: ' + (result.error || 'tente novamente'), 'error');
@@ -600,6 +652,7 @@ const PaymentSettingsModule = (() => {
   return {
     init,
     save,
+    _onProviderChange,
     _onApiKeyInput,
     _onMethodChange,
     _onEnabledChange,

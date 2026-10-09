@@ -172,7 +172,7 @@ async function validateWebhookToken(
 ): Promise<{ valid: boolean; reason: string }> {
   try {
     const { data } = await db
-      .from('store_payment_settings')
+      .from('store_payment_secrets')
       .select('webhook_token')
       .eq('store_id', storeId)
       .eq('payment_provider', 'asaas')

@@ -81,21 +81,19 @@ window.PixCheckoutModule = (() => {
         return;
       }
 
-      // Condição 2-4: busca configurações (sem api_key)
+      // Condição 2-3: busca o provider habilitado (payment_enabled = true)
+      // Agnóstico de gateway — funciona com Asaas e Mercado Pago
       const { data, error } = await window.sb
         .from('store_payment_settings')
-        .select('id, payment_enabled, payment_methods, payment_provider, environment')
+        .select('id, payment_enabled, payment_methods, payment_provider, environment, has_asaas_key, has_mp_key')
         .eq('store_id', store.id)
-        .eq('payment_provider', 'asaas')
+        .eq('payment_enabled', true)
+        .order('updated_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error || !data) {
-        EventBus.log('PixCheckoutModule', 'Sem configurações de pagamento.');
-        return;
-      }
-
-      if (!data.payment_enabled) {
-        EventBus.log('PixCheckoutModule', 'Módulo de pagamento desativado pela loja.');
+        EventBus.log('PixCheckoutModule', 'Sem configurações de pagamento ativas.');
         return;
       }
 
@@ -104,17 +102,16 @@ window.PixCheckoutModule = (() => {
         return;
       }
 
-      // Condição 4: verifica existência da API Key (sem ler o valor)
-      const { data: keyCheck } = await window.sb
-        .from('store_payment_settings')
-        .select('id')
-        .eq('store_id', store.id)
-        .eq('payment_provider', 'asaas')
-        .not('asaas_api_key', 'is', null)
-        .maybeSingle();
+      // Condição 4: verifica existência de credencial via flag booleana
+      // (a coluna asaas_api_key foi removida — usamos has_asaas_key / has_mp_key)
+      const hasCredential = data.payment_provider === 'asaas'
+        ? !!data.has_asaas_key
+        : data.payment_provider === 'mercadopago'
+          ? !!data.has_mp_key
+          : false;
 
-      if (!keyCheck) {
-        EventBus.log('PixCheckoutModule', 'API Key não configurada.');
+      if (!hasCredential) {
+        EventBus.log('PixCheckoutModule', `Credencial não configurada para provider: ${data.payment_provider}`);
         return;
       }
 

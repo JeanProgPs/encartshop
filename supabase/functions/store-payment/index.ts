@@ -42,11 +42,16 @@ const CORS_HEADERS = {
 }
 
 const ASAAS_TIMEOUT_MS = 10_000
+const MP_TIMEOUT_MS    = 12_000
 
 const ASAAS_BASE_URLS: Record<string, string> = {
   sandbox:    'https://sandbox.asaas.com/api/v3',
   production: 'https://api.asaas.com/v3',
 }
+
+// Mercado Pago não tem base URL distinta por ambiente —
+// sandbox é controlado pelo prefixo TEST- no Access Token.
+const MP_BASE_URL = 'https://api.mercadopago.com'
 
 // ── Tipos ────────────────────────────────────────────────────────
 
@@ -54,7 +59,10 @@ interface StoreSettings {
   id:               string
   payment_provider: string
   environment:      string
-  asaas_api_key:    string
+  // Credenciais — preenchidas conforme o provider ativo
+  asaas_api_key:    string          // Asaas
+  mp_access_token:  string          // Mercado Pago
+  mp_public_key:    string          // Mercado Pago
   payment_enabled:  boolean
   payment_methods:  string[]
 }
@@ -67,10 +75,10 @@ interface CustomerInput {
 }
 
 interface PixChargeInput {
-  customerId:  string   // ID do customer já criado no Asaas
+  customerId:  string   // ID do customer no gateway (ou nome para MP)
   amount:      number
   description: string
-  orderId?:    string   // externalReference para rastreio
+  orderId?:    string   // externalReference / idempotency_key
   dueDate?:    string   // YYYY-MM-DD; padrão D+1
 }
 
@@ -308,6 +316,194 @@ class AsaasError extends Error {
   }
 }
 
+// ── GatewayError ─────────────────────────────────────────────────
+/** Erro tipado genérico — usado pelo MercadoPagoProvider e futuros gateways. */
+class GatewayError extends Error {
+  readonly code: string
+  constructor(message: string, code: string) {
+    super(message)
+    this.name = 'GatewayError'
+    this.code = code
+  }
+}
+
+
+// ── MercadoPagoProvider ──────────────────────────────────────────
+/**
+ * Implementação do PaymentProvider para o gateway Mercado Pago.
+ *
+ * Regras de segurança:
+ *   - accessToken nunca é logado nem retornado
+ *   - publicKey nunca é logada nem retornada
+ *   - Erros HTTP do MP são convertidos em GatewayError tipado
+ *
+ * Nota sobre ambientes:
+ *   - Sandbox: usar Access Token que começa com TEST-
+ *   - Produção: usar Access Token que começa com APP_USR-
+ *   O sistema não valida o prefixo — responsabilidade do lojista.
+ */
+class MercadoPagoProvider implements PaymentProvider {
+  private readonly accessToken: string
+  private readonly storeId:     string   // apenas para logs
+
+  constructor(accessToken: string, _publicKey: string, storeId: string) {
+    if (!accessToken) throw new GatewayError('Access Token do Mercado Pago não configurado.', 'NO_API_KEY')
+    this.accessToken = accessToken
+    this.storeId     = storeId
+  }
+
+  // ── fetch interno ──────────────────────────────────────────
+  private async request(
+    method: string,
+    path: string,
+    body?: unknown
+  ): Promise<unknown> {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), MP_TIMEOUT_MS)
+
+    let res: Response
+    try {
+      res = await fetch(`${MP_BASE_URL}${path}`, {
+        method,
+        headers: {
+          'Authorization':  `Bearer ${this.accessToken}`,  // nunca logado
+          'Content-Type':   'application/json',
+          'User-Agent':     'EncartShop/1.0',
+          'X-Idempotency-Key': crypto.randomUUID(),
+        },
+        body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
+      })
+    } catch (err: unknown) {
+      clearTimeout(timer)
+      const isTimeout = err instanceof Error && err.name === 'AbortError'
+      throw new GatewayError(
+        isTimeout ? 'Tempo limite excedido ao contatar o Mercado Pago.' : 'Erro de rede ao contatar o Mercado Pago.',
+        isTimeout ? 'MP_TIMEOUT' : 'NETWORK_ERROR'
+      )
+    } finally {
+      clearTimeout(timer)
+    }
+
+    let data: unknown
+    try { data = await res.json() } catch { data = {} }
+
+    if (!res.ok) {
+      this._handleHttpError(res.status, data)
+    }
+
+    return data
+  }
+
+  // ── tratamento de erros HTTP do Mercado Pago ───────────────
+  private _handleHttpError(status: number, body: unknown): never {
+    const b = body as Record<string, unknown>
+    const cause = (b?.cause as Record<string, unknown>[])?.[0]
+    const errMsg = cause
+      ? String(cause.description ?? cause.code ?? '')
+      : String(b?.message ?? b?.error ?? '')
+
+    if (status === 401 || status === 403) {
+      throw new GatewayError('Access Token inválido ou sem permissão.', 'INVALID_API_KEY')
+    }
+    if (status === 429) {
+      throw new GatewayError('Limite de requisições excedido no Mercado Pago.', 'RATE_LIMIT')
+    }
+    if (status === 400 || status === 422) {
+      throw new GatewayError(
+        errMsg || 'Dados inválidos enviados ao Mercado Pago.',
+        'MP_VALIDATION_ERROR'
+      )
+    }
+    if (status >= 500) {
+      throw new GatewayError('O Mercado Pago está temporariamente indisponível.', 'MP_UNAVAILABLE')
+    }
+    throw new GatewayError(
+      errMsg || `Erro inesperado no Mercado Pago (HTTP ${status}).`,
+      `MP_HTTP_${status}`
+    )
+  }
+
+  // ── validateCredentials ────────────────────────────────────
+  async validateCredentials(): Promise<string> {
+    const data = await this.request('GET', '/v1/users/me') as Record<string, unknown>
+    const name = String(data?.first_name ?? data?.nickname ?? 'conta Mercado Pago')
+    return name
+  }
+
+  // ── ensureCustomer ─────────────────────────────────────────
+  /**
+   * O Mercado Pago embute os dados do pagador (payer) direto na
+   * criação do payment — não precisa de um objeto Customer separado.
+   * Este método apenas retorna o nome do cliente para ser usado
+   * como referência no payer block.
+   */
+  async ensureCustomer(customer: CustomerInput): Promise<string> {
+    // No MP o "customer" é o payer embutido no payment.
+    // Retornamos o nome como identificador local.
+    return customer.name
+  }
+
+  // ── createPixCharge ────────────────────────────────────────
+  /**
+   * Cria uma cobrança PIX via POST /v1/payments.
+   * A API do Mercado Pago retorna o QR Code e o código Copia e Cola
+   * dentro do próprio response de criação do payment.
+   */
+  async createPixCharge(input: PixChargeInput): Promise<PixChargeResult> {
+    // Vencimento: D+1 se não informado
+    const dueDate = input.dueDate ?? (() => {
+      const d = new Date()
+      d.setDate(d.getDate() + 1)
+      return d.toISOString().split('T')[0]
+    })()
+
+    // Monta payload conforme API v1 do Mercado Pago
+    const chargePayload: Record<string, unknown> = {
+      transaction_amount: input.amount,
+      description:        input.description.slice(0, 255), // MP limita a 255 chars
+      payment_method_id:  'pix',
+      date_of_expiration: `${dueDate}T23:59:59.000-03:00`,
+      external_reference: input.orderId ?? '',
+      payer: {
+        // O MP exige pelo menos o email ou nome. Usamos o nome como fallback.
+        first_name: input.customerId.trim().split(' ')[0] ?? 'Cliente',
+        last_name:  input.customerId.trim().split(' ').slice(1).join(' ') || 'EncartShop',
+        // email é opcional mas melhora a UX na notificação do MP:
+        // será adicionado quando o frontend enviar customer.email
+      },
+    }
+
+    const charge = await this.request('POST', '/v1/payments', chargePayload) as Record<string, unknown>
+    const paymentId = String(charge.id)
+
+    // O QR Code vem em point_of_interaction.transaction_data
+    const txData = (charge.point_of_interaction as Record<string, unknown>)
+                    ?.transaction_data as Record<string, unknown> | undefined
+
+    const pixCode = String(txData?.qr_code        ?? '')
+    const qrCode  = String(txData?.qr_code_base64 ?? '')
+
+    console.log(
+      `[store-payment] MP cobrança PIX criada | store_id=${this.storeId}` +
+      ` | payment_id=${paymentId} | amount=${input.amount} | status=${charge.status}`
+    )
+
+    return {
+      gatewayPaymentId: paymentId,
+      status:           String(charge.status ?? 'pending'),
+      invoiceUrl:       String(charge.transaction_details
+                          ? (charge.transaction_details as Record<string,string>).external_resource_url ?? ''
+                          : ''),
+      pixCode,
+      qrCode,
+      expirationDate:   `${dueDate}T23:59:59.000-03:00`,
+      amount:           Number(charge.transaction_amount ?? input.amount),
+      billingType:      'PIX',
+    }
+  }
+}
+
 
 // ── Helpers HTTP ─────────────────────────────────────────────────
 
@@ -331,12 +527,12 @@ function sanitizeEnvironment(env: unknown): 'sandbox' | 'production' | null {
 // ── Factory de provider ──────────────────────────────────────────
 /**
  * Cria a instância correta do PaymentProvider com base no gateway configurado.
- * Ponto único de extensão: para adicionar Mercado Pago, PagBank ou Stripe,
+ * Ponto único de extensão: para adicionar PagBank ou Stripe,
  * basta adicionar um case aqui e criar a respectiva classe.
  */
 function createProvider(settings: StoreSettings): PaymentProvider {
   const env = sanitizeEnvironment(settings.environment)
-  if (!env) throw new AsaasError(
+  if (!env) throw new GatewayError(
     'Ambiente inválido. Configure "sandbox" ou "production".',
     'INVALID_ENVIRONMENT'
   )
@@ -345,13 +541,19 @@ function createProvider(settings: StoreSettings): PaymentProvider {
     case 'asaas':
       return new AsaasProvider(settings.asaas_api_key, env, settings.id)
 
+    case 'mercadopago':
+      return new MercadoPagoProvider(
+        settings.mp_access_token,
+        settings.mp_public_key,
+        settings.id
+      )
+
     // Futuros gateways:
-    // case 'mercadopago': return new MercadoPagoProvider(settings, env)
-    // case 'pagbank':     return new PagBankProvider(settings, env)
-    // case 'stripe':      return new StripeProvider(settings, env)
+    // case 'pagbank': return new PagBankProvider(settings, env)
+    // case 'stripe':  return new StripeProvider(settings, env)
 
     default:
-      throw new AsaasError(
+      throw new GatewayError(
         `Gateway "${settings.payment_provider}" não suportado.`,
         'UNSUPPORTED_GATEWAY'
       )
@@ -360,25 +562,44 @@ function createProvider(settings: StoreSettings): PaymentProvider {
 
 // ── Busca de configurações (service_role) ────────────────────────
 /**
- * Busca store_payment_settings com a asaas_api_key via service_role.
- * Único ponto do sistema que acessa a chave — nunca retorna ao frontend.
+ * Busca store_payment_settings e as credenciais do provider ativo na tabela de segredos.
+ * Agnostico de gateway — retorna o provider habilitado (payment_enabled=true) ou o mais recente.
+ * Único ponto do sistema que acessa credenciais — nunca retorna ao frontend.
  */
 async function fetchSettings(
   supabaseAdmin: ReturnType<typeof createClient>,
   storeId: string
 ): Promise<StoreSettings | null> {
-  const { data, error } = await supabaseAdmin
+  // Busca o provider ativo (ou o mais recentemente atualizado)
+  const { data: settingsData, error: settingsError } = await supabaseAdmin
     .from('store_payment_settings')
-    .select('id, payment_provider, environment, asaas_api_key, payment_enabled, payment_methods')
+    .select('id, payment_provider, environment, payment_enabled, payment_methods')
     .eq('store_id', storeId)
-    .eq('payment_provider', 'asaas')
+    .eq('payment_enabled', true)
+    .order('updated_at', { ascending: false })
+    .limit(1)
     .maybeSingle()
 
-  if (error) {
-    console.error(`[store-payment] fetchSettings error | store_id=${storeId} | msg=${error.message}`)
+  if (settingsError || !settingsData) {
+    if (settingsError) console.error(`[store-payment] fetchSettings error | store_id=${storeId} | msg=${settingsError.message}`)
     return null
   }
-  return data as StoreSettings | null
+
+  const provider = settingsData.payment_provider
+
+  const { data: secretData } = await supabaseAdmin
+    .from('store_payment_secrets')
+    .select('asaas_api_key, mp_access_token, mp_public_key')
+    .eq('store_id', storeId)
+    .eq('payment_provider', provider)
+    .maybeSingle()
+
+  return {
+    ...settingsData,
+    asaas_api_key:   secretData?.asaas_api_key   || '',
+    mp_access_token: secretData?.mp_access_token || '',
+    mp_public_key:   secretData?.mp_public_key   || '',
+  } as StoreSettings
 }
 
 
@@ -459,8 +680,8 @@ Deno.serve(async (req: Request) => {
     }
   } catch (err: unknown) {
     // Erros não tratados — loga sem expor detalhes internos
-    const msg = err instanceof Error ? err.message : 'Erro interno.'
-    const code = err instanceof AsaasError ? err.code : 'INTERNAL_ERROR'
+    const msg  = err instanceof Error ? err.message : 'Erro interno.'
+    const code = (err instanceof AsaasError || err instanceof GatewayError) ? err.code : 'INTERNAL_ERROR'
     console.error(`[store-payment] unhandled error | action=${action} | store_id=${storeId} | code=${code}`)
     return errorResponse(msg, code)
   }
@@ -479,11 +700,18 @@ async function handleValidateApiKey(
 
   if (!settings) {
     console.log(`[store-payment] validateApiKey | store_id=${store.id} | result=no_settings`)
-    return jsonResponse({ success: false, message: 'API Key não configurada.', code: 'NO_SETTINGS' })
+    return jsonResponse({ success: false, message: 'Credenciais não configuradas.', code: 'NO_SETTINGS' })
   }
-  if (!settings.asaas_api_key) {
-    console.log(`[store-payment] validateApiKey | store_id=${store.id} | result=no_api_key`)
-    return jsonResponse({ success: false, message: 'API Key não configurada.', code: 'NO_API_KEY' })
+
+  const hasCredentials = settings.payment_provider === 'asaas'
+    ? !!settings.asaas_api_key
+    : settings.payment_provider === 'mercadopago'
+      ? !!settings.mp_access_token
+      : false
+
+  if (!hasCredentials) {
+    console.log(`[store-payment] validateApiKey | store_id=${store.id} | provider=${settings.payment_provider} | result=no_api_key`)
+    return jsonResponse({ success: false, message: 'Credenciais do gateway não configuradas.', code: 'NO_API_KEY' })
   }
 
   const env = sanitizeEnvironment(settings.environment)
@@ -509,8 +737,8 @@ async function handleValidateApiKey(
     })
   } catch (err: unknown) {
     const elapsed = Date.now() - startTime
-    const code    = err instanceof AsaasError ? err.code : 'UNKNOWN'
-    const msg     = err instanceof Error      ? err.message : 'Erro desconhecido.'
+    const code    = (err instanceof AsaasError || err instanceof GatewayError) ? err.code : 'UNKNOWN'
+    const msg     = err instanceof Error ? err.message : 'Erro desconhecido.'
 
     console.log(
       `[store-payment] validateApiKey | store_id=${store.id} | gateway=${settings.payment_provider}` +
@@ -578,9 +806,17 @@ async function handleCreatePixCharge(
     console.log(`[store-payment] createPixCharge | store_id=${store.id} | result=no_settings`)
     return jsonResponse({ success: false, message: 'Pagamento online não configurado para esta loja.', code: 'NO_SETTINGS' })
   }
-  if (!settings.asaas_api_key) {
-    console.log(`[store-payment] createPixCharge | store_id=${store.id} | result=no_api_key`)
-    return jsonResponse({ success: false, message: 'API Key não configurada.', code: 'NO_API_KEY' })
+
+  // ── Verifica credenciais do provider ativo ─────────────────
+  const hasCredentials = settings.payment_provider === 'asaas'
+    ? !!settings.asaas_api_key
+    : settings.payment_provider === 'mercadopago'
+      ? !!settings.mp_access_token
+      : false
+
+  if (!hasCredentials) {
+    console.log(`[store-payment] createPixCharge | store_id=${store.id} | provider=${settings.payment_provider} | result=no_api_key`)
+    return jsonResponse({ success: false, message: 'Credenciais do gateway não configuradas.', code: 'NO_API_KEY' })
   }
 
   // ── Verifica se gateway está habilitado ────────────────────
@@ -621,11 +857,11 @@ async function handleCreatePixCharge(
 
   } catch (err: unknown) {
     const elapsed = Date.now() - startTime
-    const code    = err instanceof AsaasError ? err.code : 'PROVIDER_ERROR'
+    const code    = (err instanceof AsaasError || err instanceof GatewayError) ? err.code : 'PROVIDER_ERROR'
     const msg     = err instanceof Error ? err.message : 'Erro ao processar pagamento.'
 
     console.error(
-      `[store-payment] createPixCharge | store_id=${store.id} | result=error` +
+      `[store-payment] createPixCharge | store_id=${store.id} | provider=${settings.payment_provider} | result=error` +
       ` | code=${code} | elapsed=${elapsed}ms`
     )
     return jsonResponse({ success: false, message: msg, code })
@@ -650,12 +886,12 @@ async function handleCreatePixCharge(
     customer_document:  typeof cust.document === 'string' ? cust.document.replace(/\D/g, '') : null,
     customer_email:     typeof cust.email === 'string' ? cust.email : null,
     customer_phone:     typeof cust.phone === 'string' ? cust.phone : null,
-    // metadata: dados de auditoria — sem api_key, sem QR Code, sem dados sensíveis
+    // metadata: dados de auditoria — sem api_key, sem credenciais, sem dados sensíveis
     metadata: {
       gateway_payment_id: chargeResult.gatewayPaymentId,
-      asaas_customer_id:  asaasCustomerId,
-      environment:        settings.environment,
-      created_at:         new Date().toISOString(),
+      gateway_customer_id: asaasCustomerId,    // nome do customer (MP) ou ID (Asaas)
+      environment:         settings.environment,
+      created_at:          new Date().toISOString(),
     },
   }
 
