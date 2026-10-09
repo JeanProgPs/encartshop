@@ -286,7 +286,7 @@ window.CartManager = (() => {
         ? `\n\n${storeObj.whatsapp_footer.trim()}`
         : `\n\n🔗 *Gerenciar no Painel:*\n${window.location.origin}/admin/pedidos.html?ref=${orderRef}`;
 
-      const msg = `🧾 *Novo Pedido*${phoneMsg}${addressMsg}\n\n\`\`\`\n${receipt}\n\`\`\`${footerMsg}\n\n_Enviado via EncartShop_ ⚡`;
+      const msg = `🧾 *Novo Pedido*${phoneMsg}${addressMsg}\n\n\`\`\`\n${receipt}\n\`\`\`${footerMsg}`;
 
       // Monta dados do pedido
       const orderPayload = {
