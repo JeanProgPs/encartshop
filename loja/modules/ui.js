@@ -174,7 +174,7 @@ window.StoreUI = (() => {
     const defaultImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' fill='%23e2e8f0'%3E%3Crect width='100%25' height='100%25'/%3E%3C/svg%3E";
 
     try {
-      body.innerHTML = cart.map(item => {
+      let itemsHtml = cart.map(item => {
         const qty = parseFloat(item.qty) || 0;
         const qtyLabel = item.unit === 'kg'
           ? (qty < 1 ? `${qty * 1000}g` : `${qty.toFixed(1).replace('.', ',')}kg`)
@@ -198,6 +198,20 @@ window.StoreUI = (() => {
             </div>
           </div>`;
       }).join('');
+
+      const hasKg = cart.some(i => i.unit === 'kg' || i.unit === 'Kg' || i.unit === 'KG');
+      if (hasKg) {
+        itemsHtml += `
+          <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; margin: 12px 0;">
+            <p style="font-size: 0.8rem; color: #b45309; margin: 0; display: flex; align-items: flex-start; gap: 8px;">
+              <span style="font-size: 1.1rem; line-height: 1;">⚖️</span>
+              <span><strong>Aviso:</strong> Produtos vendidos por peso (Kg) podem sofrer um pequeno ajuste no valor final após a pesagem exata no balcão.</span>
+            </p>
+          </div>
+        `;
+      }
+
+      body.innerHTML = itemsHtml;
     } catch (e) {
       console.error('Crash renderizando cart', e, cart);
       body.innerHTML = `<div style="padding: 20px; color: red;">Erro ao processar itens do carrinho. Limpe seus dados de navegação ou atualize a página.</div>`;
