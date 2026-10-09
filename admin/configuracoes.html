@@ -185,13 +185,21 @@
           <i data-lucide="message-circle" class="w-5 h-5 text-textPrimary"></i>
           <h3 class="text-base font-semibold text-textPrimary">WhatsApp para Pedidos</h3>
         </div>
-        <p class="text-sm text-textSecondary mb-6">Número que receberá os pedidos dos clientes. Use o formato internacional sem espaços.</p>
+        <p class="text-sm text-textSecondary mb-6">Número que receberá os pedidos dos clientes e a mensagem que aparecerá no rodapé do comprovante.</p>
         
-        <div class="flex flex-col gap-1.5 max-w-sm">
-          <label class="text-sm font-medium text-textPrimary">Número do WhatsApp <span class="text-danger">*</span></label>
-          <input id="s-whatsapp" type="tel" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="5511999999999">
+        <div class="flex flex-col gap-4 max-w-lg">
+          <div class="flex flex-col gap-1.5 max-w-sm">
+            <label class="text-sm font-medium text-textPrimary">Número do WhatsApp <span class="text-danger">*</span></label>
+            <input id="s-whatsapp" type="tel" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="5511999999999">
+            <p class="text-xs text-textSecondary mt-1"><i data-lucide="info" class="w-3 h-3 inline"></i> Ex: Brasil (55) + DDD (11) + número (999999999) = <strong>5511999999999</strong></p>
+          </div>
+          
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium text-textPrimary">Mensagem de Rodapé (Opcional)</label>
+            <textarea id="s-whatsapp-footer" rows="2" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Ex: Nos siga no Instagram @minha_loja!"></textarea>
+            <p class="text-xs text-textSecondary mt-1">Substitui o link padrão de "Gerenciar no Painel" enviado para o cliente.</p>
+          </div>
         </div>
-        <p class="text-xs text-textSecondary mt-2"><i data-lucide="info" class="w-3 h-3 inline"></i> Exemplo: Brasil (55) + DDD (11) + número (999999999) = <strong>5511999999999</strong></p>
       </div>
 
       <!-- Entrega -->
@@ -377,6 +385,7 @@
     }
     
     document.getElementById('s-whatsapp').value      = _store.whatsapp      || '';
+    document.getElementById('s-whatsapp-footer').value = _store.whatsapp_footer || '';
     document.getElementById('s-origin-zip').value    = _store.origin_zip    || '';
     
     const isCombine = _store.delivery_fee === -1;
@@ -499,6 +508,7 @@
         seo_description: document.getElementById('s-seo-description').value.trim() || null,
         seo_keywords:    document.getElementById('s-seo-keywords').value.trim() || null,
         whatsapp:        wa,
+        whatsapp_footer: document.getElementById('s-whatsapp-footer').value.trim() || null,
         origin_zip:      document.getElementById('s-origin-zip').value.replace(/\D/g, '') || null,
         delivery_fee:    isCombine ? -1 : (parseFloat(document.getElementById('s-delivery-fee').value) || 0),
         delivery_free:   isCombine ? 0 : (parseFloat(document.getElementById('s-delivery-free').value) || 0),

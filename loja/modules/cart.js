@@ -282,7 +282,11 @@ window.CartManager = (() => {
         DIV2,
       ].join('\n');
 
-      const msg = `🧾 *Novo Pedido*${phoneMsg}${addressMsg}\n\n\`\`\`\n${receipt}\n\`\`\`\n\n🔗 *Gerenciar no Painel:*\n${window.location.origin}/admin/pedidos.html?ref=${orderRef}\n\n_Enviado via EncartShop_ ⚡`;
+      const footerMsg = storeObj.whatsapp_footer
+        ? `\n\n${storeObj.whatsapp_footer.trim()}`
+        : `\n\n🔗 *Gerenciar no Painel:*\n${window.location.origin}/admin/pedidos.html?ref=${orderRef}`;
+
+      const msg = `🧾 *Novo Pedido*${phoneMsg}${addressMsg}\n\n\`\`\`\n${receipt}\n\`\`\`${footerMsg}\n\n_Enviado via EncartShop_ ⚡`;
 
       // Monta dados do pedido
       const orderPayload = {
