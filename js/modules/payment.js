@@ -26,6 +26,8 @@
 // Operações sobre a tabela store_payment_settings.
 // ──────────────────────────────────────────────────────────────────
 
+(() => {
+
 const StorePaymentAPI = {
   /**
    * Busca as configurações de pagamento de uma loja.
@@ -245,3 +247,5 @@ const OrderPaymentAPI = {
 
 // Expõe OrderPaymentAPI globalmente para uso futuro (não referenciado por nenhum módulo atual)
 window.OrderPaymentAPI = OrderPaymentAPI;
+
+})();
