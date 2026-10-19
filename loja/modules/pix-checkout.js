@@ -292,6 +292,7 @@ window.PixCheckoutModule = (() => {
       const pixResult = await window.OrderPaymentAPI.createCharge({
         storeId:     _store.id,
         orderId:     _currentOrderId,
+        orderRef:    orderRef,
         customer: {
           name:     name,
           phone:    phoneRaw || undefined,
@@ -379,8 +380,8 @@ window.PixCheckoutModule = (() => {
         DIV2,
       ].join('\n');
 
-      const footerMsg = storeObj.whatsapp_footer
-        ? `\n\n${storeObj.whatsapp_footer.trim()}`
+      const footerMsg = (_store && _store.whatsapp_footer)
+        ? `\n\n${_store.whatsapp_footer.trim()}`
         : `\n\n🔗 *Gerenciar no Painel:*\n${window.location.origin}/admin/pedidos.html?ref=${orderRef}`;
 
       const msg = `🧾 *Novo Pedido*${phoneMsg}${addressMsg}\n\n\`\`\`\n${receipt}\n\`\`\`${footerMsg}`;
@@ -657,6 +658,7 @@ window.PixCheckoutModule = (() => {
     fallbackToWhatsApp,
     // Exposto para testes
     _checkEligibility,
+    _buildWhatsAppUrl,
   };
 
 })();

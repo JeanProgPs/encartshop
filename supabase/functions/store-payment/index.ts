@@ -617,28 +617,6 @@ Deno.serve(async (req: Request) => {
 
   const startTime = Date.now()
 
-  // ── Autenticação JWT ───────────────────────────────────────
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return errorResponse('Autenticação necessária.', 'UNAUTHORIZED')
-  }
-  const token = authHeader.replace('Bearer ', '').trim()
-
-  const supabaseUser = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    { global: { headers: { Authorization: `Bearer ${token}` } } }
-  )
-  const supabaseAdmin = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  )
-
-  const { data: { user }, error: authError } = await supabaseUser.auth.getUser()
-  if (authError || !user) {
-    return errorResponse('Token inválido ou expirado.', 'UNAUTHORIZED')
-  }
-
   // ── Parse body ─────────────────────────────────────────────
   let body: Record<string, unknown>
   try {
@@ -655,26 +633,90 @@ Deno.serve(async (req: Request) => {
     return errorResponse('Campo "storeId" obrigatório.', 'MISSING_STORE_ID')
   }
 
-  // ── Verifica dono da loja via RLS ──────────────────────────
-  const { data: store, error: storeError } = await supabaseUser
-    .from('stores')
-    .select('id, name, plan')
-    .eq('id', storeId)
-    .maybeSingle()
+  const authHeader = req.headers.get('Authorization') ?? ''
+  const token = authHeader.startsWith('Bearer ') ? authHeader.replace('Bearer ', '').trim() : ''
 
-  if (storeError || !store) {
-    console.error(`[store-payment] acesso negado | store_id=${storeId} | user=${user.id}`)
-    return errorResponse('Loja não encontrada.', 'STORE_NOT_FOUND')
-  }
+  const supabaseAdmin = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  )
 
-  // ── Roteamento ─────────────────────────────────────────────
+  // ── Roteamento e autorização por ação ───────────────────────
   try {
     switch (action) {
-      case 'validateApiKey':
-        return await handleValidateApiKey(supabaseAdmin, store, startTime)
+      case 'validateApiKey': {
+        // Operação administrativa restrita: exige login do lojista
+        if (!token) {
+          return errorResponse('Autenticação necessária.', 'UNAUTHORIZED')
+        }
 
-      case 'createPixCharge':
+        const supabaseUser = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+          { global: { headers: { Authorization: `Bearer ${token}` } } }
+        )
+
+        const { data: { user }, error: authError } = await supabaseUser.auth.getUser()
+        if (authError || !user) {
+          return errorResponse('Token inválido ou expirado.', 'UNAUTHORIZED')
+        }
+
+        // Verifica se o usuário autenticado é o proprietário da loja
+        const { data: store, error: storeError } = await supabaseAdmin
+          .from('stores')
+          .select('id, name, plan, user_id')
+          .eq('id', storeId)
+          .maybeSingle()
+
+        if (storeError || !store || store.user_id !== user.id) {
+          console.error(`[store-payment] acesso negado | store_id=${storeId} | user=${user.id}`)
+          return errorResponse('Loja não encontrada ou sem permissão.', 'STORE_NOT_FOUND')
+        }
+
+        return await handleValidateApiKey(supabaseAdmin, store, startTime)
+      }
+
+      case 'createPixCharge': {
+        // Operação de checkout público: compradores anônimos são permitidos
+        // Valida que a requisição vem de origem com a anon key ou token autenticado
+        const expectedAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+        const apiKeyHeader = req.headers.get('apikey') ?? ''
+        if (expectedAnonKey && apiKeyHeader !== expectedAnonKey && token !== expectedAnonKey) {
+          const supabaseCheck = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            expectedAnonKey,
+            { global: { headers: { Authorization: `Bearer ${token}` } } }
+          )
+          const { data: { user } } = await supabaseCheck.auth.getUser().catch(() => ({ data: { user: null } }))
+          if (!user) {
+            return errorResponse('Origem não autorizada.', 'UNAUTHORIZED')
+          }
+        }
+
+        // Valida existência e status da loja via service_role
+        const { data: store, error: storeError } = await supabaseAdmin
+          .from('stores')
+          .select('id, name, plan, status')
+          .eq('id', storeId)
+          .maybeSingle()
+
+        if (storeError || !store) {
+          console.error(`[store-payment] createPixCharge | loja não encontrada | store_id=${storeId}`)
+          return errorResponse('Loja não encontrada.', 'STORE_NOT_FOUND')
+        }
+
+        if (store.status !== 'active') {
+          return errorResponse('Esta loja não está disponível para receber pagamentos no momento.', 'STORE_INACTIVE')
+        }
+
+        const allowedPlans = ['pro', 'enterprise']
+        const storePlan = (store.plan || '').toLowerCase()
+        if (!allowedPlans.includes(storePlan)) {
+          return errorResponse('A loja não possui um plano elegível para pagamentos online.', 'PLAN_NOT_ELIGIBLE')
+        }
+
         return await handleCreatePixCharge(supabaseAdmin, store, body, startTime)
+      }
 
       default:
         return errorResponse(`Action "${action}" não reconhecida.`, 'UNKNOWN_ACTION')
@@ -769,13 +811,13 @@ async function handleValidateApiKey(
  */
 async function handleCreatePixCharge(
   supabaseAdmin: ReturnType<typeof createClient>,
-  store: { id: string; name: string; plan: string },
+  store: { id: string; name: string; plan: string; status?: string },
   body:  Record<string, unknown>,
   startTime: number
 ): Promise<Response> {
 
   // ── Validação de entrada ───────────────────────────────────
-  const { orderId, customer, amount, description } = body
+  const { orderId, orderRef, customer, amount, description } = body
 
   if (!customer || typeof customer !== 'object') {
     return errorResponse('Campo "customer" obrigatório (objeto com name).', 'MISSING_CUSTOMER')
@@ -789,7 +831,7 @@ async function handleCreatePixCharge(
   if (!parsedAmount || isNaN(parsedAmount) || parsedAmount <= 0) {
     return errorResponse('Campo "amount" deve ser um número positivo.', 'INVALID_AMOUNT')
   }
-  // Asaas exige mínimo de R$ 1,00
+  // Asaas e Mercado Pago exigem mínimo de R$ 1,00
   if (parsedAmount < 1) {
     return errorResponse('Valor mínimo para cobrança é R$ 1,00.', 'AMOUNT_TOO_LOW')
   }
@@ -798,7 +840,86 @@ async function handleCreatePixCharge(
     ? description.trim()
     : `Pedido ${store.name}`
 
-  const orderIdStr = typeof orderId === 'string' && orderId ? orderId : undefined
+  // ── Resolução do Pedido e Validação Anti-Fraude ─────────────
+  let resolvedOrderId: string | undefined = typeof orderId === 'string' && orderId ? orderId : undefined
+
+  // Se não foi enviado UUID direto, tenta resolver pelo código de referência (#XXXXX)
+  const refCode = (typeof orderRef === 'string' && orderRef.trim())
+    ? orderRef.trim()
+    : (typeof description === 'string' ? description.match(/#([A-Z0-9]{4,8})/i)?.[1] : undefined)
+
+  if (!resolvedOrderId && refCode) {
+    const { data: matchedOrder } = await supabaseAdmin
+      .from('orders')
+      .select('id, total, status')
+      .eq('store_id', store.id)
+      .ilike('customer_name', `%[#${refCode}]%`)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (matchedOrder) {
+      resolvedOrderId = matchedOrder.id
+    }
+  }
+
+  // Se o pedido for localizado no banco, valida integridade do valor e status
+  if (resolvedOrderId) {
+    const { data: orderRecord } = await supabaseAdmin
+      .from('orders')
+      .select('id, store_id, total, status')
+      .eq('id', resolvedOrderId)
+      .maybeSingle()
+
+    if (orderRecord) {
+      if (orderRecord.store_id !== store.id) {
+        return errorResponse('Pedido não pertence a esta loja.', 'INVALID_ORDER')
+      }
+
+      // Validação anti-adulteração: amount não pode divergir do total do pedido
+      if (orderRecord.total != null && Math.abs(Number(orderRecord.total) - parsedAmount) > 0.05) {
+        console.warn(`[store-payment] divergência de valor | store_id=${store.id} | order_id=${resolvedOrderId} | order_total=${orderRecord.total} | amount=${parsedAmount}`)
+        return errorResponse('Valor da cobrança diverge do total do pedido.', 'AMOUNT_MISMATCH')
+      }
+    }
+
+    // ── Idempotência: Reutiliza cobrança PIX existente para o mesmo pedido ──
+    const { data: existingPayment } = await supabaseAdmin
+      .from('order_payments')
+      .select('id, gateway_payment_id, pix_code, qr_code, payment_url, due_date, status, amount, billing_type')
+      .eq('store_id', store.id)
+      .eq('order_id', resolvedOrderId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (existingPayment) {
+      if (existingPayment.status === 'confirmed') {
+        return errorResponse('Este pedido já foi pago e confirmado.', 'ORDER_ALREADY_PAID')
+      }
+
+      // Se ainda estiver pending e tiver código PIX gerado
+      if (existingPayment.status === 'pending' && existingPayment.pix_code) {
+        const elapsed = Date.now() - startTime
+        console.log(
+          `[store-payment] createPixCharge (reutilizado) | store_id=${store.id} | order_id=${resolvedOrderId}` +
+          ` | payment_id=${existingPayment.gateway_payment_id} | elapsed=${elapsed}ms`
+        )
+        return jsonResponse({
+          success:        true,
+          orderPaymentId: existingPayment.id,
+          paymentId:      existingPayment.gateway_payment_id,
+          invoiceUrl:     existingPayment.payment_url ?? '',
+          pixCode:        existingPayment.pix_code,
+          qrCode:         existingPayment.qr_code ?? '',
+          expirationDate: existingPayment.due_date ?? '',
+          status:         existingPayment.status,
+          amount:         existingPayment.amount,
+          billingType:    'PIX',
+        })
+      }
+    }
+  }
 
   // ── Busca configurações da loja ────────────────────────────
   const settings = await fetchSettings(supabaseAdmin, store.id)
@@ -852,7 +973,7 @@ async function handleCreatePixCharge(
       customerId:  asaasCustomerId,
       amount:      parsedAmount,
       description: descStr,
-      orderId:     orderIdStr,
+      orderId:     resolvedOrderId ?? (typeof orderId === 'string' ? orderId : undefined),
       dueDate:     typeof body.dueDate === 'string' ? body.dueDate : undefined,
     })
 
@@ -873,7 +994,7 @@ async function handleCreatePixCharge(
   // O webhook atualizará para 'confirmed', 'expired', 'cancelled' ou 'refunded'
   const orderPaymentRecord = {
     store_id:           store.id,
-    order_id:           orderIdStr ?? null,
+    order_id:           resolvedOrderId ?? (typeof orderId === 'string' ? orderId : null),
     gateway:            settings.payment_provider,
     gateway_payment_id: chargeResult.gatewayPaymentId,
     billing_type:       'pix',

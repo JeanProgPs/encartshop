@@ -1,0 +1,377 @@
+/**
+ * EncartShop — Flyer Templates CSS (Etapa 3)
+ * Estilos visuais para a folha A4 proporcional do encarte,
+ * grids de produtos (4, 6, 8, 9 itens) e temas por segmento.
+ */
+
+:root {
+  --flyer-bg: #ffffff;
+  --flyer-text-dark: #18181b;
+  --flyer-text-muted: #71717a;
+  --flyer-border: #e4e4e7;
+  --flyer-card-bg: #ffffff;
+}
+
+/* ── Container da Folha A4 do Encarte ───────────────────────── */
+.flyer-preview-stage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.flyer-page-sheet {
+  width: 100%;
+  max-width: 680px;
+  aspect-ratio: 210 / 297;
+  background-color: var(--flyer-bg);
+  color: var(--flyer-text-dark);
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  border-radius: 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ── Cabeçalhos dos Encartes ────────────────────────────────── */
+.flyer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 2px solid var(--brand-color, #e94560);
+  flex-shrink: 0;
+}
+
+.flyer-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.flyer-logo-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  border: 1px solid var(--flyer-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.flyer-header-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.flyer-header-logo-fallback {
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: var(--brand-color, #e94560);
+}
+
+.flyer-header-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.flyer-store-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--flyer-text-dark);
+  margin: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.flyer-store-subtitle {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--brand-color, #e94560);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 2px 0 0;
+}
+
+/* Badges do Header */
+.flyer-header-badge-market span,
+.flyer-header-badge-food span,
+.flyer-header-badge-fashion span {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.flyer-header-badge-market span {
+  background-color: var(--brand-color, #e94560);
+  color: #ffffff;
+}
+
+.flyer-header-badge-food span {
+  background-color: #f59e0b;
+  color: #ffffff;
+}
+
+.flyer-header-badge-fashion span {
+  background-color: #18181b;
+  color: #ffffff;
+}
+
+/* ── Container do Grid de Produtos ──────────────────────────── */
+.flyer-grid-container {
+  flex: 1;
+  display: grid;
+  gap: 10px;
+  overflow: hidden;
+  align-content: stretch;
+}
+
+/* Densidades de Grid */
+.flyer-grid-4 {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.flyer-grid-6 {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.flyer-grid-8 {
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.flyer-grid-9 {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+
+/* ── Cards de Produtos ──────────────────────────────────────── */
+.flyer-card {
+  background-color: var(--flyer-card-bg);
+  border: 1px solid var(--flyer-border);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.flyer-card-img-wrap {
+  width: 100%;
+  height: 55%;
+  min-height: 50px;
+  background-color: #f4f4f5;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.flyer-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.flyer-tag-promo {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background-color: var(--brand-color, #e94560);
+  color: #ffffff;
+  font-size: 0.55rem;
+  font-weight: 800;
+  padding: 2px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.flyer-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin-top: 6px;
+  min-height: 0;
+}
+
+.flyer-card-cat {
+  font-size: 0.55rem;
+  color: var(--flyer-text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+  display: block;
+}
+
+.flyer-card-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--flyer-text-dark);
+  margin: 2px 0 0;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Preços */
+.flyer-card-prices {
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.flyer-price-regular {
+  font-size: 0.58rem;
+  color: var(--flyer-text-muted);
+  text-decoration: line-through;
+  line-height: 1;
+}
+
+.flyer-price-highlight,
+.flyer-price-promo,
+.flyer-price-single {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--flyer-text-dark);
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+.flyer-price-por {
+  font-size: 0.6rem;
+  font-weight: 600;
+}
+
+.flyer-unit {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--flyer-text-muted);
+}
+
+/* ── Ajustes por Tema ────────────────────────────────────────── */
+
+/* Tema: Fashion */
+.flyer-theme-fashion .flyer-card {
+  border: 1px solid #e4e4e7;
+  border-radius: 6px;
+}
+.flyer-theme-fashion .flyer-card-img-wrap {
+  height: 60%;
+  background-color: #fafafa;
+}
+.flyer-theme-fashion .flyer-card-img {
+  object-fit: cover;
+}
+.flyer-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.flyer-card-brand {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #18181b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.flyer-tags-wrap {
+  display: flex;
+  gap: 3px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+.flyer-tag {
+  font-size: 0.5rem;
+  background-color: #f4f4f5;
+  color: #71717a;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* Tema: Food */
+.flyer-theme-food .flyer-card {
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.flyer-card-desc {
+  font-size: 0.55rem;
+  color: var(--flyer-text-muted);
+  margin: 1px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Rodapé dos Encartes ─────────────────────────────────────── */
+.flyer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  margin-top: 10px;
+  border-top: 1px solid var(--flyer-border);
+  font-size: 0.58rem;
+  color: var(--flyer-text-muted);
+  flex-shrink: 0;
+}
+
+.flyer-footer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.flyer-footer-contact {
+  font-weight: 700;
+  color: var(--flyer-text-dark);
+}
+
+.flyer-footer-page {
+  font-weight: 700;
+  font-size: 0.6rem;
+  white-space: nowrap;
+}
+
+/* Ajustes responsivos para grades densas */
+.flyer-grid-8 .flyer-card,
+.flyer-grid-9 .flyer-card {
+  padding: 6px;
+}
+
+.flyer-grid-8 .flyer-card-title,
+.flyer-grid-9 .flyer-card-title {
+  font-size: 0.65rem;
+}
+
+.flyer-grid-8 .flyer-price-highlight,
+.flyer-grid-9 .flyer-price-highlight {
+  font-size: 0.75rem;
+}

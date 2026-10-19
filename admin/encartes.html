@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de Encartes — EncartShop</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  
+  <!-- CSS Base & Tailwind -->
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/assets/output.css">
+  
+  <!-- Estilos dos Modelos Visuais de Encartes (Etapa 3) -->
+  <link rel="stylesheet" href="/css/flyer-templates.css">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    .fade-in-up {
+      animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    @keyframes fadeInUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .hover-scale {
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+    }
+    .hover-scale:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    /* Card de Produto no Gerador */
+    .flyer-product-card {
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .flyer-product-card.selected {
+      border-color: var(--accent);
+      background-color: rgba(233, 69, 96, 0.05);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    /* Botões Ativos nos Seletores de Template e Grid */
+    .btn-template-choice.active {
+      border-color: var(--accent);
+      background-color: rgba(233, 69, 96, 0.08);
+      color: var(--accent);
+    }
+    .btn-grid-choice.active {
+      background-color: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    /* Shimmer para Skeleton Loader */
+    @keyframes encart-shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .skeleton-box {
+      background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+      background-size: 200% 100%;
+      animation: encart-shimmer 1.5s infinite;
+    }
+  </style>
+</head>
+<body data-page="encartes" class="bg-bgPrimary text-textPrimary antialiased selection:bg-accent selection:text-white">
+
+<div class="admin-layout flex min-h-screen">
+  <!-- Sidebar injetado pelo admin-common.js -->
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <!-- Main Content Area -->
+  <main class="main-content flex-1 ml-0 md:ml-[256px] flex flex-col min-h-screen transition-all duration-300">
+    
+    <!-- Topbar Premium -->
+    <header class="h-[64px] bg-cardBg/80 backdrop-blur-md border-b border-borderColor sticky top-0 z-50 px-4 md:px-8 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
+          <i data-lucide="newspaper" class="w-4 h-4"></i>
+        </div>
+        <div class="flex flex-col">
+          <h2 class="text-sm font-semibold text-textPrimary leading-tight">Gerador de Encartes</h2>
+          <span id="topbar-subtitle" class="text-xs text-textSecondary">Crie folhetos em páginas A4 prontas para sua loja</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span id="plan-badge-top" class="hidden text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider"></span>
+        <button class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-bgPrimary transition-colors relative" title="Notificações">
+          <i data-lucide="bell" class="w-5 h-5 text-textSecondary"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <div class="flex-1 p-4 md:p-8 flex flex-col gap-6 max-w-[1400px] w-full mx-auto">
+      
+      <!-- Loading State Inicial (Verificação de Assinatura) -->
+      <div id="loading-state" class="flex flex-col items-center justify-center py-20 gap-3">
+        <div class="w-10 h-10 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-sm text-textSecondary font-medium">Verificando permissões e dados da loja...</p>
+      </div>
+
+      <!-- Start Plan Presentation / Paywall (Visível apenas para plano Start) -->
+      <div id="paywall-container" class="hidden fade-in-up">
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-cardBg via-bgPrimary to-cardBg border border-borderColor p-6 md:p-10 shadow-sm">
+          <div class="max-w-3xl mx-auto flex flex-col items-center text-center gap-6">
+            
+            <div class="inline-flex items-center gap-2 bg-gradient-to-r from-warning/20 to-amber-500/20 border border-warning/30 text-warning px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-warning"></i>
+              Recurso Exclusivo PRO & Enterprise
+            </div>
+
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent to-purple-600 flex items-center justify-center text-white shadow-lg shadow-accent/20">
+              <i data-lucide="newspaper" class="w-8 h-8"></i>
+            </div>
+
+            <div>
+              <h1 class="text-2xl md:text-3xl font-extrabold text-textPrimary tracking-tight">
+                Gerador de Encartes Promocionais
+              </h1>
+              <p class="text-textSecondary text-sm md:text-base mt-2 max-w-xl mx-auto leading-relaxed">
+                Crie encartes, panfletos e folhetos digitais com a cara da sua loja em segundos. 
+                Gere arquivos prontos para impressão em gráfica ou compartilhe direto no WhatsApp e Instagram.
+              </p>
+            </div>
+
+            <!-- Features Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full text-left mt-2">
+              <div class="p-4 rounded-xl bg-bgPrimary border border-borderColor hover-scale">
+                <div class="w-9 h-9 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center mb-3">
+                  <i data-lucide="layout-grid" class="w-5 h-5"></i>
+                </div>
+                <h4 class="font-bold text-sm text-textPrimary">Paginação Automática</h4>
+                <p class="text-xs text-textSecondary mt-1 leading-relaxed">
+                  Selecione os produtos e o sistema organiza tudo em páginas prontas, respeitando a grade e densidade escolhida.
+                </p>
+              </div>
+
+              <div class="p-4 rounded-xl bg-bgPrimary border border-borderColor hover-scale">
+                <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-3">
+                  <i data-lucide="palette" class="w-5 h-5"></i>
+                </div>
+                <h4 class="font-bold text-sm text-textPrimary">Identidade Própria</h4>
+                <p class="text-xs text-textSecondary mt-1 leading-relaxed">
+                  Sua logo, cores da marca e contatos aplicados automaticamente em modelos profissionais para Alimentação, Moda e Variedades.
+                </p>
+              </div>
+
+              <div class="p-4 rounded-xl bg-bgPrimary border border-borderColor hover-scale">
+                <div class="w-9 h-9 rounded-lg bg-accent/10 text-accent flex items-center justify-center mb-3">
+                  <i data-lucide="download" class="w-5 h-5"></i>
+                </div>
+                <h4 class="font-bold text-sm text-textPrimary">PDF e Imagens em Alta</h4>
+                <p class="text-xs text-textSecondary mt-1 leading-relaxed">
+                  Exporte em PDF A4 nítido para impressão ou imagens em PNG e JPG de alta resolução para suas redes sociais.
+                </p>
+              </div>
+            </div>
+
+            <!-- CTA Upgrade -->
+            <div class="pt-4 flex flex-col sm:flex-row items-center gap-3">
+              <a href="pagamento.html" class="px-6 py-3 bg-gradient-to-r from-accent to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-accent/25 hover:brightness-110 transition-all flex items-center gap-2 text-sm">
+                <i data-lucide="zap" class="w-4 h-4"></i> Fazer Upgrade para o Plano Pro
+              </a>
+              <a href="produtos.html" class="px-5 py-3 border border-borderColor bg-cardBg hover:bg-bgPrimary text-textSecondary text-sm font-medium rounded-xl transition-colors">
+                Voltar aos Produtos
+              </a>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Subscription Blocked State (Assinatura vencida) -->
+      <div id="blocked-container" class="hidden fade-in-up">
+        <div class="p-6 rounded-xl bg-danger/10 border border-danger/30 text-center flex flex-col items-center gap-3">
+          <div class="w-12 h-12 rounded-full bg-danger/20 text-danger flex items-center justify-center">
+            <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-base font-bold text-danger">Assinatura Necessita de Regularização</h3>
+          <p class="text-sm text-textSecondary max-w-md">
+            Sua assinatura atual está expirada. Para continuar gerando encartes e folhetos promocionais, regularize sua fatura.
+          </p>
+          <a href="pagamento.html" class="mt-2 px-5 py-2.5 bg-danger text-white font-bold rounded-lg hover:opacity-90 transition-opacity text-sm">
+            Ir para Pagamento
+          </a>
+        </div>
+      </div>
+
+      <!-- Pro / Enterprise Functional Area (Etapas 1, 2 e 3) -->
+      <div id="pro-container" class="hidden flex-col gap-6 fade-in-up">
+        
+        <!-- Header de Boas-Vindas & Status -->
+        <div class="bg-cardBg border border-borderColor rounded-xl p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+          <div class="flex items-center gap-4">
+            <div id="store-logo-preview" class="w-12 h-12 rounded-xl bg-bgPrimary border border-borderColor flex items-center justify-center overflow-hidden flex-shrink-0">
+              <i data-lucide="store" class="w-6 h-6 text-textSecondary"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 id="store-name-display" class="text-lg font-bold text-textPrimary leading-tight">Carregando loja...</h3>
+                <span id="plan-badge-inline" class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase"></span>
+                <span id="segment-badge-inline" class="text-[10px] font-medium bg-bgPrimary border border-borderColor text-textSecondary px-2 py-0.5 rounded-full uppercase"></span>
+              </div>
+              <p class="text-xs text-textSecondary mt-1">
+                Selecione os produtos e personalize o modelo visual do seu encarte.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 text-xs text-success bg-success/10 border border-success/20 px-3 py-1.5 rounded-full font-semibold">
+              <span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
+              Gerador Habilitado
+            </span>
+          </div>
+        </div>
+
+        <!-- Pipeline de Etapas (Roadmap de Execução) -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          
+          <!-- Etapa 1: Concluída -->
+          <div class="p-3.5 rounded-xl bg-cardBg border border-borderColor flex flex-col gap-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold tracking-wider uppercase text-success bg-success/10 px-2 py-0.5 rounded">Etapa 1</span>
+              <i data-lucide="check-circle" class="w-4 h-4 text-success"></i>
+            </div>
+            <h4 class="font-bold text-xs text-textPrimary">Estrutura & Acesso</h4>
+            <p class="text-[11px] text-textSecondary leading-tight">
+              Plano Pro/Enterprise verificado.
+            </p>
+          </div>
+
+          <!-- Etapa 2: Seleção -->
+          <div id="pipeline-step-2" class="p-3.5 rounded-xl bg-cardBg border border-borderColor flex flex-col gap-1.5 cursor-pointer hover:border-accent transition-colors" onclick="switchToSelectionView()">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold tracking-wider uppercase text-accent bg-accent/10 px-2 py-0.5 rounded">Etapa 2</span>
+              <span id="step-2-status-icon"><i data-lucide="check-circle" class="w-4 h-4 text-success"></i></span>
+            </div>
+            <h4 class="font-bold text-xs text-textPrimary">Seleção de Produtos</h4>
+            <p class="text-[11px] text-textSecondary leading-tight">
+              <span id="pipeline-selected-badge" class="font-bold text-textPrimary">0 produtos</span> marcados.
+            </p>
+          </div>
+
+          <!-- Etapa 3: Modelos & Layout (Ativa Agora) -->
+          <div id="pipeline-step-3" class="p-3.5 rounded-xl bg-cardBg border-2 border-accent shadow-sm flex flex-col gap-1.5 relative overflow-hidden">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold tracking-wider uppercase text-accent bg-accent/10 px-2 py-0.5 rounded">Etapa 3</span>
+              <span class="text-[10px] font-bold text-accent animate-pulse">Ativa</span>
+            </div>
+            <h4 class="font-bold text-xs text-textPrimary">Modelos & Paginação</h4>
+            <p class="text-[11px] text-textSecondary leading-tight">
+              Templates visuais e páginas A4.
+            </p>
+          </div>
+
+          <!-- Etapa 4: Exportação (Ativa) -->
+          <div id="pipeline-step-4" class="p-3.5 rounded-xl bg-cardBg border border-borderColor flex flex-col gap-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold tracking-wider uppercase text-success bg-success/10 px-2 py-0.5 rounded">Etapa 4</span>
+              <i data-lucide="download" class="w-4 h-4 text-success"></i>
+            </div>
+            <h4 class="font-bold text-xs text-textPrimary">Exportação</h4>
+            <p class="text-[11px] text-textSecondary leading-tight">
+              PDF A4 e PNG/JPG prontos.
+            </p>
+          </div>
+            <h4 class="font-bold text-xs text-textPrimary">Prévia & Exportação</h4>
+            <p class="text-[11px] text-textSecondary leading-tight">
+              Download em PDF A4 e PNG/JPG.
+            </p>
+          </div>
+
+        </div>
+
+        <!-- ═════════════════════════════════════════════════════════════ -->
+        <!-- VIEW 1: SELEÇÃO DE PRODUTOS DO CATÁLOGO (Etapa 2)           -->
+        <!-- ═════════════════════════════════════════════════════════════ -->
+        <div id="view-selection" class="flex flex-col gap-5">
+          
+          <div class="bg-cardBg border border-borderColor rounded-xl p-5 md:p-6 flex flex-col gap-5 shadow-sm">
+            
+            <!-- Linha 1: Barra de Filtros e Busca -->
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              
+              <!-- Campo de Busca com debounce -->
+              <div class="flex-1 max-w-md relative">
+                <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-textSecondary"></i>
+                <input 
+                  type="text" 
+                  id="search-input" 
+                  placeholder="Buscar por nome, marca ou categoria..." 
+                  class="w-full bg-bgPrimary border border-borderColor rounded-xl py-2.5 pl-10 pr-9 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                >
+                <button 
+                  id="btn-clear-search" 
+                  class="hidden absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-textSecondary hover:text-textPrimary"
+                  title="Limpar busca"
+                >
+                  <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+              </div>
+
+              <!-- Filtros de Categoria e Promoção -->
+              <div class="flex flex-wrap items-center gap-3">
+                
+                <!-- Seletor de Categoria -->
+                <div class="relative min-w-[200px]">
+                  <select 
+                    id="filter-category" 
+                    class="w-full bg-bgPrimary border border-borderColor rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:border-accent appearance-none cursor-pointer pr-9 text-textPrimary"
+                  >
+                    <option value="">Todas as Categorias</option>
+                  </select>
+                  <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-textSecondary pointer-events-none"></i>
+                </div>
+
+                <!-- Botão Toggle de Promoção -->
+                <button 
+                  id="btn-filter-promo" 
+                  class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-borderColor bg-bgPrimary text-textSecondary text-sm font-medium hover:border-accent transition-all"
+                  title="Filtrar produtos com preço promocional"
+                >
+                  <i data-lucide="tag" class="w-4 h-4"></i>
+                  <span>Apenas Promoções</span>
+                </button>
+
+                <!-- Botão Limpar Filtros -->
+                <button 
+                  id="btn-reset-filters" 
+                  class="hidden items-center gap-1.5 px-3 py-2 text-xs font-semibold text-textSecondary hover:text-danger hover:bg-danger/10 rounded-lg transition-colors"
+                >
+                  <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                  <span>Limpar filtros</span>
+                </button>
+
+              </div>
+
+            </div>
+
+            <!-- Linha 2: Barra de Ações em Massa e Resumo de Seleção -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-borderColor/60">
+              
+              <div class="flex items-center gap-3">
+                <span id="selection-counter-badge" class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-accent/10 text-accent border border-accent/20">
+                  <i data-lucide="check-square" class="w-3.5 h-3.5"></i>
+                  <span id="selected-count-number">0</span> selecionados
+                </span>
+                <span id="total-visible-count" class="text-xs text-textSecondary">
+                  Carregando catálogo...
+                </span>
+              </div>
+
+              <!-- Botões de Ação em Lote -->
+              <div class="flex items-center gap-2">
+                <button 
+                  id="btn-select-all-filtered" 
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-borderColor bg-bgPrimary text-textPrimary text-xs font-semibold hover:border-accent hover:text-accent transition-colors"
+                  title="Selecionar todos os produtos visíveis no filtro atual"
+                >
+                  <i data-lucide="list-checks" class="w-4 h-4"></i>
+                  <span>Selecionar Filtrados</span>
+                </button>
+
+                <button 
+                  id="btn-clear-selection" 
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-borderColor bg-bgPrimary text-textSecondary text-xs font-semibold hover:text-danger hover:border-danger/30 transition-colors"
+                  title="Desmarcar todos os produtos selecionados"
+                >
+                  <i data-lucide="square" class="w-4 h-4"></i>
+                  <span>Limpar Seleção</span>
+                </button>
+              </div>
+
+            </div>
+
+            <!-- ESTADOS DA LISTA DE PRODUTOS -->
+            <!-- 1. Skeleton Loading -->
+            <div id="products-loading" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3.5 pt-2">
+              <div class="h-28 rounded-xl skeleton-box border border-borderColor/50"></div>
+              <div class="h-28 rounded-xl skeleton-box border border-borderColor/50"></div>
+              <div class="h-28 rounded-xl skeleton-box border border-borderColor/50"></div>
+              <div class="h-28 rounded-xl skeleton-box border border-borderColor/50"></div>
+              <div class="h-28 rounded-xl skeleton-box border border-borderColor/50"></div>
+              <div class="h-28 rounded-xl skeleton-box border border-borderColor/50"></div>
+              <div class="h-28 rounded-xl skeleton-box border border-borderColor/50"></div>
+              <div class="h-28 rounded-xl skeleton-box border border-borderColor/50"></div>
+            </div>
+
+            <!-- 2. Estado de Erro -->
+            <div id="products-error-state" class="hidden p-8 rounded-xl bg-danger/10 border border-danger/30 text-center flex-col items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-danger/20 text-danger flex items-center justify-center">
+                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+              </div>
+              <h4 class="font-bold text-sm text-danger">Falha ao carregar produtos</h4>
+              <p id="products-error-msg" class="text-xs text-textSecondary max-w-md">Ocorreu um erro ao consultar o catálogo da loja no Supabase.</p>
+              <button onclick="reloadCatalog()" class="mt-2 px-4 py-2 bg-textPrimary text-white rounded-lg text-xs font-semibold hover:opacity-90 transition-opacity">
+                Tentar Novamente
+              </button>
+            </div>
+
+            <!-- 3. Estado de Catálogo Vazio -->
+            <div id="products-empty-catalog" class="hidden p-12 rounded-xl bg-bgPrimary border border-dashed border-borderColor text-center flex-col items-center gap-3">
+              <div class="w-14 h-14 rounded-2xl bg-cardBg border border-borderColor flex items-center justify-center text-textSecondary">
+                <i data-lucide="package-open" class="w-7 h-7"></i>
+              </div>
+              <h4 class="font-bold text-base text-textPrimary">Nenhum produto cadastrado</h4>
+              <p class="text-xs text-textSecondary max-w-md">
+                Sua loja ainda não possui produtos cadastrados. Adicione seus primeiros itens no menu Produtos para poder gerar folhetos e encartes.
+              </p>
+              <a href="produtos.html" class="mt-2 px-4 py-2 bg-accent text-white rounded-lg text-xs font-bold hover:brightness-110 transition-all flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Produtos
+              </a>
+            </div>
+
+            <!-- 4. Estado de Filtro sem Resultados -->
+            <div id="products-empty-filter" class="hidden p-10 rounded-xl bg-bgPrimary border border-dashed border-borderColor text-center flex-col items-center gap-3">
+              <div class="w-12 h-12 rounded-xl bg-cardBg border border-borderColor flex items-center justify-center text-textSecondary">
+                <i data-lucide="search-x" class="w-6 h-6"></i>
+              </div>
+              <h4 class="font-bold text-sm text-textPrimary">Nenhum produto encontrado</h4>
+              <p class="text-xs text-textSecondary max-w-sm">
+                Nenhum item corresponde aos critérios de pesquisa e filtros selecionados.
+              </p>
+              <button onclick="clearAllFilters()" class="mt-1 px-3.5 py-1.5 border border-borderColor bg-cardBg hover:bg-bgPrimary text-textPrimary rounded-lg text-xs font-semibold transition-colors">
+                Limpar Filtros
+              </button>
+            </div>
+
+            <!-- 5. Grid de Produtos Selecionáveis -->
+            <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3.5 pt-1">
+              <!-- Cards injetados via FlyerProducts -->
+            </div>
+
+          </div>
+
+          <!-- Barra de Ação para Ir aos Modelos -->
+          <div class="bg-cardBg border border-borderColor rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
+                <i data-lucide="sparkles" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <div class="text-sm font-bold text-textPrimary">
+                  <span id="footer-selected-count">0 produtos selecionados</span> para o encarte
+                </div>
+                <p class="text-xs text-textSecondary">
+                  Clique no botão ao lado para escolher o modelo visual e ver a prévia das páginas.
+                </p>
+              </div>
+            </div>
+
+            <button 
+              id="btn-go-to-preview" 
+              class="px-6 py-2.5 bg-accent hover:bg-accent/90 text-white rounded-xl text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+              onclick="switchToPreviewView()"
+            >
+              <span>Avançar para Modelos & Prévia</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- ═════════════════════════════════════════════════════════════ -->
+        <!-- VIEW 2: MODELOS VISUAIS & PRÉ-VISUALIZAÇÃO A4 (Etapa 3)     -->
+        <!-- ═════════════════════════════════════════════════════════════ -->
+        <div id="view-preview" class="hidden flex-col gap-6 fade-in-up">
+          
+          <!-- Barra de Retorno e Resumo -->
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <button 
+              class="px-4 py-2 bg-cardBg border border-borderColor hover:bg-bgPrimary text-textPrimary rounded-xl text-xs font-semibold transition-colors flex items-center gap-2 cursor-pointer"
+              onclick="switchToSelectionView()"
+            >
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              <span>Voltar para Seleção de Produtos</span>
+            </button>
+
+            <div class="flex items-center gap-2">
+              <span id="preview-summary-badge" class="text-xs font-bold px-3 py-1.5 rounded-full bg-accent/10 text-accent border border-accent/20">
+                0 produtos • 0 páginas geradas
+              </span>
+            </div>
+          </div>
+
+          <!-- Controles de Configuração do Modelo Visual -->
+          <div class="bg-cardBg border border-borderColor rounded-xl p-5 md:p-6 flex flex-col gap-6 shadow-sm">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              <!-- 1. Seletor de Modelo Visual (Segmento) -->
+              <div class="flex flex-col gap-2.5">
+                <label class="text-xs font-bold uppercase tracking-wider text-textSecondary flex items-center gap-1.5">
+                  <i data-lucide="palette" class="w-3.5 h-3.5 text-accent"></i>
+                  Modelo Visual (Segmento)
+                </label>
+                <div class="grid grid-cols-3 gap-2">
+                  <button 
+                    type="button"
+                    class="btn-template-choice p-2.5 rounded-xl border border-borderColor bg-bgPrimary flex flex-col items-center text-center gap-1 hover:border-accent transition-all cursor-pointer active"
+                    data-template="market"
+                    onclick="selectTemplate('market')"
+                  >
+                    <span class="text-base">🏪</span>
+                    <span class="text-xs font-bold leading-tight">Mercado</span>
+                    <span class="text-[9px] text-textSecondary leading-none">Ofertas</span>
+                  </button>
+
+                  <button 
+                    type="button"
+                    class="btn-template-choice p-2.5 rounded-xl border border-borderColor bg-bgPrimary flex flex-col items-center text-center gap-1 hover:border-accent transition-all cursor-pointer"
+                    data-template="food"
+                    onclick="selectTemplate('food')"
+                  >
+                    <span class="text-base">🍔</span>
+                    <span class="text-xs font-bold leading-tight">Food</span>
+                    <span class="text-[9px] text-textSecondary leading-none">Delivery</span>
+                  </button>
+
+                  <button 
+                    type="button"
+                    class="btn-template-choice p-2.5 rounded-xl border border-borderColor bg-bgPrimary flex flex-col items-center text-center gap-1 hover:border-accent transition-all cursor-pointer"
+                    data-template="fashion"
+                    onclick="selectTemplate('fashion')"
+                  >
+                    <span class="text-base">👗</span>
+                    <span class="text-xs font-bold leading-tight">Moda</span>
+                    <span class="text-[9px] text-textSecondary leading-none">Editorial</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 2. Seletor de Produtos por Página -->
+              <div class="flex flex-col gap-2.5">
+                <label class="text-xs font-bold uppercase tracking-wider text-textSecondary flex items-center gap-1.5">
+                  <i data-lucide="layout-grid" class="w-3.5 h-3.5 text-accent"></i>
+                  Produtos por Página A4
+                </label>
+                <div class="grid grid-cols-4 gap-2">
+                  <button 
+                    type="button"
+                    class="btn-grid-choice py-2.5 px-2 rounded-xl border border-borderColor bg-bgPrimary text-textPrimary text-xs font-bold hover:border-accent transition-all cursor-pointer text-center"
+                    data-density="4"
+                    onclick="selectGridDensity(4)"
+                  >
+                    4 itens
+                  </button>
+                  <button 
+                    type="button"
+                    class="btn-grid-choice py-2.5 px-2 rounded-xl border border-borderColor bg-bgPrimary text-textPrimary text-xs font-bold hover:border-accent transition-all cursor-pointer text-center active"
+                    data-density="6"
+                    onclick="selectGridDensity(6)"
+                  >
+                    6 itens
+                  </button>
+                  <button 
+                    type="button"
+                    class="btn-grid-choice py-2.5 px-2 rounded-xl border border-borderColor bg-bgPrimary text-textPrimary text-xs font-bold hover:border-accent transition-all cursor-pointer text-center"
+                    data-density="8"
+                    onclick="selectGridDensity(8)"
+                  >
+                    8 itens
+                  </button>
+                  <button 
+                    type="button"
+                    class="btn-grid-choice py-2.5 px-2 rounded-xl border border-borderColor bg-bgPrimary text-textPrimary text-xs font-bold hover:border-accent transition-all cursor-pointer text-center"
+                    data-density="9"
+                    onclick="selectGridDensity(9)"
+                  >
+                    9 itens
+                  </button>
+                </div>
+              </div>
+
+              <!-- 3. Identidade da Loja e Cores -->
+              <div class="flex flex-col gap-2.5">
+                <label class="text-xs font-bold uppercase tracking-wider text-textSecondary flex items-center gap-1.5">
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5 text-accent"></i>
+                  Cor de Destaque da Loja
+                </label>
+                <div class="flex items-center gap-3 bg-bgPrimary p-2.5 border border-borderColor rounded-xl">
+                  <input 
+                    type="color" 
+                    id="flyer-color-picker" 
+                    class="w-8 h-8 rounded-lg cursor-pointer border-0 bg-transparent"
+                    onchange="updateFlyerColor(this.value)"
+                  >
+                  <div class="flex flex-col">
+                    <span id="flyer-color-hex" class="text-xs font-mono font-bold text-textPrimary">#e94560</span>
+                    <span class="text-[10px] text-textSecondary">Cor da loja aplicada nos títulos e preços</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Barra de Navegação entre Páginas do Encarte -->
+          <div class="bg-cardBg border border-borderColor rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+            
+            <div class="flex items-center gap-2">
+              <button 
+                id="btn-prev-page" 
+                class="px-3.5 py-2 rounded-lg bg-bgPrimary border border-borderColor hover:bg-cardBg text-textPrimary text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                onclick="changePage(-1)"
+              >
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                <span>Página Anterior</span>
+              </button>
+
+              <div id="page-pills-container" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                <!-- Pílulas de página geradas dinamicamente -->
+              </div>
+
+              <button 
+                id="btn-next-page" 
+                class="px-3.5 py-2 rounded-lg bg-bgPrimary border border-borderColor hover:bg-cardBg text-textPrimary text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                onclick="changePage(1)"
+              >
+                <span>Próxima Página</span>
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <div class="text-xs font-semibold text-textSecondary" id="page-counter-text">
+              Página 1 de 1
+            </div>
+
+          </div>
+
+          <!-- Palco de Pré-visualização da Folha A4 -->
+          <div class="flyer-preview-stage">
+            <div id="flyer-page-render-target" class="w-full flex justify-center">
+              <!-- Folha A4 renderizada dinamicamente via FlyerTemplates.renderPage -->
+            </div>
+          </div>
+
+          <!-- ══════════════════════════════════════════════════════════════ -->
+          <!-- PAINEL DE EXPORTAÇÃO — Etapa 4                                -->
+          <!-- ══════════════════════════════════════════════════════════════ -->
+          <div class="bg-cardBg border border-borderColor rounded-xl shadow-sm overflow-hidden">
+
+            <!-- Cabeçalho do painel -->
+            <div class="px-5 py-4 border-b border-borderColor flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center text-success flex-shrink-0">
+                <i data-lucide="download" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1">
+                <div class="text-sm font-bold text-textPrimary">Exportar Encarte</div>
+                <p class="text-xs text-textSecondary">Faça o download das páginas prontas para impressão ou WhatsApp.</p>
+              </div>
+              <div id="export-loading-badge" class="hidden items-center gap-2 text-xs font-semibold text-accent">
+                <div class="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+                <span id="export-loading-label">Processando...</span>
+              </div>
+            </div>
+
+            <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <!-- ── Coluna 1: PDF e todas as páginas ─── -->
+              <div class="flex flex-col gap-3">
+                <p class="text-[10px] font-bold tracking-widest uppercase text-textSecondary">Documento Completo</p>
+
+                <!-- PDF -->
+                <button
+                  id="btn-export-pdf"
+                  class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-borderColor bg-bgPrimary hover:border-accent hover:bg-accent/5 transition-all text-left group"
+                  onclick="handleExportPDF()"
+                >
+                  <div class="w-9 h-9 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-xs font-bold text-textPrimary group-hover:text-accent transition-colors">Exportar PDF</div>
+                    <div class="text-[10px] text-textSecondary leading-tight mt-0.5">Todas as páginas · A4 · Alta qualidade</div>
+                  </div>
+                  <i data-lucide="download" class="w-4 h-4 text-textSecondary group-hover:text-accent transition-colors"></i>
+                </button>
+
+                <!-- PNG — todas as páginas -->
+                <button
+                  id="btn-export-png-all"
+                  class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-borderColor bg-bgPrimary hover:border-accent hover:bg-accent/5 transition-all text-left group"
+                  onclick="handleExportPNGAll()"
+                >
+                  <div class="w-9 h-9 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="image" class="w-5 h-5"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-xs font-bold text-textPrimary group-hover:text-accent transition-colors">Exportar PNG</div>
+                    <div class="text-[10px] text-textSecondary leading-tight mt-0.5">Todas as páginas · Alta resolução · Fundo transparente</div>
+                  </div>
+                  <i data-lucide="download" class="w-4 h-4 text-textSecondary group-hover:text-accent transition-colors"></i>
+                </button>
+
+                <!-- JPG — todas as páginas -->
+                <button
+                  id="btn-export-jpg-all"
+                  class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-borderColor bg-bgPrimary hover:border-accent hover:bg-accent/5 transition-all text-left group"
+                  onclick="handleExportJPGAll()"
+                >
+                  <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="image" class="w-5 h-5"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-xs font-bold text-textPrimary group-hover:text-accent transition-colors">Exportar JPG</div>
+                    <div class="text-[10px] text-textSecondary leading-tight mt-0.5">Todas as páginas · Para WhatsApp e Instagram</div>
+                  </div>
+                  <i data-lucide="download" class="w-4 h-4 text-textSecondary group-hover:text-accent transition-colors"></i>
+                </button>
+              </div>
+
+              <!-- ── Coluna 2: Página atual -->
+              <div class="flex flex-col gap-3">
+                <p class="text-[10px] font-bold tracking-widest uppercase text-textSecondary">Página Atual (<span id="export-current-page-label">1</span>)</p>
+
+                <!-- PNG — página atual -->
+                <button
+                  id="btn-export-png-page"
+                  class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-borderColor bg-bgPrimary hover:border-accent hover:bg-accent/5 transition-all text-left group"
+                  onclick="handleExportCurrentPNG()"
+                >
+                  <div class="w-9 h-9 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="image" class="w-5 h-5"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-xs font-bold text-textPrimary group-hover:text-accent transition-colors">PNG desta Página</div>
+                    <div class="text-[10px] text-textSecondary leading-tight mt-0.5">Apenas a página visualizada · Alta resolução</div>
+                  </div>
+                  <i data-lucide="download" class="w-4 h-4 text-textSecondary group-hover:text-accent transition-colors"></i>
+                </button>
+
+                <!-- JPG — página atual -->
+                <button
+                  id="btn-export-jpg-page"
+                  class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-borderColor bg-bgPrimary hover:border-accent hover:bg-accent/5 transition-all text-left group"
+                  onclick="handleExportCurrentJPG()"
+                >
+                  <div class="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="image" class="w-5 h-5"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-xs font-bold text-textPrimary group-hover:text-accent transition-colors">JPG desta Página</div>
+                    <div class="text-[10px] text-textSecondary leading-tight mt-0.5">Apenas a página visualizada · Para WhatsApp</div>
+                  </div>
+                  <i data-lucide="download" class="w-4 h-4 text-textSecondary group-hover:text-accent transition-colors"></i>
+                </button>
+
+                <!-- Dica WhatsApp -->
+                <div class="mt-auto p-3 rounded-xl bg-success/5 border border-success/20 flex items-start gap-2">
+                  <i data-lucide="message-circle" class="w-4 h-4 text-success flex-shrink-0 mt-0.5"></i>
+                  <p class="text-[10px] text-textSecondary leading-relaxed">
+                    <strong class="text-success">Dica WhatsApp:</strong> Use JPG para compartilhar direto no status ou grupos. Prefira PDF para enviar ao cliente ou à gráfica.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- Scripts Core -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/supabase.js"></script>
+<script src="/js/core/helpers.js"></script>
+<script src="/js/core/supabaseClient.js"></script>
+<script src="/js/core/api.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="/js/modules/store.js"></script>
+<script src="/js/modules/products.js"></script>
+<script src="/js/modules/subscription.js"></script>
+<script src="/js/auth/authGuard.js"></script>
+<script src="/js/ui/components.js"></script>
+<script src="/js/admin-common.js"></script>
+
+<!-- Módulos do Gerador de Encartes -->
+<script src="/admin/modules/flyerProducts.js"></script>
+<script src="/admin/modules/flyerTemplates.js"></script>
+
+<!-- Bibliotecas de Exportação (Etapa 4) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="/admin/modules/flyerExport.js"></script>
+
+<script>
+  /**
+   * Controlador Principal da Tela de Encartes — Etapas 1, 2 e 3
+   */
+  let _activeStore = null;
+  let _searchDebounceTimer = null;
+
+  // Estado da Etapa 3
+  let _currentTemplate = 'market';
+  let _currentItemsPerPage = 6;
+  let _currentPageIndex = 0;
+  let _paginationResult = { pages: [], totalPages: 0, totalProducts: 0, itemsPerPage: 6 };
+  let _flyerBrandColor = '#e94560';
+
+  async function initFlyerAdmin() {
+    const loadingEl   = document.getElementById('loading-state');
+    const paywallEl   = document.getElementById('paywall-container');
+    const blockedEl   = document.getElementById('blocked-container');
+    const proEl       = document.getElementById('pro-container');
+    const planBadge   = document.getElementById('plan-badge-top');
+    const inlineBadge = document.getElementById('plan-badge-inline');
+
+    try {
+      const store = await StoreModule.getActive();
+
+      if (!store) {
+        loadingEl.innerHTML = `
+          <div class="p-6 text-center text-textSecondary">
+            <p>Nenhuma loja ativa encontrada. Acesse o painel de lojas para selecionar.</p>
+            <a href="lojas.html" class="mt-3 inline-block px-4 py-2 bg-textPrimary text-white rounded-lg text-xs">Ir para Lojas</a>
+          </div>
+        `;
+        return;
+      }
+
+      _activeStore = store;
+
+      // Parâmetro de teste/override para simulação de plano (?plan=start / ?plan=pro)
+      const urlParams = new URLSearchParams(window.location.search);
+      const forcedPlan = urlParams.get('plan');
+      const plan = (forcedPlan || store.plan || 'start').toLowerCase();
+
+      const isProOrEnterprise = plan === 'pro' || plan === 'enterprise';
+      const subStatus = SubscriptionModule.getStatus(store.expires_at);
+      const isBlocked = subStatus?.blocked && store.status !== 'active';
+
+      loadingEl.classList.add('hidden');
+
+      // Atualiza badge no topo
+      if (planBadge) {
+        planBadge.classList.remove('hidden');
+        if (plan === 'enterprise') {
+          planBadge.textContent = 'Enterprise';
+          planBadge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase bg-black text-white';
+        } else if (plan === 'pro') {
+          planBadge.textContent = 'Plano Pro';
+          planBadge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase bg-accent text-white';
+        } else {
+          planBadge.textContent = 'Plano Start';
+          planBadge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase bg-bgPrimary border border-borderColor text-textSecondary';
+        }
+      }
+
+      // Caso 1: Plano Start (não carrega produtos, exibe tela de upgrade)
+      if (!isProOrEnterprise) {
+        paywallEl.classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      // Caso 2: Loja bloqueada por falta de pagamento
+      if (isBlocked) {
+        blockedEl.classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      // Caso 3: Plano Pro ou Enterprise com assinatura válida
+      proEl.classList.remove('hidden');
+      proEl.classList.add('flex');
+
+      // Preenche dados da loja
+      const nameEl = document.getElementById('store-name-display');
+      if (nameEl) nameEl.textContent = store.name || 'Sua Loja';
+
+      if (inlineBadge) {
+        inlineBadge.textContent = plan === 'enterprise' ? 'Enterprise' : 'Plano Pro';
+        inlineBadge.className = plan === 'enterprise'
+          ? 'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase bg-black text-white'
+          : 'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase bg-accent text-white';
+      }
+
+      const segmentBadge = document.getElementById('segment-badge-inline');
+      const rawSeg = (store.store_segment || 'market').toLowerCase();
+      if (segmentBadge) {
+        const segLabels = {
+          market: 'Variedades & Mercado',
+          food: 'Alimentação & Food',
+          fashion: 'Moda & Fashion'
+        };
+        segmentBadge.textContent = segLabels[rawSeg] || rawSeg;
+      }
+
+      // Inicializa modelo pré-selecionado conforme o segmento da loja
+      if (['market', 'food', 'fashion'].includes(rawSeg)) {
+        _currentTemplate = rawSeg;
+      }
+
+      // Inicializa cor do encarte com a cor cadastrada na loja
+      if (store.color) {
+        _flyerBrandColor = store.color;
+        const colorInput = document.getElementById('flyer-color-picker');
+        const colorHex = document.getElementById('flyer-color-hex');
+        if (colorInput) colorInput.value = _flyerBrandColor;
+        if (colorHex) colorHex.textContent = _flyerBrandColor;
+      }
+
+      // Logo da loja
+      if (store.logo_url) {
+        const logoWrap = document.getElementById('store-logo-preview');
+        if (logoWrap) {
+          logoWrap.innerHTML = `<img src="${store.logo_url}" alt="${store.name}" class="w-full h-full object-cover">`;
+        }
+      }
+
+      // Inicializa controles de eventos e catálogo
+      setupEventListeners();
+      await loadCatalog(store.id);
+
+      if (window.lucide) lucide.createIcons();
+
+    } catch (e) {
+      console.error('[Encartes] Erro na inicialização:', e);
+      loadingEl.innerHTML = `<div class="p-6 text-center text-danger text-sm">Erro ao carregar módulo: ${e.message}</div>`;
+    }
+  }
+
+  /**
+   * Carrega produtos reais do catálogo da loja
+   */
+  async function loadCatalog(storeId) {
+    const loadingGrid = document.getElementById('products-loading');
+    const errorState  = document.getElementById('products-error-state');
+    const emptyCat    = document.getElementById('products-empty-catalog');
+    const emptyFilter = document.getElementById('products-empty-filter');
+    const grid        = document.getElementById('products-grid');
+
+    loadingGrid.classList.remove('hidden');
+    errorState.classList.add('hidden');
+    emptyCat.classList.add('hidden');
+    emptyFilter.classList.add('hidden');
+    grid.innerHTML = '';
+
+    try {
+      const products = await FlyerProducts.loadProducts(storeId);
+      loadingGrid.classList.add('hidden');
+
+      if (!products || products.length === 0) {
+        emptyCat.classList.remove('hidden');
+        emptyCat.classList.add('flex');
+        updateCountersUI();
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      // Popula o select de categorias
+      populateCategoriesSelect(products);
+
+      // Renderiza a lista inicial
+      renderProductsList();
+
+    } catch (err) {
+      console.error('[Encartes] Erro ao carregar catálogo:', err);
+      loadingGrid.classList.add('hidden');
+      errorState.classList.remove('hidden');
+      errorState.classList.add('flex');
+      document.getElementById('products-error-msg').textContent = err.message || 'Erro inesperado ao consultar produtos.';
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+
+  function reloadCatalog() {
+    if (_activeStore) loadCatalog(_activeStore.id);
+  }
+
+  /**
+   * Preenche o dropdown de categorias dinamicamente
+   */
+  function populateCategoriesSelect(products) {
+    const select = document.getElementById('filter-category');
+    if (!select) return;
+
+    const categories = FlyerProducts.getCategories(products);
+    select.innerHTML = '<option value="">Todas as Categorias</option>';
+
+    categories.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      select.appendChild(opt);
+    });
+  }
+
+  /**
+   * Renderiza os cards de produtos no grid de seleção
+   */
+  function renderProductsList() {
+    const grid        = document.getElementById('products-grid');
+    const emptyFilter = document.getElementById('products-empty-filter');
+    const filtered    = FlyerProducts.getFilteredProducts();
+
+    grid.innerHTML = '';
+
+    if (filtered.length === 0) {
+      emptyFilter.classList.remove('hidden');
+      emptyFilter.classList.add('flex');
+    } else {
+      emptyFilter.classList.add('hidden');
+      emptyFilter.classList.remove('flex');
+
+      const defaultImg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="%23222"><rect width="100%" height="100%" fill="%2318181b"/><text x="50%" y="50%" fill="%2371717a" font-family="sans-serif" font-size="12" text-anchor="middle" dy=".3em">Sem Imagem</text></svg>';
+
+      const cardsHtml = filtered.map(p => {
+        const isSel = FlyerProducts.isSelected(p.id);
+        const hasPromo = FlyerProducts.hasPromoPrice(p);
+        const imgUrl = p.image ? FlyerProducts.escapeHTML(p.image) : defaultImg;
+        const name = FlyerProducts.escapeHTML(p.name || 'Produto sem nome');
+        const cat = FlyerProducts.escapeHTML(p.category || 'Geral');
+        const unit = p.unit ? `/${FlyerProducts.escapeHTML(p.unit)}` : '';
+        const regularPriceStr = FlyerProducts.formatMoney(p.price);
+        const promoPriceStr = hasPromo ? FlyerProducts.formatMoney(p.promo_price) : '';
+
+        return `
+          <div 
+            class="flyer-product-card bg-bgPrimary border border-borderColor rounded-xl p-3 flex items-start gap-3 cursor-pointer hover:border-accent/60 ${isSel ? 'selected' : ''}"
+            data-product-id="${p.id}"
+          >
+            <!-- Checkbox Customizado -->
+            <div class="pt-0.5 flex-shrink-0">
+              <input 
+                type="checkbox" 
+                class="flyer-card-checkbox w-4 h-4 rounded text-accent focus:ring-accent border-borderColor cursor-pointer pointer-events-none"
+                ${isSel ? 'checked' : ''}
+              >
+            </div>
+
+            <!-- Thumbnail da Imagem -->
+            <div class="w-14 h-14 rounded-lg bg-cardBg border border-borderColor overflow-hidden flex-shrink-0 relative">
+              <img 
+                src="${imgUrl}" 
+                alt="${name}" 
+                class="w-full h-full object-cover" 
+                loading="lazy"
+                onerror="this.src='${defaultImg}'"
+              >
+            </div>
+
+            <!-- Informações do Produto -->
+            <div class="flex-1 min-w-0 flex flex-col justify-between self-stretch">
+              <div>
+                <div class="flex items-center gap-1.5 mb-1">
+                  <span class="text-[10px] font-medium bg-cardBg text-textSecondary px-1.5 py-0.5 rounded border border-borderColor/60 truncate max-w-[120px]">
+                    ${cat}
+                  </span>
+                  ${hasPromo ? '<span class="text-[9px] font-bold bg-danger/10 text-danger px-1 rounded uppercase">Promo</span>' : ''}
+                </div>
+                <h5 class="text-xs font-semibold text-textPrimary leading-snug line-clamp-2" title="${name}">
+                  ${name}
+                </h5>
+              </div>
+
+              <!-- Preço Regular vs Promocional -->
+              <div class="mt-1 pt-1 border-t border-borderColor/40 flex items-baseline gap-1.5 flex-wrap">
+                ${hasPromo ? `
+                  <span class="text-xs font-bold text-accent">${promoPriceStr}<span class="text-[10px] font-normal text-textSecondary">${unit}</span></span>
+                  <span class="text-[10px] line-through text-textSecondary">${regularPriceStr}</span>
+                ` : `
+                  <span class="text-xs font-bold text-textPrimary">${regularPriceStr}<span class="text-[10px] font-normal text-textSecondary">${unit}</span></span>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      grid.innerHTML = cardsHtml;
+    }
+
+    updateCountersUI();
+    if (window.lucide) lucide.createIcons();
+  }
+
+  /**
+   * Atualiza os contadores e botões de ação em lote
+   */
+  function updateCountersUI() {
+    const stats = FlyerProducts.getStats();
+
+    const selectedCountNum = document.getElementById('selected-count-number');
+    if (selectedCountNum) selectedCountNum.textContent = stats.selectedTotal;
+
+    const footerCount = document.getElementById('footer-selected-count');
+    if (footerCount) footerCount.textContent = `${stats.selectedTotal} ${stats.selectedTotal === 1 ? 'produto selecionado' : 'produtos selecionados'}`;
+
+    const pipelineBadge = document.getElementById('pipeline-selected-badge');
+    if (pipelineBadge) pipelineBadge.textContent = `${stats.selectedTotal} produtos`;
+
+    const totalVisible = document.getElementById('total-visible-count');
+    if (totalVisible) {
+      totalVisible.textContent = `${stats.filteredCount} exibido(s) de ${stats.total} no catálogo`;
+    }
+
+    // Botão Limpar Filtros
+    const filters = FlyerProducts.getFilters();
+    const hasActiveFilter = !!filters.query || !!filters.category || !!filters.onlyPromo;
+    const btnReset = document.getElementById('btn-reset-filters');
+    const btnClearSearch = document.getElementById('btn-clear-search');
+
+    if (btnReset) {
+      if (hasActiveFilter) {
+        btnReset.classList.remove('hidden');
+        btnReset.classList.add('inline-flex');
+      } else {
+        btnReset.classList.add('hidden');
+        btnReset.classList.remove('inline-flex');
+      }
+    }
+
+    if (btnClearSearch) {
+      if (filters.query) {
+        btnClearSearch.classList.remove('hidden');
+      } else {
+        btnClearSearch.classList.add('hidden');
+      }
+    }
+
+    // Estado do botão "Selecionar Todos os Filtrados"
+    const btnSelectAll = document.getElementById('btn-select-all-filtered');
+    if (btnSelectAll) {
+      if (stats.isAllFilteredSelected && stats.filteredCount > 0) {
+        btnSelectAll.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-accent"></i><span>Todos Filtrados Selecionados</span>`;
+      } else {
+        btnSelectAll.innerHTML = `<i data-lucide="list-checks" class="w-4 h-4"></i><span>Selecionar Filtrados (${stats.filteredCount})</span>`;
+      }
+    }
+  }
+
+  /**
+   * Limpa todos os filtros e reseta a busca
+   */
+  function clearAllFilters() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('filter-category').value = '';
+    
+    const promoBtn = document.getElementById('btn-filter-promo');
+    promoBtn.classList.remove('bg-accent', 'text-white', 'border-accent');
+    promoBtn.classList.add('bg-bgPrimary', 'text-textSecondary', 'border-borderColor');
+
+    FlyerProducts.resetFilters();
+    renderProductsList();
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // MÉTODOS DA ETAPA 3: TRANSIÇÃO, MODELOS & PRÉ-VISUALIZAÇÃO A4
+  // ══════════════════════════════════════════════════════════════
+
+  /**
+   * Alterna para a visualização de seleção de produtos (View 1)
+   */
+  function switchToSelectionView() {
+    document.getElementById('view-preview').classList.add('hidden');
+    document.getElementById('view-selection').classList.remove('hidden');
+
+    // Atualiza estado do pipeline
+    const step2 = document.getElementById('pipeline-step-2');
+    const step3 = document.getElementById('pipeline-step-3');
+    step2.className = 'p-3.5 rounded-xl bg-cardBg border-2 border-accent shadow-sm flex flex-col gap-1.5 relative overflow-hidden';
+    step3.className = 'p-3.5 rounded-xl bg-cardBg/60 border border-borderColor flex flex-col gap-1.5 opacity-70';
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  /**
+   * Alterna para a visualização de modelos e pré-visualização A4 (View 2)
+   */
+  function switchToPreviewView() {
+    const selectedCount = FlyerProducts.getSelectedCount();
+    if (selectedCount === 0) {
+      if (window.showToast) {
+        showToast('Selecione pelo menos 1 produto para gerar o encarte.', 'warning');
+      }
+      return;
+    }
+
+    document.getElementById('view-selection').classList.add('hidden');
+    document.getElementById('view-preview').classList.remove('hidden');
+
+    // Atualiza estado do pipeline
+    const step2 = document.getElementById('pipeline-step-2');
+    const step3 = document.getElementById('pipeline-step-3');
+    step2.className = 'p-3.5 rounded-xl bg-cardBg border border-borderColor flex flex-col gap-1.5 cursor-pointer hover:border-accent transition-colors';
+    step3.className = 'p-3.5 rounded-xl bg-cardBg border-2 border-accent shadow-sm flex flex-col gap-1.5 relative overflow-hidden';
+
+    // Calcula paginação inicial e renderiza
+    _currentPageIndex = 0;
+    updatePaginationAndRender();
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  /**
+   * Escolhe o modelo visual (segmento)
+   */
+  function selectTemplate(templateName) {
+    if (!['market', 'food', 'fashion'].includes(templateName)) return;
+    _currentTemplate = templateName;
+
+    // Atualiza botões
+    document.querySelectorAll('.btn-template-choice').forEach(btn => {
+      if (btn.getAttribute('data-template') === templateName) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    renderCurrentPreviewPage();
+  }
+
+  /**
+   * Escolhe a densidade de produtos por página (4, 6, 8 ou 9)
+   */
+  function selectGridDensity(density) {
+    const num = Number(density);
+    if (![4, 6, 8, 9].includes(num)) return;
+    _currentItemsPerPage = num;
+
+    // Atualiza botões
+    document.querySelectorAll('.btn-grid-choice').forEach(btn => {
+      if (Number(btn.getAttribute('data-density')) === num) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    _currentPageIndex = 0;
+    updatePaginationAndRender();
+  }
+
+  /**
+   * Altera a cor de destaque do encarte
+   */
+  function updateFlyerColor(hex) {
+    if (!hex) return;
+    _flyerBrandColor = hex;
+    const hexLabel = document.getElementById('flyer-color-hex');
+    if (hexLabel) hexLabel.textContent = hex;
+    renderCurrentPreviewPage();
+  }
+
+  /**
+   * Recalcula a paginação e renderiza a folha atual
+   */
+  function updatePaginationAndRender() {
+    const selectedProducts = FlyerProducts.getSelectedProducts();
+    _paginationResult = FlyerTemplates.paginate(selectedProducts, _currentItemsPerPage);
+
+    // Ajusta índice de página se estiver fora dos limites
+    if (_currentPageIndex >= _paginationResult.totalPages) {
+      _currentPageIndex = Math.max(0, _paginationResult.totalPages - 1);
+    }
+
+    // Atualiza resumo
+    const summaryBadge = document.getElementById('preview-summary-badge');
+    if (summaryBadge) {
+      summaryBadge.textContent = `${_paginationResult.totalProducts} produtos selecionados • ${_paginationResult.totalPages} página(s) A4 gerada(s)`;
+    }
+
+    renderPaginationControls();
+    renderCurrentPreviewPage();
+    _syncExportPageLabel();
+  }
+
+  /**
+   * Renderiza os controles de paginação (anterior, próxima e pílulas de página)
+   */
+  function renderPaginationControls() {
+    const totalPages = _paginationResult.totalPages;
+    const btnPrev = document.getElementById('btn-prev-page');
+    const btnNext = document.getElementById('btn-next-page');
+    const counterText = document.getElementById('page-counter-text');
+    const pillsContainer = document.getElementById('page-pills-container');
+
+    if (btnPrev) btnPrev.disabled = _currentPageIndex === 0;
+    if (btnNext) btnNext.disabled = _currentPageIndex >= totalPages - 1;
+
+    if (counterText) {
+      counterText.textContent = totalPages > 0 
+        ? `Página ${_currentPageIndex + 1} de ${totalPages}`
+        : 'Nenhuma página gerada';
+    }
+
+    if (pillsContainer) {
+      pillsContainer.innerHTML = '';
+      for (let i = 0; i < totalPages; i++) {
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        const isCurrent = i === _currentPageIndex;
+        pill.className = `w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+          isCurrent 
+            ? 'bg-accent text-white shadow-sm' 
+            : 'bg-bgPrimary text-textSecondary hover:text-textPrimary hover:bg-cardBg border border-borderColor'
+        }`;
+        pill.textContent = i + 1;
+        pill.title = `Ir para página ${i + 1}`;
+        pill.onclick = () => {
+          _currentPageIndex = i;
+          renderPaginationControls();
+          renderCurrentPreviewPage();
+          _syncExportPageLabel();
+        };
+        pillsContainer.appendChild(pill);
+      }
+    }
+  }
+
+  /**
+   * Avança ou retrocede página
+   */
+  function changePage(direction) {
+    const newIdx = _currentPageIndex + direction;
+    if (newIdx >= 0 && newIdx < _paginationResult.totalPages) {
+      _currentPageIndex = newIdx;
+      renderPaginationControls();
+      renderCurrentPreviewPage();
+      _syncExportPageLabel();
+    }
+  }
+
+  /**
+   * Renderiza a página A4 atual no palco de visualização
+   */
+  function renderCurrentPreviewPage() {
+    const target = document.getElementById('flyer-page-render-target');
+    if (!target) return;
+
+    if (!_paginationResult.pages || _paginationResult.pages.length === 0) {
+      target.innerHTML = `
+        <div class="p-12 text-center text-textSecondary bg-cardBg border border-borderColor rounded-xl">
+          Nenhum produto selecionado para exibir.
+        </div>
+      `;
+      return;
+    }
+
+    const pageProducts = _paginationResult.pages[_currentPageIndex] || [];
+    
+    // Configura loja ativa com a cor selecionada
+    const storeData = {
+      ...(_activeStore || {}),
+      color: _flyerBrandColor
+    };
+
+    const pageHtml = FlyerTemplates.renderPage(
+      pageProducts,
+      _currentPageIndex,
+      _paginationResult.totalPages,
+      storeData,
+      {
+        template: _currentTemplate,
+        itemsPerPage: _currentItemsPerPage
+      }
+    );
+
+    target.innerHTML = pageHtml;
+  }
+
+  /**
+   * Configuração de ouvintes de eventos da interface
+   */
+  function setupEventListeners() {
+    const searchInput  = document.getElementById('search-input');
+    const catSelect    = document.getElementById('filter-category');
+    const promoBtn     = document.getElementById('btn-filter-promo');
+    const btnClearSrch = document.getElementById('btn-clear-search');
+    const btnResetFlt  = document.getElementById('btn-reset-filters');
+    const btnSelectAll = document.getElementById('btn-select-all-filtered');
+    const btnClearSel  = document.getElementById('btn-clear-selection');
+    const productsGrid = document.getElementById('products-grid');
+
+    // 1. Busca textual com debounce de 150ms
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        clearTimeout(_searchDebounceTimer);
+        _searchDebounceTimer = setTimeout(() => {
+          FlyerProducts.setFilters({ query: e.target.value });
+          renderProductsList();
+        }, 150);
+      });
+    }
+
+    if (btnClearSrch) {
+      btnClearSrch.addEventListener('click', () => {
+        searchInput.value = '';
+        FlyerProducts.setFilters({ query: '' });
+        renderProductsList();
+      });
+    }
+
+    // 2. Filtro de Categoria
+    if (catSelect) {
+      catSelect.addEventListener('change', (e) => {
+        FlyerProducts.setFilters({ category: e.target.value });
+        renderProductsList();
+      });
+    }
+
+    // 3. Toggle de Promoções
+    if (promoBtn) {
+      promoBtn.addEventListener('click', () => {
+        const current = FlyerProducts.getFilters().onlyPromo;
+        const next = !current;
+
+        if (next) {
+          promoBtn.classList.add('bg-accent', 'text-white', 'border-accent');
+          promoBtn.classList.remove('bg-bgPrimary', 'text-textSecondary', 'border-borderColor');
+        } else {
+          promoBtn.classList.remove('bg-accent', 'text-white', 'border-accent');
+          promoBtn.classList.add('bg-bgPrimary', 'text-textSecondary', 'border-borderColor');
+        }
+
+        FlyerProducts.setFilters({ onlyPromo: next });
+        renderProductsList();
+      });
+    }
+
+    // 4. Limpar filtros
+    if (btnResetFlt) {
+      btnResetFlt.addEventListener('click', clearAllFilters);
+    }
+
+    // 5. Delegação de eventos no grid de produtos
+    if (productsGrid) {
+      productsGrid.addEventListener('click', (e) => {
+        const card = e.target.closest('.flyer-product-card');
+        if (!card) return;
+
+        const productId = card.getAttribute('data-product-id');
+        if (!productId) return;
+
+        const isNowSelected = FlyerProducts.toggleSelect(productId);
+        
+        if (isNowSelected) {
+          card.classList.add('selected');
+        } else {
+          card.classList.remove('selected');
+        }
+
+        const chk = card.querySelector('.flyer-card-checkbox');
+        if (chk) chk.checked = isNowSelected;
+
+        updateCountersUI();
+      });
+    }
+
+    // 6. Selecionar Todos os Filtrados
+    if (btnSelectAll) {
+      btnSelectAll.addEventListener('click', () => {
+        const stats = FlyerProducts.getStats();
+        if (stats.isAllFilteredSelected) {
+          FlyerProducts.deselectAll();
+          if (window.showToast) showToast('Produtos filtrados desmarcados.', 'info');
+        } else {
+          FlyerProducts.selectAll();
+          if (window.showToast) showToast(`${stats.filteredCount} produto(s) selecionado(s)!`, 'success');
+        }
+        renderProductsList();
+      });
+    }
+
+    // 7. Limpar Seleção
+    if (btnClearSel) {
+      btnClearSel.addEventListener('click', () => {
+        const count = FlyerProducts.getSelectedCount();
+        if (count === 0) return;
+        FlyerProducts.clearSelection();
+        renderProductsList();
+        if (window.showToast) showToast('Seleção de produtos limpa.', 'info');
+      });
+    }
+  }
+
+  // Inicialização após o DOM estar pronto
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initFlyerAdmin, 250);
+  });
+
+  // ══════════════════════════════════════════════════════════════
+  // EXPORTAÇÃO — Etapa 4: Handlers para PDF, PNG e JPG
+  // ══════════════════════════════════════════════════════════════
+
+  /** IDs dos botões de exportação */
+  const EXPORT_BTN_IDS = [
+    'btn-export-pdf',
+    'btn-export-png-all',
+    'btn-export-jpg-all',
+    'btn-export-png-page',
+    'btn-export-jpg-page',
+  ];
+
+  /**
+   * Ativa/desativa o estado de carregamento no painel de exportação.
+   * @param {boolean} active
+   * @param {string}  label   Texto exibido durante o processamento
+   */
+  function setExportLoading(active, label = 'Processando...') {
+    const badge  = document.getElementById('export-loading-badge');
+    const lbl    = document.getElementById('export-loading-label');
+
+    if (badge) {
+      if (active) {
+        badge.classList.remove('hidden');
+        badge.classList.add('flex');
+      } else {
+        badge.classList.add('hidden');
+        badge.classList.remove('flex');
+      }
+    }
+    if (lbl) lbl.textContent = label;
+
+    EXPORT_BTN_IDS.forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.disabled = active;
+    });
+  }
+
+  /**
+   * Constrói o objeto de opções de renderização para o FlyerExport.
+   */
+  function getExportOptions() {
+    return {
+      template: _currentTemplate,
+      itemsPerPage: _currentItemsPerPage,
+    };
+  }
+
+  /**
+   * Exporta todas as páginas em PDF A4.
+   */
+  async function handleExportPDF() {
+    if (!FlyerExport.isReady()) {
+      if (window.showToast) showToast('Aguarde, as bibliotecas de exportação estão sendo carregadas...', 'warning');
+      return;
+    }
+    if (_paginationResult.totalPages === 0) {
+      if (window.showToast) showToast('Gere o encarte antes de exportar.', 'warning');
+      return;
+    }
+    setExportLoading(true, 'Gerando PDF...');
+    try {
+      const storeData = { ...(_activeStore || {}), color: _flyerBrandColor };
+      await FlyerExport.exportPDF(_paginationResult.pages, storeData, getExportOptions());
+    } catch (e) {
+      console.error('[Exportação PDF]', e);
+      if (window.showToast) showToast('Erro ao gerar PDF: ' + e.message, 'error');
+    } finally {
+      setExportLoading(false);
+    }
+  }
+
+  /**
+   * Exporta todas as páginas em PNG.
+   */
+  async function handleExportPNGAll() {
+    if (!FlyerExport.isReady()) {
+      if (window.showToast) showToast('Aguarde, as bibliotecas de exportação estão sendo carregadas...', 'warning');
+      return;
+    }
+    if (_paginationResult.totalPages === 0) {
+      if (window.showToast) showToast('Gere o encarte antes de exportar.', 'warning');
+      return;
+    }
+    setExportLoading(true, 'Gerando PNG...');
+    try {
+      const storeData = { ...(_activeStore || {}), color: _flyerBrandColor };
+      await FlyerExport.exportPNG(_paginationResult.pages, storeData, getExportOptions());
+    } catch (e) {
+      console.error('[Exportação PNG]', e);
+      if (window.showToast) showToast('Erro ao gerar PNG: ' + e.message, 'error');
+    } finally {
+      setExportLoading(false);
+    }
+  }
+
+  /**
+   * Exporta todas as páginas em JPG.
+   */
+  async function handleExportJPGAll() {
+    if (!FlyerExport.isReady()) {
+      if (window.showToast) showToast('Aguarde, as bibliotecas de exportação estão sendo carregadas...', 'warning');
+      return;
+    }
+    if (_paginationResult.totalPages === 0) {
+      if (window.showToast) showToast('Gere o encarte antes de exportar.', 'warning');
+      return;
+    }
+    setExportLoading(true, 'Gerando JPG...');
+    try {
+      const storeData = { ...(_activeStore || {}), color: _flyerBrandColor };
+      await FlyerExport.exportJPG(_paginationResult.pages, storeData, getExportOptions());
+    } catch (e) {
+      console.error('[Exportação JPG]', e);
+      if (window.showToast) showToast('Erro ao gerar JPG: ' + e.message, 'error');
+    } finally {
+      setExportLoading(false);
+    }
+  }
+
+  /**
+   * Exporta a página atual em PNG.
+   */
+  async function handleExportCurrentPNG() {
+    if (!FlyerExport.isReady()) {
+      if (window.showToast) showToast('Aguarde, as bibliotecas de exportação estão sendo carregadas...', 'warning');
+      return;
+    }
+    const pageProducts = _paginationResult.pages[_currentPageIndex] || [];
+    if (pageProducts.length === 0) {
+      if (window.showToast) showToast('Nenhum produto na página atual.', 'warning');
+      return;
+    }
+    setExportLoading(true, `Gerando PNG da página ${_currentPageIndex + 1}...`);
+    try {
+      const storeData = { ...(_activeStore || {}), color: _flyerBrandColor };
+      await FlyerExport.exportCurrentPagePNG(
+        pageProducts,
+        _currentPageIndex,
+        _paginationResult.totalPages,
+        storeData,
+        getExportOptions()
+      );
+    } catch (e) {
+      console.error('[Exportação PNG página]', e);
+      if (window.showToast) showToast('Erro ao gerar PNG: ' + e.message, 'error');
+    } finally {
+      setExportLoading(false);
+    }
+  }
+
+  /**
+   * Exporta a página atual em JPG.
+   */
+  async function handleExportCurrentJPG() {
+    if (!FlyerExport.isReady()) {
+      if (window.showToast) showToast('Aguarde, as bibliotecas de exportação estão sendo carregadas...', 'warning');
+      return;
+    }
+    const pageProducts = _paginationResult.pages[_currentPageIndex] || [];
+    if (pageProducts.length === 0) {
+      if (window.showToast) showToast('Nenhum produto na página atual.', 'warning');
+      return;
+    }
+    setExportLoading(true, `Gerando JPG da página ${_currentPageIndex + 1}...`);
+    try {
+      const storeData = { ...(_activeStore || {}), color: _flyerBrandColor };
+      await FlyerExport.exportCurrentPageJPG(
+        pageProducts,
+        _currentPageIndex,
+        _paginationResult.totalPages,
+        storeData,
+        getExportOptions()
+      );
+    } catch (e) {
+      console.error('[Exportação JPG página]', e);
+      if (window.showToast) showToast('Erro ao gerar JPG: ' + e.message, 'error');
+    } finally {
+      setExportLoading(false);
+    }
+  }
+
+  /**
+   * Sincroniza o label "Página Atual (N)" no painel de exportação.
+   * Chamado sempre que a página muda.
+   */
+  function _syncExportPageLabel() {
+    const lbl = document.getElementById('export-current-page-label');
+    if (lbl) lbl.textContent = _currentPageIndex + 1;
+  }
+</script>
+</body>
+</html>

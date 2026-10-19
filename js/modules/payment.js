@@ -139,6 +139,7 @@ const OrderPaymentAPI = {
           action:      'createPixCharge',
           storeId:     params.storeId,
           orderId:     params.orderId    ?? null,
+          orderRef:    params.orderRef   ?? null,
           customer:    params.customer,
           amount:      params.amount,
           description: params.description ?? null,
