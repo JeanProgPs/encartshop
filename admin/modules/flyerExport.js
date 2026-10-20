@@ -21,7 +21,7 @@ const FlyerExport = (() => {
   const A4_HEIGHT_MM  = 297;
   const A4_PX_WIDTH   = 794;     // 210 mm → px a 96 dpi
   const A4_PX_HEIGHT  = 1123;    // 297 mm → px a 96 dpi
-  const SCALE         = 3;       // Fator de resolução do canvas (3× = alta qualidade)
+  const SCALE         = 2;       // Fator de resolução do canvas (2× = 1588×2246 px, alta definição e estabilidade)
   const JPEG_QUALITY  = 0.92;    // Qualidade JPEG (0–1)
 
   /* ─── Helpers internos ──────────────────────────────────────── */
@@ -64,8 +64,9 @@ const FlyerExport = (() => {
    */
   function buildOffscreenPage(pageProducts, pageIndex, totalPages, store, options) {
     const wrapper = document.createElement('div');
+    wrapper.id = `flyer-export-offscreen-${pageIndex}`;
     wrapper.style.cssText = [
-      `position:absolute`,
+      `position:fixed`,
       `left:0`,
       `top:0`,
       `width:${A4_PX_WIDTH}px`,
@@ -74,6 +75,8 @@ const FlyerExport = (() => {
       `z-index:-9999`,
       `pointer-events:none`,
       `background:#ffffff`,
+      `margin:0`,
+      `padding:0`,
     ].join(';');
 
     // Reutiliza FlyerTemplates para gerar o HTML exatamente como na prévia
@@ -86,16 +89,20 @@ const FlyerExport = (() => {
     );
     wrapper.innerHTML = pageHtml;
 
-    // Garante que a folha ocupe 100% do wrapper (sobrescreve max-width da prévia)
+    // Garante que a folha ocupe 100% do wrapper em A4 exato
     const sheet = wrapper.querySelector('.flyer-page-sheet');
     if (sheet) {
       sheet.style.cssText += [
         `;width:${A4_PX_WIDTH}px`,
         `max-width:${A4_PX_WIDTH}px`,
         `height:${A4_PX_HEIGHT}px`,
+        `min-height:${A4_PX_HEIGHT}px`,
+        `max-height:${A4_PX_HEIGHT}px`,
         `border-radius:0`,
         `box-shadow:none`,
         `padding:0`,
+        `margin:0`,
+        `box-sizing:border-box`,
       ].join('');
     }
 
@@ -111,25 +118,47 @@ const FlyerExport = (() => {
    */
   async function captureNode(node) {
     document.body.appendChild(node);
+
+    // Força reflow síncrono para que flex e grid calculem as alturas completas
+    void node.offsetHeight;
+    await new Promise(r => setTimeout(r, 60));
+
+    // Aguarda carregamento de todas as imagens do nó antes do print
+    const imgs = Array.from(node.querySelectorAll('img'));
+    if (imgs.length > 0) {
+      await Promise.all(imgs.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(res => {
+          img.onload = res;
+          img.onerror = res;
+          setTimeout(res, 2500);
+        });
+      }));
+    }
+
     try {
-      const canvas = await window.html2canvas(node, {
+      const sheet = node.querySelector('.flyer-page-sheet') || node;
+      const canvas = await window.html2canvas(sheet, {
         scale: SCALE,
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#ffffff',
         logging: false,
-        removeContainer: false,
+        imageTimeout: 15000,
         scrollX: 0,
         scrollY: 0,
         x: 0,
         y: 0,
         width: A4_PX_WIDTH,
         height: A4_PX_HEIGHT,
-        imageTimeout: 15000,
+        windowWidth: A4_PX_WIDTH,
+        windowHeight: A4_PX_HEIGHT,
       });
       return canvas;
     } finally {
-      document.body.removeChild(node);
+      if (node.parentNode) {
+        node.parentNode.removeChild(node);
+      }
     }
   }
 

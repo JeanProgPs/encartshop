@@ -163,12 +163,42 @@ const FlyerTemplates = (() => {
   // CARDS DE PRODUTO
   // ────────────────────────────────────────────────────────────────
 
+  function renderCardImage(product, name) {
+    const hasImage = Boolean(product && product.image && String(product.image).trim());
+    const placeholderHtml = `
+      <div class="flyer-card-no-img">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>Sem Foto</span>
+      </div>
+    `;
+
+    if (!hasImage) {
+      return placeholderHtml;
+    }
+
+    const safeUrl = escapeHTML(product.image.trim());
+    return `
+      <img src="${safeUrl}" alt="${name}" class="flyer-card-img" loading="eager" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div class="flyer-card-no-img" style="display:none">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>Sem Foto</span>
+      </div>
+    `;
+  }
+
   function renderProductCard(product, template, branding) {
-    const defaultImg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="%23f4f4f5"/><text x="50%" y="50%" fill="%23a1a1aa" font-family="sans-serif" font-size="11" text-anchor="middle" dy=".3em">Sem Foto</text></svg>';
-    const imgUrl = product.image ? escapeHTML(product.image) : defaultImg;
     const name = escapeHTML(product.name || 'Produto sem nome');
     const category = escapeHTML(product.category || '');
     const unit = product.unit ? `${escapeHTML(product.unit)}` : '';
+    const imageHtml = renderCardImage(product, name);
 
     const promo = Number(product.promo_price);
     const regular = Number(product.price);
@@ -182,7 +212,7 @@ const FlyerTemplates = (() => {
       return `
         <div class="flyer-card">
           <div class="flyer-card-img-wrap">
-            <img src="${imgUrl}" alt="${name}" class="flyer-card-img" loading="lazy" onerror="this.src='${defaultImg}'">
+            ${imageHtml}
             ${hasPromo ? '<span class="flyer-tag-promo">OFF</span>' : ''}
           </div>
           <div class="flyer-card-body">
@@ -208,7 +238,7 @@ const FlyerTemplates = (() => {
       return `
         <div class="flyer-card">
           <div class="flyer-card-img-wrap">
-            <img src="${imgUrl}" alt="${name}" class="flyer-card-img" loading="lazy" onerror="this.src='${defaultImg}'">
+            ${imageHtml}
             ${hasPromo ? '<span class="flyer-tag-promo">PROMOÇÃO</span>' : ''}
           </div>
           <div class="flyer-card-body">
@@ -235,7 +265,7 @@ const FlyerTemplates = (() => {
     return `
       <div class="flyer-card">
         <div class="flyer-card-img-wrap">
-          <img src="${imgUrl}" alt="${name}" class="flyer-card-img" loading="lazy" onerror="this.src='${defaultImg}'">
+          ${imageHtml}
           ${hasPromo ? '<span class="flyer-tag-promo">OFERTA</span>' : ''}
         </div>
         <div class="flyer-card-body">
@@ -249,7 +279,7 @@ const FlyerTemplates = (() => {
                    ${unit ? `<span class="flyer-unit"> /${unit}</span>` : ''}
                  </div>`
               : `<div class="flyer-price-single">
-                   <span style="font-size:0.55em;font-weight:900;">R$</span>${parts.integer}<sup style="font-size:0.5em;font-weight:900;">,${parts.decimal}</sup>
+                   <span class="currency">R$</span>${parts.integer}<sup style="font-size:0.5em;font-weight:900;">,${parts.decimal}</sup>
                    ${unit ? `<span class="flyer-unit"> /${unit}</span>` : ''}
                  </div>`
             }
