@@ -102,7 +102,7 @@ const FlyerTemplates = (() => {
     const escapedName = escapeHTML(branding.name);
     const escapedInitial = escapeHTML(branding.initial);
     if (branding.logoUrl) {
-      return `<img src="${escapeHTML(branding.logoUrl)}" alt="${escapedName}" class="flyer-header-logo-img" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=\\'flyer-header-logo-fallback\\'>${escapedInitial}</span>'">`;
+      return `<img src="${escapeHTML(branding.logoUrl)}" alt="${escapedName}" class="flyer-header-logo-img" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='flex';"><span class="flyer-header-logo-fallback" style="display:none">${escapedInitial}</span>`;
     }
     return `<span class="flyer-header-logo-fallback">${escapedInitial}</span>`;
   }
@@ -142,8 +142,8 @@ const FlyerTemplates = (() => {
       `;
     }
 
-    // Padrão: Market
-    const subtitle = options.customSubtitle || branding.slogan || 'OFERTAS DA SEMANA';
+    // Padrão: Market (Estilo Supermercado Guanabara / CrieOferta)
+    const subtitle = options.customSubtitle || branding.slogan || 'OFERTAS DA SEMANA · ECONOMIA DE VERDADE';
     return `
       <header class="flyer-header" style="--brand-color:${escapeHTML(branding.color)};">
         <div class="flyer-header-left">
@@ -164,7 +164,8 @@ const FlyerTemplates = (() => {
   // ────────────────────────────────────────────────────────────────
 
   function renderCardImage(product, name) {
-    const hasImage = Boolean(product && product.image && String(product.image).trim());
+    const rawImage = product?.image || product?.image_url || product?.img || '';
+    const hasImage = Boolean(rawImage && String(rawImage).trim());
     const placeholderHtml = `
       <div class="flyer-card-no-img">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -180,9 +181,9 @@ const FlyerTemplates = (() => {
       return placeholderHtml;
     }
 
-    const safeUrl = escapeHTML(product.image.trim());
+    const safeUrl = escapeHTML(String(rawImage).trim());
     return `
-      <img src="${safeUrl}" alt="${name}" class="flyer-card-img" loading="eager" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <img src="${safeUrl}" alt="${name}" class="flyer-card-img" crossorigin="anonymous" referrerpolicy="no-referrer" loading="eager" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='flex';">
       <div class="flyer-card-no-img" style="display:none">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <rect x="3" y="3" width="18" height="18" rx="3"></rect>
@@ -258,7 +259,7 @@ const FlyerTemplates = (() => {
       `;
     }
 
-    // Market — estilo "cartazete de supermercado" com preço grande em destaque
+    // Market — estilo "cartazete de supermercado" com preço grande em destaque (estilo Guanabara & CrieOferta)
     const price = hasPromo ? promo : regular;
     const parts = splitPrice(price);
 
@@ -273,16 +274,18 @@ const FlyerTemplates = (() => {
           <h3 class="flyer-card-title">${name}</h3>
           <div class="flyer-card-prices">
             ${hasPromo ? `<div class="flyer-price-from">De: ${formatMoney(regular)}</div>` : ''}
-            ${hasPromo
-              ? `<div class="flyer-price-main" style="color:var(--brand-color,#e94560);">
-                   <span class="currency">R$</span>${parts.integer}<sup style="font-size:0.5em;font-weight:900;">,${parts.decimal}</sup>
-                   ${unit ? `<span class="flyer-unit"> /${unit}</span>` : ''}
-                 </div>`
-              : `<div class="flyer-price-single">
-                   <span class="currency">R$</span>${parts.integer}<sup style="font-size:0.5em;font-weight:900;">,${parts.decimal}</sup>
-                   ${unit ? `<span class="flyer-unit"> /${unit}</span>` : ''}
-                 </div>`
-            }
+            <div class="flyer-price-main-wrap">
+              ${hasPromo
+                ? `<div class="flyer-price-main" style="color:var(--brand-color,#e94560);">
+                     <span class="currency">R$</span><span class="int">${parts.integer}</span><sup class="dec">,${parts.decimal}</sup>
+                     ${unit ? `<span class="flyer-unit">/${unit}</span>` : ''}
+                   </div>`
+                : `<div class="flyer-price-single">
+                     <span class="currency">R$</span><span class="int">${parts.integer}</span><sup class="dec">,${parts.decimal}</sup>
+                     ${unit ? `<span class="flyer-unit">/${unit}</span>` : ''}
+                   </div>`
+              }
+            </div>
           </div>
         </div>
       </div>

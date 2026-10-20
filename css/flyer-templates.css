@@ -281,6 +281,22 @@
   gap: 1px;
 }
 
+.flyer-theme-market .flyer-price-main .int,
+.flyer-theme-market .flyer-price-single .int {
+  font-size: 1.35em;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 0.9;
+}
+
+.flyer-theme-market .flyer-price-main .dec,
+.flyer-theme-market .flyer-price-single .dec {
+  font-size: 0.65em;
+  font-weight: 900;
+  vertical-align: super;
+  margin-left: 1px;
+}
+
 .flyer-theme-market .flyer-price-main .currency {
   font-size: 0.65rem;
   font-weight: 900;
@@ -824,10 +840,10 @@
    DENSIDADES DE GRID (compartilhadas)
 ══════════════════════════════════════════════════════════════ */
 
-.flyer-grid-4  { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
-.flyer-grid-6  { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
-.flyer-grid-8  { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
-.flyer-grid-9  { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); }
+.flyer-grid-4  { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+.flyer-grid-6  { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+.flyer-grid-8  { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); }
+.flyer-grid-9  { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
 
 /* Ajustes responsivos para grades densas */
 .flyer-grid-8 .flyer-card-title,
