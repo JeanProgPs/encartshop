@@ -36,30 +36,137 @@
       box-shadow: var(--shadow-lg);
     }
     
-    /* Card de Produto no Gerador */
+    /* ── Card de Produto no Gerador ───────── */
     .flyer-product-card {
-      transition: all 0.2s ease;
+      transition: all 0.18s cubic-bezier(0.16,1,0.3,1);
       user-select: none;
+      cursor: pointer;
+    }
+    .flyer-product-card:hover {
+      border-color: rgba(233,69,96,0.4);
+      transform: translateY(-1px);
     }
     .flyer-product-card.selected {
       border-color: var(--accent);
       background-color: rgba(233, 69, 96, 0.05);
-      box-shadow: 0 0 0 1px var(--accent);
+      box-shadow: 0 0 0 2px rgba(233,69,96,0.18);
+    }
+    .flyer-product-card.selected .fp-thumb {
+      border-color: var(--accent);
     }
 
-    /* Botões Ativos nos Seletores de Template e Grid */
+    /* ── Seletor de Template (miniatura visual) ─ */
+    .btn-template-choice {
+      transition: all 0.2s ease;
+      overflow: hidden;
+    }
+    .btn-template-choice:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent) !important;
+    }
     .btn-template-choice.active {
+      border-color: var(--accent) !important;
+      box-shadow: 0 0 0 3px rgba(233,69,96,0.15);
+    }
+    .btn-template-choice.active .tpl-label {
+      color: var(--accent);
+    }
+    /* Mini-prévia do template */
+    .tpl-thumb {
+      width: 100%;
+      height: 54px;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 6px;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .tpl-thumb-header {
+      height: 14px;
+      display: flex;
+      align-items: center;
+      padding: 0 4px;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+    .tpl-thumb-logo {
+      width: 8px; height: 8px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.8);
+      flex-shrink: 0;
+    }
+    .tpl-thumb-title {
+      height: 4px; flex: 1;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.6);
+    }
+    .tpl-thumb-badge {
+      height: 6px; width: 18px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.9);
+    }
+    .tpl-thumb-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 1px;
+      padding: 2px;
+      background: #f4f4f5;
+    }
+    .tpl-thumb-card {
+      background: #fff;
+      border-radius: 2px;
+      display: flex;
+      flex-direction: column;
+      padding: 2px;
+      overflow: hidden;
+    }
+    .tpl-thumb-card-img {
+      background: #e4e4e7;
+      height: 60%;
+      border-radius: 1px;
+    }
+    .tpl-thumb-card-line {
+      height: 2px; border-radius: 1px;
+      background: #e4e4e7;
+      margin-top: 2px;
+    }
+    .tpl-thumb-card-price {
+      height: 3px; border-radius: 1px;
+      width: 70%;
+      margin-top: 1px;
+    }
+    .tpl-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: block;
+      transition: color 0.2s;
+    }
+    .tpl-sublabel {
+      font-size: 0.6rem;
+      color: var(--text-secondary);
+      display: block;
+      margin-top: 1px;
+    }
+
+    /* ── Botões de Densidade de Grid ─────── */
+    .btn-grid-choice {
+      transition: all 0.18s ease;
+    }
+    .btn-grid-choice:hover {
       border-color: var(--accent);
-      background-color: rgba(233, 69, 96, 0.08);
       color: var(--accent);
     }
     .btn-grid-choice.active {
       background-color: var(--accent);
       color: #ffffff;
       border-color: var(--accent);
+      box-shadow: 0 2px 8px rgba(233,69,96,0.3);
     }
 
-    /* Shimmer para Skeleton Loader */
+    /* ── Shimmer Skeleton Loader ─────────── */
     @keyframes encart-shimmer {
       0% { background-position: 200% 0; }
       100% { background-position: -200% 0; }
@@ -502,42 +609,80 @@
               <!-- 1. Seletor de Modelo Visual (Segmento) -->
               <div class="flex flex-col gap-2.5">
                 <label class="text-xs font-bold uppercase tracking-wider text-textSecondary flex items-center gap-1.5">
-                  <i data-lucide="palette" class="w-3.5 h-3.5 text-accent"></i>
-                  Modelo Visual (Segmento)
+                  <i data-lucide="layout-template" class="w-3.5 h-3.5 text-accent"></i>
+                  Modelo Visual
                 </label>
                 <div class="grid grid-cols-3 gap-2">
+
+                  <!-- Mercado -->
                   <button 
                     type="button"
-                    class="btn-template-choice p-2.5 rounded-xl border border-borderColor bg-bgPrimary flex flex-col items-center text-center gap-1 hover:border-accent transition-all cursor-pointer active"
+                    class="btn-template-choice p-2 rounded-xl border border-borderColor bg-bgPrimary flex flex-col items-start gap-0 cursor-pointer active"
                     data-template="market"
                     onclick="selectTemplate('market')"
                   >
-                    <span class="text-base">🏪</span>
-                    <span class="text-xs font-bold leading-tight">Mercado</span>
-                    <span class="text-[9px] text-textSecondary leading-none">Ofertas</span>
+                    <div class="tpl-thumb">
+                      <div class="tpl-thumb-header" style="background:#e94560;">
+                        <div class="tpl-thumb-logo"></div>
+                        <div class="tpl-thumb-title"></div>
+                        <div class="tpl-thumb-badge"></div>
+                      </div>
+                      <div class="tpl-thumb-grid" style="background:#e94560;gap:1px;">
+                        <div class="tpl-thumb-card"><div class="tpl-thumb-card-img"></div><div class="tpl-thumb-card-line"></div><div class="tpl-thumb-card-price" style="background:#e94560;"></div></div>
+                        <div class="tpl-thumb-card"><div class="tpl-thumb-card-img"></div><div class="tpl-thumb-card-line"></div><div class="tpl-thumb-card-price" style="background:#e94560;"></div></div>
+                        <div class="tpl-thumb-card"><div class="tpl-thumb-card-img"></div><div class="tpl-thumb-card-line"></div><div class="tpl-thumb-card-price" style="background:#e94560;"></div></div>
+                      </div>
+                    </div>
+                    <span class="tpl-label">Mercado</span>
+                    <span class="tpl-sublabel">Variedades &amp; Ofertas</span>
                   </button>
 
+                  <!-- Food -->
                   <button 
                     type="button"
-                    class="btn-template-choice p-2.5 rounded-xl border border-borderColor bg-bgPrimary flex flex-col items-center text-center gap-1 hover:border-accent transition-all cursor-pointer"
+                    class="btn-template-choice p-2 rounded-xl border border-borderColor bg-bgPrimary flex flex-col items-start gap-0 cursor-pointer"
                     data-template="food"
                     onclick="selectTemplate('food')"
                   >
-                    <span class="text-base">🍔</span>
-                    <span class="text-xs font-bold leading-tight">Food</span>
-                    <span class="text-[9px] text-textSecondary leading-none">Delivery</span>
+                    <div class="tpl-thumb">
+                      <div class="tpl-thumb-header" style="background:#3d1a00;border-bottom:2px solid #f59e0b;">
+                        <div class="tpl-thumb-logo" style="border-radius:50%;border:1px solid #f59e0b;"></div>
+                        <div class="tpl-thumb-title"></div>
+                        <div class="tpl-thumb-badge" style="background:#f59e0b;border-radius:999px;"></div>
+                      </div>
+                      <div class="tpl-thumb-grid" style="background:#fff9f0;">
+                        <div class="tpl-thumb-card" style="border:1px solid #fde68a;"><div class="tpl-thumb-card-img" style="background:#fde68a;"></div><div class="tpl-thumb-card-line"></div><div class="tpl-thumb-card-price" style="background:#f59e0b;"></div></div>
+                        <div class="tpl-thumb-card" style="border:1px solid #fde68a;"><div class="tpl-thumb-card-img" style="background:#fde68a;"></div><div class="tpl-thumb-card-line"></div><div class="tpl-thumb-card-price" style="background:#f59e0b;"></div></div>
+                        <div class="tpl-thumb-card" style="border:1px solid #fde68a;"><div class="tpl-thumb-card-img" style="background:#fde68a;"></div><div class="tpl-thumb-card-line"></div><div class="tpl-thumb-card-price" style="background:#f59e0b;"></div></div>
+                      </div>
+                    </div>
+                    <span class="tpl-label">Food</span>
+                    <span class="tpl-sublabel">Delivery &amp; Cardápio</span>
                   </button>
 
+                  <!-- Moda -->
                   <button 
                     type="button"
-                    class="btn-template-choice p-2.5 rounded-xl border border-borderColor bg-bgPrimary flex flex-col items-center text-center gap-1 hover:border-accent transition-all cursor-pointer"
+                    class="btn-template-choice p-2 rounded-xl border border-borderColor bg-bgPrimary flex flex-col items-start gap-0 cursor-pointer"
                     data-template="fashion"
                     onclick="selectTemplate('fashion')"
                   >
-                    <span class="text-base">👗</span>
-                    <span class="text-xs font-bold leading-tight">Moda</span>
-                    <span class="text-[9px] text-textSecondary leading-none">Editorial</span>
+                    <div class="tpl-thumb">
+                      <div class="tpl-thumb-header" style="background:#18181b;border-bottom:1px solid #3f3f46;">
+                        <div class="tpl-thumb-logo" style="background:rgba(255,255,255,0.15);"></div>
+                        <div class="tpl-thumb-title" style="background:rgba(255,255,255,0.3);"></div>
+                        <div class="tpl-thumb-badge" style="background:#e94560;"></div>
+                      </div>
+                      <div class="tpl-thumb-grid" style="background:#f4f4f5;">
+                        <div class="tpl-thumb-card" style="border:1px solid #e4e4e7;"><div class="tpl-thumb-card-img" style="background:#d4d4d8;"></div><div class="tpl-thumb-card-line"></div><div class="tpl-thumb-card-price" style="background:#e94560;"></div></div>
+                        <div class="tpl-thumb-card" style="border:1px solid #e4e4e7;"><div class="tpl-thumb-card-img" style="background:#d4d4d8;"></div><div class="tpl-thumb-card-line"></div><div class="tpl-thumb-card-price" style="background:#e94560;"></div></div>
+                        <div class="tpl-thumb-card" style="border:1px solid #e4e4e7;"><div class="tpl-thumb-card-img" style="background:#d4d4d8;"></div><div class="tpl-thumb-card-line"></div><div class="tpl-thumb-card-price" style="background:#e94560;"></div></div>
+                      </div>
+                    </div>
+                    <span class="tpl-label">Moda</span>
+                    <span class="tpl-sublabel">Fashion &amp; Editorial</span>
                   </button>
+
                 </div>
               </div>
 
@@ -911,6 +1056,7 @@
       if (['market', 'food', 'fashion'].includes(rawSeg)) {
         _currentTemplate = rawSeg;
       }
+      selectTemplate(_currentTemplate);
 
       // Inicializa cor do encarte com a cor cadastrada na loja
       if (store.color) {
@@ -919,6 +1065,7 @@
         const colorHex = document.getElementById('flyer-color-hex');
         if (colorInput) colorInput.value = _flyerBrandColor;
         if (colorHex) colorHex.textContent = _flyerBrandColor;
+        updateFlyerColor(_flyerBrandColor);
       }
 
       // Logo da loja
@@ -1262,6 +1409,14 @@
     _flyerBrandColor = hex;
     const hexLabel = document.getElementById('flyer-color-hex');
     if (hexLabel) hexLabel.textContent = hex;
+
+    // Atualiza mini-thumbnails do seletor de modelos com a cor da marca
+    document.querySelectorAll('[data-template="market"] .tpl-thumb-header').forEach(el => el.style.background = hex);
+    document.querySelectorAll('[data-template="market"] .tpl-thumb-card-price').forEach(el => el.style.background = hex);
+    document.querySelectorAll('[data-template="market"] .tpl-thumb-grid').forEach(el => el.style.background = hex);
+    document.querySelectorAll('[data-template="fashion"] .tpl-thumb-badge').forEach(el => el.style.background = hex);
+    document.querySelectorAll('[data-template="fashion"] .tpl-thumb-card-price').forEach(el => el.style.background = hex);
+
     renderCurrentPreviewPage();
   }
 

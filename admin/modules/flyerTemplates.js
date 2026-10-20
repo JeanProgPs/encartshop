@@ -1,7 +1,7 @@
 /**
- * EncartShop — FlyerTemplates Module (Etapa 3)
- * Gerenciamento de modelos visuais, identidade da loja e paginação automática
- * para o Gerador de Encartes.
+ * EncartShop — FlyerTemplates Module (v2 — Estilo Encarte Real)
+ * Renderiza encartes no estilo tablóide de supermercado/padaria/moda,
+ * com identidade da loja, preços em destaque e paginação automática.
  */
 
 const FlyerTemplates = (() => {
@@ -12,9 +12,8 @@ const FlyerTemplates = (() => {
 
   /**
    * Divide uma lista de produtos em páginas com tamanho fixo.
-   * Não duplica nem descarta nenhum produto.
    *
-   * @param {Array} products - Lista de produtos selecionados
+   * @param {Array} products
    * @param {number} itemsPerPage - 4, 6, 8 ou 9
    * @returns {Object} { pages, totalPages, totalProducts, itemsPerPage }
    */
@@ -25,12 +24,7 @@ const FlyerTemplates = (() => {
       : DEFAULT_ITEMS_PER_PAGE;
 
     if (list.length === 0) {
-      return {
-        pages: [],
-        totalPages: 0,
-        totalProducts: 0,
-        itemsPerPage: perPage
-      };
+      return { pages: [], totalPages: 0, totalProducts: 0, itemsPerPage: perPage };
     }
 
     const pages = [];
@@ -38,18 +32,11 @@ const FlyerTemplates = (() => {
       pages.push(list.slice(i, i + perPage));
     }
 
-    return {
-      pages,
-      totalPages: pages.length,
-      totalProducts: list.length,
-      itemsPerPage: perPage
-    };
+    return { pages, totalPages: pages.length, totalProducts: list.length, itemsPerPage: perPage };
   }
 
   /**
    * Extrai e normaliza a identidade visual da loja ativa com fallbacks seguros.
-   * @param {Object} store
-   * @returns {Object}
    */
   function getStoreBranding(store = {}) {
     const s = store || {};
@@ -61,26 +48,16 @@ const FlyerTemplates = (() => {
     const address = (s.address || '').trim() || '';
     const hours = (s.hours || '').trim() || '';
     const segment = (s.store_segment || 'market').toLowerCase();
-
-    // Iniciais para fallback caso não haja logo
     const initial = name.charAt(0).toUpperCase() || 'E';
 
     return {
-      name,
-      color,
-      logoUrl,
-      slogan,
-      whatsapp,
-      address,
-      hours,
+      name, color, logoUrl, slogan, whatsapp, address, hours,
       segment: ALLOWED_TEMPLATES.includes(segment) ? segment : 'market',
       initial
     };
   }
 
-  /**
-   * Formata valores monetários em padrão BRL.
-   */
+  /** Formata valores monetários em BRL. */
   function formatMoney(value) {
     if (value === undefined || value === null || value === '') return 'R$ 0,00';
     const num = Number(value);
@@ -88,9 +65,17 @@ const FlyerTemplates = (() => {
     return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
-  /**
-   * Sanitiza strings contra XSS.
-   */
+  /** Quebra "R$ X,XX" em partes para estilização separada do preço. */
+  function splitPrice(value) {
+    const str = formatMoney(value); // ex: "R$ 4,89"
+    const match = str.match(/^(R\$\s*)([\d.]+),([\d]{2})$/);
+    if (match) {
+      return { symbol: match[1].trim(), integer: match[2], decimal: match[3] };
+    }
+    return { symbol: 'R$', integer: str.replace('R$ ', '').split(',')[0] || '0', decimal: '00' };
+  }
+
+  /** Sanitiza strings contra XSS. */
   function escapeHTML(str) {
     if (str === undefined || str === null) return '';
     return String(str).replace(/[&<>'"]/g, tag => ({
@@ -98,41 +83,37 @@ const FlyerTemplates = (() => {
     }[tag] || tag));
   }
 
-  /**
-   * Determina a classe de grid CSS adequada para a densidade de itens por página.
-   */
+  /** Retorna a classe de grid CSS adequada. */
   function getGridClass(itemsPerPage) {
     switch (Number(itemsPerPage)) {
-      case 4:
-        return 'flyer-grid-4'; // 2x2
-      case 6:
-        return 'flyer-grid-6'; // 3x2 ou 2x3
-      case 8:
-        return 'flyer-grid-8'; // 4x2
-      case 9:
-        return 'flyer-grid-9'; // 3x3
-      default:
-        return 'flyer-grid-6';
+      case 4: return 'flyer-grid-4';
+      case 6: return 'flyer-grid-6';
+      case 8: return 'flyer-grid-8';
+      case 9: return 'flyer-grid-9';
+      default: return 'flyer-grid-6';
     }
   }
 
-  /**
-   * Renderiza o cabeçalho institucional do encarte.
-   */
-  function renderHeader(branding, template, options = {}) {
-    const subtitle = options.customSubtitle || branding.slogan || (
-      template === 'fashion' ? 'COLEÇÃO & OFERTAS EXCLUSIVAS' :
-      template === 'food' ? 'CARDÁPIO DE OFERTAS & SABORES' :
-      'OFERTAS DA SEMANA'
-    );
+  // ────────────────────────────────────────────────────────────────
+  // CABEÇALHOS
+  // ────────────────────────────────────────────────────────────────
 
-    const logoHtml = branding.logoUrl
-      ? `<img src="${escapeHTML(branding.logoUrl)}" alt="${escapeHTML(branding.name)}" class="flyer-header-logo-img" onerror="this.parentElement.innerHTML='<span class=\\'flyer-header-logo-fallback\\'>${escapeHTML(branding.initial)}</span>'">`
-      : `<span class="flyer-header-logo-fallback">${escapeHTML(branding.initial)}</span>`;
+  function renderLogoHtml(branding) {
+    const escapedName = escapeHTML(branding.name);
+    const escapedInitial = escapeHTML(branding.initial);
+    if (branding.logoUrl) {
+      return `<img src="${escapeHTML(branding.logoUrl)}" alt="${escapedName}" class="flyer-header-logo-img" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=\\'flyer-header-logo-fallback\\'>${escapedInitial}</span>'">`;
+    }
+    return `<span class="flyer-header-logo-fallback">${escapedInitial}</span>`;
+  }
+
+  function renderHeader(branding, template, options = {}) {
+    const logoHtml = renderLogoHtml(branding);
 
     if (template === 'fashion') {
+      const subtitle = options.customSubtitle || branding.slogan || 'COLEÇÃO & OFERTAS EXCLUSIVAS';
       return `
-        <header class="flyer-header flyer-header-fashion" style="--brand-color: ${escapeHTML(branding.color)};">
+        <header class="flyer-header" style="--brand-color:${escapeHTML(branding.color)};">
           <div class="flyer-header-left">
             <div class="flyer-logo-box">${logoHtml}</div>
             <div class="flyer-header-info">
@@ -140,16 +121,15 @@ const FlyerTemplates = (() => {
               <p class="flyer-store-subtitle">${escapeHTML(subtitle)}</p>
             </div>
           </div>
-          <div class="flyer-header-badge-fashion">
-            <span>LOOKS & OFERTAS</span>
-          </div>
+          <div class="flyer-header-badge">LOOKS &amp; MODA</div>
         </header>
       `;
     }
 
     if (template === 'food') {
+      const subtitle = options.customSubtitle || branding.slogan || 'CARDÁPIO DE OFERTAS';
       return `
-        <header class="flyer-header flyer-header-food" style="--brand-color: ${escapeHTML(branding.color)};">
+        <header class="flyer-header" style="--brand-color:${escapeHTML(branding.color)};">
           <div class="flyer-header-left">
             <div class="flyer-logo-box">${logoHtml}</div>
             <div class="flyer-header-info">
@@ -157,16 +137,15 @@ const FlyerTemplates = (() => {
               <p class="flyer-store-subtitle">${escapeHTML(subtitle)}</p>
             </div>
           </div>
-          <div class="flyer-header-badge-food">
-            <span>DELIVERY & PROMOÇÕES</span>
-          </div>
+          <div class="flyer-header-badge">DELIVERY &amp; PROMOS</div>
         </header>
       `;
     }
 
-    // Padrão: Mercado
+    // Padrão: Market
+    const subtitle = options.customSubtitle || branding.slogan || 'OFERTAS DA SEMANA';
     return `
-      <header class="flyer-header flyer-header-market" style="--brand-color: ${escapeHTML(branding.color)};">
+      <header class="flyer-header" style="--brand-color:${escapeHTML(branding.color)};">
         <div class="flyer-header-left">
           <div class="flyer-logo-box">${logoHtml}</div>
           <div class="flyer-header-info">
@@ -174,60 +153,49 @@ const FlyerTemplates = (() => {
             <p class="flyer-store-subtitle">${escapeHTML(subtitle)}</p>
           </div>
         </div>
-        <div class="flyer-header-badge-market">
-          <span>SUPER OFERTAS</span>
-        </div>
+        <div class="flyer-header-badge">SUPER OFERTAS</div>
       </header>
+      <div class="flyer-promo-banner">⚡ PREÇOS VÁLIDOS ENQUANTO DURAREM OS ESTOQUES · CONFIRA NOSSAS OFERTAS!</div>
     `;
   }
 
-  /**
-   * Renderiza um card de produto de acordo com o modelo selecionado.
-   */
+  // ────────────────────────────────────────────────────────────────
+  // CARDS DE PRODUTO
+  // ────────────────────────────────────────────────────────────────
+
   function renderProductCard(product, template, branding) {
-    const defaultImg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="%23f4f4f5"><rect width="100%" height="100%" fill="%23f4f4f5"/><text x="50%" y="50%" fill="%23a1a1aa" font-family="sans-serif" font-size="12" text-anchor="middle" dy=".3em">Sem Foto</text></svg>';
+    const defaultImg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="%23f4f4f5"/><text x="50%" y="50%" fill="%23a1a1aa" font-family="sans-serif" font-size="11" text-anchor="middle" dy=".3em">Sem Foto</text></svg>';
     const imgUrl = product.image ? escapeHTML(product.image) : defaultImg;
     const name = escapeHTML(product.name || 'Produto sem nome');
     const category = escapeHTML(product.category || '');
-    const unit = product.unit ? `/${escapeHTML(product.unit)}` : '';
-    
-    // Validação de Preço Promocional Real
+    const unit = product.unit ? `${escapeHTML(product.unit)}` : '';
+
     const promo = Number(product.promo_price);
     const regular = Number(product.price);
     const hasPromo = !isNaN(promo) && promo > 0 && promo < regular;
 
-    const promoFormatted = hasPromo ? formatMoney(promo) : null;
-    const regularFormatted = formatMoney(regular);
-
-    // Template 1: Fashion (Moda)
     if (template === 'fashion') {
       const brand = product.brand ? `<span class="flyer-card-brand">${escapeHTML(product.brand)}</span>` : '';
       const sizeTag = product.size ? `<span class="flyer-tag">Tam: ${escapeHTML(product.size)}</span>` : '';
       const colorTag = product.color ? `<span class="flyer-tag">${escapeHTML(product.color)}</span>` : '';
 
       return `
-        <div class="flyer-card flyer-card-fashion">
+        <div class="flyer-card">
           <div class="flyer-card-img-wrap">
-            <img src="${imgUrl}" alt="${name}" class="flyer-card-img" onerror="this.src='${defaultImg}'">
+            <img src="${imgUrl}" alt="${name}" class="flyer-card-img" loading="lazy" onerror="this.src='${defaultImg}'">
             ${hasPromo ? '<span class="flyer-tag-promo">OFF</span>' : ''}
           </div>
           <div class="flyer-card-body">
-            <div class="flyer-card-meta">
-              ${brand}
-              ${category ? `<span class="flyer-card-cat">${category}</span>` : ''}
-            </div>
+            ${brand}
+            ${category ? `<span class="flyer-card-cat" style="display:none">${category}</span>` : ''}
             <h3 class="flyer-card-title">${name}</h3>
             ${(sizeTag || colorTag) ? `<div class="flyer-tags-wrap">${sizeTag}${colorTag}</div>` : ''}
             <div class="flyer-card-prices">
               ${hasPromo ? `
-                <div class="flyer-price-regular">De ${regularFormatted}</div>
-                <div class="flyer-price-promo" style="color: ${escapeHTML(branding.color)};">
-                  Por ${promoFormatted} <span class="flyer-unit">${unit}</span>
-                </div>
+                <div class="flyer-price-from">De ${formatMoney(regular)}</div>
+                <div class="flyer-price-main">Por ${formatMoney(promo)}<span class="flyer-unit">${unit ? ` /${unit}` : ''}</span></div>
               ` : `
-                <div class="flyer-price-single">
-                  ${regularFormatted} <span class="flyer-unit">${unit}</span>
-                </div>
+                <div class="flyer-price-single">${formatMoney(regular)}<span class="flyer-unit">${unit ? ` /${unit}` : ''}</span></div>
               `}
             </div>
           </div>
@@ -235,14 +203,12 @@ const FlyerTemplates = (() => {
       `;
     }
 
-    // Template 2: Food (Alimentação)
     if (template === 'food') {
       const desc = product.description ? `<p class="flyer-card-desc">${escapeHTML(product.description)}</p>` : '';
-
       return `
-        <div class="flyer-card flyer-card-food">
+        <div class="flyer-card">
           <div class="flyer-card-img-wrap">
-            <img src="${imgUrl}" alt="${name}" class="flyer-card-img" onerror="this.src='${defaultImg}'">
+            <img src="${imgUrl}" alt="${name}" class="flyer-card-img" loading="lazy" onerror="this.src='${defaultImg}'">
             ${hasPromo ? '<span class="flyer-tag-promo">PROMOÇÃO</span>' : ''}
           </div>
           <div class="flyer-card-body">
@@ -251,14 +217,10 @@ const FlyerTemplates = (() => {
             ${desc}
             <div class="flyer-card-prices">
               ${hasPromo ? `
-                <div class="flyer-price-regular">De ${regularFormatted}</div>
-                <div class="flyer-price-promo" style="color: ${escapeHTML(branding.color)};">
-                  ${promoFormatted} <span class="flyer-unit">${unit}</span>
-                </div>
+                <div class="flyer-price-from">De ${formatMoney(regular)}</div>
+                <div class="flyer-price-main">${formatMoney(promo)}<span class="flyer-unit">${unit ? ` /${unit}` : ''}</span></div>
               ` : `
-                <div class="flyer-price-single" style="color: ${escapeHTML(branding.color)};">
-                  ${regularFormatted} <span class="flyer-unit">${unit}</span>
-                </div>
+                <div class="flyer-price-single">${formatMoney(regular)}<span class="flyer-unit">${unit ? ` /${unit}` : ''}</span></div>
               `}
             </div>
           </div>
@@ -266,63 +228,71 @@ const FlyerTemplates = (() => {
       `;
     }
 
-    // Template 3: Market (Mercado / Variedades) - Padrão
+    // Market — estilo "cartazete de supermercado" com preço grande em destaque
+    const price = hasPromo ? promo : regular;
+    const parts = splitPrice(price);
+
     return `
-      <div class="flyer-card flyer-card-market">
+      <div class="flyer-card">
         <div class="flyer-card-img-wrap">
-          <img src="${imgUrl}" alt="${name}" class="flyer-card-img" onerror="this.src='${defaultImg}'">
+          <img src="${imgUrl}" alt="${name}" class="flyer-card-img" loading="lazy" onerror="this.src='${defaultImg}'">
           ${hasPromo ? '<span class="flyer-tag-promo">OFERTA</span>' : ''}
         </div>
         <div class="flyer-card-body">
           ${category ? `<span class="flyer-card-cat">${category}</span>` : ''}
           <h3 class="flyer-card-title">${name}</h3>
           <div class="flyer-card-prices">
-            ${hasPromo ? `
-              <div class="flyer-price-regular">De: ${regularFormatted}</div>
-              <div class="flyer-price-highlight" style="color: ${escapeHTML(branding.color)};">
-                <span class="flyer-price-por">Por:</span> ${promoFormatted} <span class="flyer-unit">${unit}</span>
-              </div>
-            ` : `
-              <div class="flyer-price-highlight">
-                ${regularFormatted} <span class="flyer-unit">${unit}</span>
-              </div>
-            `}
+            ${hasPromo ? `<div class="flyer-price-from">De: ${formatMoney(regular)}</div>` : ''}
+            ${hasPromo
+              ? `<div class="flyer-price-main" style="color:var(--brand-color,#e94560);">
+                   <span class="currency">R$</span>${parts.integer}<sup style="font-size:0.5em;font-weight:900;">,${parts.decimal}</sup>
+                   ${unit ? `<span class="flyer-unit"> /${unit}</span>` : ''}
+                 </div>`
+              : `<div class="flyer-price-single">
+                   <span style="font-size:0.55em;font-weight:900;">R$</span>${parts.integer}<sup style="font-size:0.5em;font-weight:900;">,${parts.decimal}</sup>
+                   ${unit ? `<span class="flyer-unit"> /${unit}</span>` : ''}
+                 </div>`
+            }
           </div>
         </div>
       </div>
     `;
   }
 
-  /**
-   * Renderiza o rodapé institucional do encarte.
-   */
+  // ────────────────────────────────────────────────────────────────
+  // RODAPÉ
+  // ────────────────────────────────────────────────────────────────
+
   function renderFooter(branding, pageIndex, totalPages) {
     const phone = branding.whatsapp ? `WhatsApp: ${escapeHTML(branding.whatsapp)}` : '';
     const addr = branding.address ? escapeHTML(branding.address) : '';
-    const contacts = [phone, addr].filter(Boolean).join(' • ');
+    const hours = branding.hours ? escapeHTML(branding.hours) : '';
+    const contacts = [phone, addr, hours].filter(Boolean).join(' · ');
 
     return `
       <footer class="flyer-footer">
-        <div class="flyer-footer-info">
+        <div class="flyer-footer-info" style="flex:1;min-width:0;">
           ${contacts ? `<span class="flyer-footer-contact">${contacts}</span>` : ''}
-          <span class="flyer-footer-disclaimer">Ofertas válidas enquanto durarem os estoques. Fotos meramente ilustrativas.</span>
+          <span style="opacity:0.7;">Ofertas válidas enquanto durarem os estoques. Imagens meramente ilustrativas.</span>
         </div>
-        <div class="flyer-footer-page">
-          Página ${pageIndex + 1} de ${totalPages}
-        </div>
+        <div class="flyer-footer-page">Pág. ${pageIndex + 1}/${totalPages}</div>
       </footer>
     `;
   }
 
+  // ────────────────────────────────────────────────────────────────
+  // RENDERIZAÇÃO COMPLETA DE PÁGINA
+  // ────────────────────────────────────────────────────────────────
+
   /**
    * Renderiza uma página completa de encarte em proporção A4.
    *
-   * @param {Array} pageProducts - Produtos atribuídos a esta página
-   * @param {number} pageIndex - Índice da página (0-based)
-   * @param {number} totalPages - Total de páginas
-   * @param {Object} store - Dados da loja ativa
-   * @param {Object} options - { template, itemsPerPage, customSubtitle }
-   * @returns {string} HTML da folha de encarte
+   * @param {Array}  pageProducts  - Produtos desta página
+   * @param {number} pageIndex     - Índice 0-based
+   * @param {number} totalPages    - Total de páginas
+   * @param {Object} store         - Dados da loja ativa
+   * @param {Object} options       - { template, itemsPerPage, customSubtitle }
+   * @returns {string} HTML da folha
    */
   function renderPage(pageProducts = [], pageIndex = 0, totalPages = 1, store = {}, options = {}) {
     const branding = getStoreBranding(store);
@@ -336,12 +306,11 @@ const FlyerTemplates = (() => {
     const gridClass = getGridClass(itemsPerPage);
     const headerHtml = renderHeader(branding, template, options);
     const footerHtml = renderFooter(branding, pageIndex, totalPages);
-
     const cardsHtml = pageProducts.map(p => renderProductCard(p, template, branding)).join('');
 
     return `
-      <div 
-        class="flyer-page-sheet flyer-theme-${template} ${gridClass}"
+      <div
+        class="flyer-page-sheet flyer-theme-${template}"
         data-page-index="${pageIndex}"
         style="--brand-color: ${escapeHTML(branding.color)};"
       >

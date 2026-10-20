@@ -95,7 +95,7 @@ const FlyerExport = (() => {
         `height:${A4_PX_HEIGHT}px`,
         `border-radius:0`,
         `box-shadow:none`,
-        `padding:28px`,
+        `padding:0`,
       ].join('');
     }
 
