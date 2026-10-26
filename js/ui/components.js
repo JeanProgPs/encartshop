@@ -104,6 +104,7 @@ const UIComponents = (() => {
         <div>
           <div style="font-size:0.65rem;font-weight:700;color:#52525B;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;padding-left:14px;">Gestão</div>
           ${navItem('financeiro', 'wallet', 'Financeiro', true)}
+          ${navItem('gestao-precos', 'tag', 'Gestão de Preços')}
           ${navItem('configuracoes', 'settings', 'Configurações')}
       </nav>
 

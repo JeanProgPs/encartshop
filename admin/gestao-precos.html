@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão de Preços — EncartShop</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/assets/output.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── Animações ─────────────────────────────────────── */
+    .fade-in-up {
+      animation: fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
+      opacity: 0; transform: translateY(10px);
+    }
+    @keyframes fadeInUp { to { opacity:1; transform:translateY(0); } }
+
+    /* ── Toolbar de reajuste ───────────────────────────── */
+    #adjust-toolbar {
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    #adjust-toolbar.toolbar-hidden {
+      opacity: 0.4; pointer-events: none;
+    }
+
+    /* ── Tabela de produtos ────────────────────────────── */
+    #price-table th, #price-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--borderColor, #27272a);
+      vertical-align: middle;
+    }
+    #price-table th {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--textSecondary, #71717a);
+      background: var(--bgPrimary, #0a0a0a);
+      position: sticky; top: 0; z-index: 2;
+      white-space: nowrap;
+    }
+    #price-table tr:hover td { background: rgba(255,255,255,0.025); }
+    #price-table tr.row-selected td { background: rgba(99,102,241,0.07); }
+    #price-table tr.row-changed td { border-left: 3px solid #f59e0b; }
+    #price-table tr.row-promo-removed td { border-left: 3px solid #ef4444; }
+
+    /* ── Input de preço inline ─────────────────────────── */
+    .price-input {
+      width: 96px; padding: 5px 8px;
+      border: 1.5px solid var(--borderColor, #27272a);
+      border-radius: 6px; background: var(--bgPrimary, #0a0a0a);
+      color: var(--textPrimary, #fafafa); font-size: 0.85rem;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      text-align: right; transition: border-color 0.15s;
+    }
+    .price-input:focus { outline: none; border-color: #6366f1; }
+    .price-input.invalid { border-color: #ef4444; }
+
+    /* ── Badge de variação ─────────────────────────────── */
+    .diff-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 0.72rem; font-weight: 700; padding: 2px 7px;
+      border-radius: 999px;
+    }
+    .diff-up   { background: rgba(16,185,129,0.12); color: #10b981; }
+    .diff-down { background: rgba(239,68,68,0.12);  color: #ef4444; }
+    .diff-none { background: rgba(113,113,122,0.12); color: #71717a; }
+
+    /* ── Select-all checkbox ───────────────────────────── */
+    input[type="checkbox"] { accent-color: #6366f1; cursor: pointer; }
+
+    /* ── Botão confirmar (desabilitado nesta fase) ─────── */
+    #btn-confirm-disabled {
+      position: relative; overflow: hidden;
+    }
+    #btn-confirm-disabled::after {
+      content: '🔒 Prévia — sem gravação';
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.75);
+      font-size: 0.75rem; font-weight: 700; color: #f59e0b;
+      opacity: 0; transition: opacity 0.2s;
+    }
+    #btn-confirm-disabled:hover::after { opacity: 1; }
+
+    /* ── Empty / loading states ────────────────────────── */
+    .state-placeholder {
+      padding: 56px 24px; text-align: center;
+      color: var(--textSecondary, #71717a);
+    }
+    .state-placeholder svg { margin: 0 auto 12px; opacity: 0.35; }
+
+    /* ── Scrollable table container ────────────────────── */
+    #table-wrap {
+      overflow-x: auto; overflow-y: auto;
+      max-height: calc(100vh - 380px);
+      min-height: 200px;
+    }
+  </style>
+</head>
+
+<body data-page="gestao-precos"
+  class="bg-bgPrimary text-textPrimary antialiased selection:bg-accent selection:text-white">
+
+<div class="admin-layout flex min-h-screen">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <main class="main-content flex-1 ml-0 md:ml-[256px] flex flex-col min-h-screen transition-all duration-300">
+
+    <!-- ── Header ──────────────────────────────────────── -->
+    <header class="h-[64px] bg-cardBg/80 backdrop-blur-md border-b border-borderColor
+                   sticky top-0 z-50 px-4 md:px-8 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <i data-lucide="tag" class="w-5 h-5 text-accent"></i>
+        <h2 class="text-sm font-semibold text-textPrimary">Gestão de Preços</h2>
+        <span id="lbl-count"
+          class="hidden px-2 py-0.5 text-[11px] font-bold rounded-full
+                 bg-accent/10 text-accent border border-accent/20">
+          0 produtos
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="lbl-selected"
+          class="hidden px-2 py-0.5 text-[11px] font-semibold rounded-full
+                 bg-warning/10 text-warning border border-warning/20">
+          0 selecionados
+        </span>
+        <button id="btn-preview"
+          onclick="PriceManager.showPreview()"
+          class="hidden items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium
+                 border border-borderColor hover:bg-bgPrimary transition-colors text-textSecondary">
+          <i data-lucide="eye" class="w-4 h-4"></i>
+          Ver Prévia
+        </button>
+      </div>
+    </header>
+
+    <!-- ── Conteúdo principal ───────────────────────────── -->
+    <div class="flex-1 p-4 md:p-6 flex flex-col gap-5 fade-in-up" style="max-width:1100px;width:100%;margin:0 auto;">
+
+      <!-- ── Painel de reajuste em massa ─────────────────── -->
+      <div id="adjust-toolbar" class="toolbar-hidden
+        bg-cardBg border border-borderColor rounded-xl p-4 flex flex-wrap gap-4 items-end">
+
+        <div>
+          <label class="block text-xs font-semibold text-textSecondary mb-1 uppercase tracking-wider">
+            Aplicar a
+          </label>
+          <select id="adj-target"
+            class="bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm
+                   text-textPrimary focus:outline-none focus:border-accent">
+            <option value="price">Preço normal</option>
+            <option value="promo_price">Preço promocional</option>
+            <option value="both">Ambos os preços</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-textSecondary mb-1 uppercase tracking-wider">
+            Tipo de reajuste
+          </label>
+          <select id="adj-type"
+            class="bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm
+                   text-textPrimary focus:outline-none focus:border-accent">
+            <option value="pct_up">Aumento %</option>
+            <option value="pct_down">Redução %</option>
+            <option value="val_up">Acréscimo R$</option>
+            <option value="val_down">Desconto R$</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-textSecondary mb-1 uppercase tracking-wider">
+            Valor
+          </label>
+          <div class="flex items-center gap-1">
+            <span id="adj-prefix" class="text-textSecondary text-sm font-medium w-5 text-right">%</span>
+            <input id="adj-value" type="number" min="0.01" step="0.01" value=""
+              placeholder="0,00"
+              class="w-24 bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm
+                     text-textPrimary focus:outline-none focus:border-accent">
+          </div>
+        </div>
+
+        <button onclick="PriceManager.applyAdjustment()"
+          class="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg text-sm
+                 font-semibold hover:bg-accent/90 transition-colors">
+          <i data-lucide="calculator" class="w-4 h-4"></i>
+          Calcular
+        </button>
+
+        <button onclick="PriceManager.resetPrices()"
+          class="flex items-center gap-2 px-4 py-2 border border-borderColor rounded-lg text-sm
+                 font-medium text-textSecondary hover:text-textPrimary hover:bg-bgPrimary transition-colors">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+          Restaurar originais
+        </button>
+      </div>
+
+      <!-- ── Filtros e busca ──────────────────────────────── -->
+      <div class="bg-cardBg border border-borderColor rounded-xl p-4
+                  flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+        <div class="flex-1 relative">
+          <i data-lucide="search"
+            class="w-4 h-4 text-textSecondary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+          <input id="search-input" type="text" autocomplete="off"
+            placeholder="Buscar por nome do produto..."
+            oninput="PriceManager.applyFilters()"
+            class="w-full bg-bgPrimary border border-borderColor rounded-lg pl-9 pr-4 py-2
+                   text-sm text-textPrimary focus:outline-none focus:border-accent transition-colors">
+        </div>
+
+        <select id="cat-filter" onchange="PriceManager.applyFilters()"
+          class="bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm
+                 text-textPrimary focus:outline-none focus:border-accent min-w-[160px]"
+          style="background-image:url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e\");background-repeat:no-repeat;background-position:right 10px center;background-size:14px;appearance:none;">
+          <option value="">Todas as categorias</option>
+        </select>
+
+        <select id="status-filter" onchange="PriceManager.applyFilters()"
+          class="bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm
+                 text-textPrimary focus:outline-none focus:border-accent"
+          style="background-image:url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e\");background-repeat:no-repeat;background-position:right 10px center;background-size:14px;appearance:none;">
+          <option value="">Todos</option>
+          <option value="active">Ativos</option>
+          <option value="inactive">Inativos</option>
+          <option value="promo">Com promoção</option>
+        </select>
+      </div>
+
+      <!-- ── Tabela de produtos ───────────────────────────── -->
+      <div class="bg-cardBg border border-borderColor rounded-xl overflow-hidden">
+
+        <!-- Cabeçalho da tabela com seleção em massa -->
+        <div class="px-4 py-3 border-b border-borderColor flex items-center justify-between gap-3 flex-wrap">
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-2 cursor-pointer select-none text-sm text-textSecondary">
+              <input type="checkbox" id="select-all" onchange="PriceManager.toggleSelectAll(this.checked)"
+                class="w-4 h-4 rounded">
+              Selecionar todos
+            </label>
+            <span id="lbl-filtered" class="text-xs text-textSecondary"></span>
+          </div>
+          <div id="mass-actions" class="hidden items-center gap-2">
+            <span class="text-xs text-textSecondary">Com selecionados:</span>
+            <button onclick="PriceManager.clearSelection()"
+              class="text-xs px-2.5 py-1 border border-borderColor rounded-md
+                     text-textSecondary hover:text-textPrimary hover:bg-bgPrimary transition-colors">
+              Desmarcar todos
+            </button>
+          </div>
+        </div>
+
+        <div id="table-wrap">
+          <table id="price-table" class="w-full min-w-[720px]">
+            <thead>
+              <tr>
+                <th class="w-10 text-center">#</th>
+                <th class="text-left">Produto</th>
+                <th class="text-left">Categoria</th>
+                <th class="text-right">Preço atual</th>
+                <th class="text-right">Promo atual</th>
+                <th class="text-right">Novo preço</th>
+                <th class="text-right">Nova promo</th>
+                <th class="text-right">Variação</th>
+              </tr>
+            </thead>
+            <tbody id="price-tbody">
+              <!-- preenchido por JS -->
+            </tbody>
+          </table>
+
+          <!-- Estado: carregando -->
+          <div id="state-loading" class="state-placeholder hidden">
+            <div style="width:36px;height:36px;border:3px solid rgba(255,255,255,0.08);
+              border-top-color:#6366f1;border-radius:50%;animation:encart-spin 0.8s linear infinite;
+              margin:0 auto 12px;"></div>
+            <p class="text-sm">Carregando produtos...</p>
+          </div>
+
+          <!-- Estado: vazio -->
+          <div id="state-empty" class="state-placeholder hidden">
+            <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5"
+              viewBox="0 0 24 24" class="block">
+              <path d="M20 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z"/>
+              <path d="M16 3H8L6 7h12l-2-4z"/>
+            </svg>
+            <p class="text-sm font-medium">Nenhum produto encontrado</p>
+            <p class="text-xs mt-1">Tente ajustar os filtros ou cadastrar produtos.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Botão de confirmação (habilitado na Fase 2B) ──── -->
+      <div class="flex justify-end gap-3 pb-4">
+        <button id="btn-preview-trigger"
+          onclick="PriceManager.showPreview()"
+          class="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold
+                 border border-borderColor text-textSecondary hover:text-textPrimary
+                 hover:bg-bgPrimary transition-colors">
+          <i data-lucide="eye" class="w-4 h-4"></i>
+          Revisar e Confirmar
+        </button>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ── Modal de Prévia ─────────────────────────────────────── -->
+<div id="preview-modal"
+  class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2000]
+         flex items-center justify-center p-4 hidden"
+  onclick="if(event.target===this) PriceManager.closePreview()">
+  <div class="bg-cardBg border border-borderColor rounded-xl
+              w-full max-w-[680px] max-h-[80vh] flex flex-col shadow-xl">
+
+    <div class="flex items-center justify-between p-5 border-b border-borderColor flex-shrink-0">
+      <div>
+        <h3 class="text-base font-bold text-textPrimary">Prévia dos Reajustes</h3>
+        <p class="text-xs text-textSecondary mt-0.5">
+          Revise antes de confirmar. Nenhuma alteração foi salva ainda.
+        </p>
+      </div>
+      <button onclick="PriceManager.closePreview()"
+        class="w-8 h-8 flex items-center justify-center rounded-full
+               border border-borderColor text-textSecondary hover:text-textPrimary
+               hover:bg-bgPrimary transition-colors text-sm">✕</button>
+    </div>
+
+    <div id="preview-body" class="flex-1 overflow-y-auto p-5">
+      <!-- preenchido por JS -->
+    </div>
+
+    <div class="flex justify-end gap-3 p-4 border-t border-borderColor flex-shrink-0">
+      <button onclick="PriceManager.closePreview()"
+        class="px-4 py-2 border border-borderColor rounded-lg text-sm font-medium
+               text-textSecondary hover:text-textPrimary hover:bg-bgPrimary transition-colors">
+        Fechar
+      </button>
+      <button id="btn-save-real"
+        onclick="PriceManager.confirmSave()"
+        disabled
+        class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold
+               bg-textSecondary/20 text-textSecondary cursor-not-allowed transition-colors">
+        <i data-lucide="save" class="w-4 h-4"></i>
+        Salvar Preços
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- ── Scripts (padrão idêntico ao relatorios.html) ──────── -->
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/js/core/supabase.js"></script>
+<script src="/js/core/helpers.js"></script>
+<script src="/js/core/supabaseClient.js"></script>
+<script src="/js/core/api.js"></script>
+<script src="/js/auth/authService.js"></script>
+<script src="/js/modules/subscription.js"></script>
+<script src="/js/auth/authGuard.js"></script>
+<script src="/js/modules/store.js"></script>
+<script src="/js/modules/products.js"></script>
+<script src="/js/ui/components.js"></script>
+<script src="/js/ui/render.js"></script>
+<script src="/js/admin-common.js"></script>
+
+<!-- ── Módulo de Gestão de Preços ────────────────────────── -->
+<script src="/js/modules/price-manager.js"></script>
+
+<script>
+  lucide.createIcons();
+
+  // Inicializa após admin-common.js configurar a autenticação e sidebar
+  (async function () {
+    const sid = AuthService.getActiveStoreId();
+    if (!sid) return; // authGuard já redireciona
+    await PriceManager.init(sid);
+
+    // Atualiza prefixo do campo de valor ao trocar tipo de reajuste
+    document.getElementById('adj-type').addEventListener('change', function () {
+      const isPct = this.value.startsWith('pct');
+      document.getElementById('adj-prefix').textContent = isPct ? '%' : 'R$';
+    });
+  })();
+</script>
+</body>
+</html>
