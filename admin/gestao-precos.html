@@ -28,7 +28,7 @@
 
     /* ── Tabela de produtos ────────────────────────────── */
     #price-table th, #price-table td {
-      padding: 10px 12px;
+      padding: 9px 10px;
       border-bottom: 1px solid var(--borderColor, #27272a);
       vertical-align: middle;
     }
@@ -46,10 +46,10 @@
 
     /* ── Input de preço inline ─────────────────────────── */
     .price-input {
-      width: 96px; padding: 5px 8px;
+      width: 86px; padding: 5px 6px;
       border: 1.5px solid var(--borderColor, #27272a);
       border-radius: 6px; background: var(--bgPrimary, #0a0a0a);
-      color: var(--textPrimary, #fafafa); font-size: 0.85rem;
+      color: var(--textPrimary, #fafafa); font-size: 0.82rem;
       font-family: 'JetBrains Mono', 'Fira Code', monospace;
       text-align: right; transition: border-color 0.15s;
     }
@@ -61,6 +61,7 @@
       display: inline-flex; align-items: center; gap: 3px;
       font-size: 0.72rem; font-weight: 700; padding: 2px 7px;
       border-radius: 999px;
+      white-space: nowrap;
     }
     .diff-up   { background: rgba(16,185,129,0.12); color: #10b981; }
     .diff-down { background: rgba(239,68,68,0.12);  color: #ef4444; }
@@ -92,9 +93,27 @@
 
     /* ── Scrollable table container ────────────────────── */
     #table-wrap {
-      overflow-x: auto; overflow-y: auto;
-      max-height: calc(100vh - 380px);
-      min-height: 200px;
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: calc(100vh - 280px);
+      min-height: 220px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.2) transparent;
+    }
+    #table-wrap::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+    #table-wrap::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.15);
+      border-radius: 4px;
+    }
+    #table-wrap::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+    }
+    #table-wrap::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.35);
     }
   </style>
 </head>
@@ -136,7 +155,7 @@
     </header>
 
     <!-- ── Conteúdo principal ───────────────────────────── -->
-    <div class="flex-1 p-4 md:p-6 flex flex-col gap-5 fade-in-up" style="max-width:1100px;width:100%;margin:0 auto;">
+    <div class="flex-1 p-4 md:p-6 flex flex-col gap-5 fade-in-up" style="max-width:1300px;width:100%;margin:0 auto;">
 
       <!-- ── Painel de reajuste em massa ─────────────────── -->
       <div id="adjust-toolbar" class="toolbar-hidden
@@ -252,7 +271,7 @@
         </div>
 
         <div id="table-wrap">
-          <table id="price-table" class="w-full min-w-[720px]">
+          <table id="price-table" class="w-full min-w-[860px]">
             <thead>
               <tr>
                 <th class="w-10 text-center">#</th>
@@ -292,7 +311,7 @@
       </div>
 
       <!-- ── Botão de confirmação (habilitado na Fase 2B) ──── -->
-      <div class="flex justify-end gap-3 pb-4">
+      <div class="flex justify-end gap-3 pt-2 pb-14">
         <button id="btn-preview-trigger"
           onclick="PriceManager.showPreview()"
           class="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold
