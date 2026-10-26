@@ -28,6 +28,7 @@
     { "source": "/promocoes", "destination": "/admin/promocoes" },
     { "source": "/clientes", "destination": "/admin/clientes" },
     { "source": "/relatorios", "destination": "/admin/relatorios" },
+    { "source": "/gestao-precos", "destination": "/admin/gestao-precos" },
     { "source": "/encartes", "destination": "/admin/encartes" },
     { "source": "/platform", "destination": "/platform/dashboard" },
     { "source": "/platform/dashboard", "destination": "/platform/dashboard.html" },
