@@ -158,6 +158,7 @@
   let searchDate     = '';
   let paymentFilter  = 'all';       // filtro financeiro: all | paid | pending | overdue | cancelled | refunded
   let listenersReady = false;
+  let currentStore   = null;
 
   const storeId = () => AuthService.getActiveStoreId();
 
@@ -220,6 +221,9 @@
       ).join('');
 
     try {
+      if (window.StoreModule) {
+        try { currentStore = await StoreModule.getActive(); } catch (_) {}
+      }
       await renderOrders();
 
       // Só liga listeners depois que os pedidos já estão carregados
@@ -406,65 +410,427 @@
     window.open(waUrl, '_blank');
   };
 
+  // ── Gerador do Documento de Impressão (Cupom Térmico / A4) ────────────
+  window.buildOrderReceiptHtml = function(o, options = {}) {
+    const store = options.store || currentStore || null;
+    const payment = options.payment || null;
+    const storeName = (store && store.name) || 'EncartShop';
+    const footerCustom = store && store.whatsapp_footer ? store.whatsapp_footer.trim() : '';
+
+    const esc = (typeof escapeHTML === 'function') ? escapeHTML : (window.escapeHTML || function(str) {
+      return String(str ?? '').replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
+    });
+
+    const fmtPrice = (window.UIRender && window.UIRender.fmtPrice) || function(v) {
+      if (v === undefined || v === null) return 'R$ 0,00';
+      return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    };
+
+    const orderRef = String(o.id || '').slice(-5).toUpperCase() || '00000';
+    const dateStr = o.created_at ? new Date(o.created_at).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR');
+
+    const isCombine = o.delivery_fee === -1;
+    const deliveryFee = isCombine ? 0 : (Number(o.delivery_fee) || 0);
+    const subtotal = (o.items || []).reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.qty || i.quantity) || 1), 0);
+    const total = (o.total !== undefined && o.total !== null) ? Number(o.total) : (subtotal + deliveryFee);
+
+    let pmLabel = '';
+    if (payment && payment.status) {
+      if (payment.status === 'confirmed') pmLabel = 'PIX Confirmado';
+      else if (payment.status === 'pending') pmLabel = 'Aguardando PIX';
+      else if (payment.status === 'expired') pmLabel = 'PIX Expirado';
+      else if (payment.status === 'cancelled') pmLabel = 'PIX Cancelado';
+      else if (payment.status === 'refunded') pmLabel = 'PIX Estornado';
+    }
+
+    const itemsHtml = (o.items || []).map(item => {
+      const qtyNum = item.qty || item.quantity || 1;
+      const isKg = item.unit === 'kg';
+      const qtyStr = isKg ? `${qtyNum}kg` : `${qtyNum}x`;
+      const price = Number(item.price) || 0;
+      const itemTotal = price * qtyNum;
+      return `
+        <tr>
+          <td class="col-item">
+            <span class="item-qty">${esc(qtyStr)}</span>
+            <span class="item-name">${esc(item.name || 'Item')}</span>
+          </td>
+          <td class="col-total">${fmtPrice(itemTotal)}</td>
+        </tr>`;
+    }).join('');
+
+    return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Pedido #${esc(orderRef)} - ${esc(storeName)}</title>
+  <style>
+    /* ── Reset e Alto Contraste ── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      height: auto !important;
+      min-height: 0 !important;
+      background: #ffffff !important;
+      color: #000000 !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    /* ── Visualização na Tela (Preview amigável) ── */
+    @media screen {
+      body {
+        background: #eef1f5 !important;
+        padding: 24px 12px !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .no-print-toolbar {
+        margin-bottom: 14px;
+        display: flex;
+        gap: 8px;
+      }
+      .btn-print {
+        background: #111827;
+        color: #ffffff;
+        border: none;
+        padding: 9px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      }
+      .btn-print:hover {
+        background: #000000;
+      }
+      .receipt {
+        background: #ffffff;
+        border: 1px solid #d1d5db;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        padding: 16px 14px;
+        width: 100%;
+        max-width: 360px;
+      }
+    }
+
+    /* ── Configuração Estrita de Impressão (@media print) ── */
+    @page {
+      size: auto;
+      margin: 0;
+    }
+    @media print {
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+      }
+      .no-print-toolbar {
+        display: none !important;
+      }
+      .receipt {
+        width: 100% !important;
+        max-width: 80mm !important;
+        margin: 0 auto !important;
+        padding: 3mm 3mm 0 3mm !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+    }
+
+    /* ── Elementos do Cupom ── */
+    .receipt {
+      color: #000000 !important;
+      line-height: 1.35;
+      font-size: 13px;
+    }
+
+    /* Cabeçalho */
+    .header {
+      text-align: center;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+      border-bottom: 1.5px dashed #000000;
+    }
+    .header .title {
+      font-size: 18px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.2;
+      margin: 0 0 2px 0;
+      color: #000000 !important;
+      word-break: break-word;
+    }
+    .header .doc-type {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 2px 0;
+      color: #000000 !important;
+    }
+    .header .order-id {
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      margin: 4px 0 2px 0;
+      color: #000000 !important;
+    }
+    .header .date {
+      font-size: 11px;
+      font-weight: 600;
+      margin: 2px 0 0 0;
+      color: #000000 !important;
+    }
+
+    /* Dados do Cliente */
+    .customer-box {
+      padding: 6px 0;
+      margin-bottom: 8px;
+      border-bottom: 1.5px dashed #000000;
+    }
+    .info-line {
+      font-size: 12px;
+      line-height: 1.4;
+      margin: 2px 0;
+      color: #000000 !important;
+      word-break: break-word;
+    }
+    .info-line strong {
+      font-weight: 800;
+      color: #000000 !important;
+    }
+    .info-line span {
+      font-weight: 600;
+      color: #000000 !important;
+    }
+
+    /* Tabela de Itens */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6px 0;
+    }
+    thead th {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 5px 0;
+      border-top: 1.5px solid #000000;
+      border-bottom: 1.5px solid #000000;
+      color: #000000 !important;
+    }
+    thead th:first-child { text-align: left; }
+    thead th:last-child  { text-align: right; }
+    
+    tbody tr td {
+      padding: 5px 0;
+      font-size: 13px;
+      line-height: 1.35;
+      vertical-align: top;
+      color: #000000 !important;
+      border-bottom: 1px dotted #000000;
+    }
+    tbody tr:last-child td {
+      border-bottom: 1.5px solid #000000;
+    }
+    .col-item {
+      text-align: left;
+    }
+    .item-qty {
+      font-weight: 800;
+      margin-right: 4px;
+      color: #000000 !important;
+      white-space: nowrap;
+    }
+    .item-name {
+      font-weight: 600;
+      color: #000000 !important;
+      word-break: break-word;
+    }
+    .col-total {
+      text-align: right;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      padding-left: 8px;
+      color: #000000 !important;
+    }
+
+    /* Totais */
+    .totals {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #000000 !important;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2px 0;
+      font-weight: 600;
+      color: #000000 !important;
+    }
+    .total-row .val {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: #000000 !important;
+    }
+    .total-bold {
+      font-size: 16px !important;
+      font-weight: 900 !important;
+      border-top: 2px solid #000000;
+      border-bottom: 2px solid #000000;
+      padding: 6px 0;
+      margin-top: 6px;
+      color: #000000 !important;
+    }
+    .total-bold .val {
+      font-size: 17px !important;
+      font-weight: 900 !important;
+    }
+
+    /* Rodapé com eliminação estrita de espaço extra */
+    .footer {
+      text-align: center;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1.5px dashed #000000;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #000000 !important;
+      margin-bottom: 0 !important;
+      padding-bottom: 3mm !important;
+    }
+    .footer-custom {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: none;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+    .footer-brand {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      margin-top: 4px;
+      color: #000000 !important;
+    }
+    .receipt > *:last-child {
+      margin-bottom: 0 !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print-toolbar">
+    <button class="btn-print" onclick="window.print()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+      Imprimir Cupom
+    </button>
+  </div>
+
+  <div class="receipt">
+    <div class="header">
+      <div class="title">${esc(storeName)}</div>
+      <div class="doc-type">Comprovante de Pedido</div>
+      <div class="order-id">PEDIDO #${esc(orderRef)}</div>
+      <div class="date">Data: ${esc(dateStr)}</div>
+    </div>
+    
+    <div class="customer-box">
+      <div class="info-line"><strong>Cliente:</strong> <span>${esc(o.customer_name || 'Não informado')}</span></div>
+      ${o.customer_phone ? `<div class="info-line"><strong>WhatsApp:</strong> <span>${esc(o.customer_phone)}</span></div>` : ''}
+      ${o.customer_address ? `<div class="info-line"><strong>Endereço:</strong> <span>${esc(o.customer_address)}</span></div>` : ''}
+      ${pmLabel ? `<div class="info-line"><strong>Pagamento:</strong> <span>${esc(pmLabel)}</span></div>` : ''}
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsHtml || '<tr><td colspan="2" style="text-align:center;padding:8px 0;font-weight:600;">Nenhum item informado</td></tr>'}
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div class="total-row"><span>Subtotal:</span><span class="val">${fmtPrice(subtotal)}</span></div>
+      <div class="total-row"><span>Entrega:</span><span class="val">${isCombine ? 'A combinar' : (deliveryFee === 0 ? 'Grátis' : fmtPrice(deliveryFee))}</span></div>
+      <div class="total-row total-bold"><span>TOTAL:</span><span class="val">${fmtPrice(total)}</span></div>
+    </div>
+
+    <div class="footer">
+      ${footerCustom ? `<div class="footer-custom">${esc(footerCustom)}</div>` : ''}
+      <div>Obrigado pela preferência!</div>
+      <div class="footer-brand">${esc(storeName)}</div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      function doPrint() {
+        window.focus();
+        window.print();
+      }
+      if (document.readyState === 'complete') {
+        setTimeout(doPrint, 150);
+      } else {
+        window.addEventListener('load', function() {
+          setTimeout(doPrint, 150);
+        });
+      }
+      window.onafterprint = function() {
+        try { window.close(); } catch (_) {}
+      };
+    })();
+  </script>
+</body>
+</html>`;
+  };
+
   // ── Impressão de cupom ─────────────────────────────────────────────────
   window.handlePrintOrder = function(id) {
     const o = allOrders.find(order => order.id === id);
     if (!o) return;
 
-    const printWindow = window.open('', '_blank', 'width=600,height=800');
+    const printWindow = window.open('', '_blank', 'width=480,height=700');
     if (!printWindow) {
-      showToast('Permita popups para imprimir o pedido.', 'warning');
+      if (window.showToast) showToast('Permita popups para imprimir o pedido.', 'warning');
       return;
     }
 
-    const itemsHtml = (o.items || []).map(item => `
-      <tr>
-        <td style="padding:6px 0;font-size:14px;">${item.qty || item.quantity}x ${item.name}</td>
-        <td style="padding:6px 0;text-align:right;font-size:14px;">${UIRender.fmtPrice(item.price * (item.qty || item.quantity))}</td>
-      </tr>`).join('');
+    const pm = paymentMap ? paymentMap.get(o.id) : null;
+    const receiptHtml = window.buildOrderReceiptHtml(o, { store: currentStore, payment: pm });
 
-    const dateStr     = new Date(o.created_at).toLocaleString('pt-BR');
-    const isCombine   = o.delivery_fee === -1;
-    const deliveryFee = isCombine ? 0 : (Number(o.delivery_fee) || 0);
-    const subtotal    = (o.items || []).reduce((s, i) => s + i.price * (i.qty || i.quantity), 0);
-    const total       = subtotal + deliveryFee;
-
-    printWindow.document.write(`<!DOCTYPE html><html><head>
-      <title>Pedido #${String(o.id).slice(-5).toUpperCase()}</title>
-      <style>
-        body{font-family:'Courier New',Courier,monospace;margin:20px;color:#000;background:#fff;}
-        .receipt{max-width:400px;margin:0 auto;}
-        .header{text-align:center;margin-bottom:20px;border-bottom:1px dashed #000;padding-bottom:10px;}
-        .title{font-size:18px;font-weight:bold;margin:5px 0;}
-        .info{font-size:12px;margin:3px 0;}
-        table{width:100%;border-collapse:collapse;margin:15px 0;border-bottom:1px dashed #000;}
-        th{padding-bottom:5px;font-size:12px;}th:first-child{text-align:left;}th:last-child{text-align:right;}
-        .totals{font-size:14px;margin-top:10px;}
-        .total-row{display:flex;justify-content:space-between;margin:4px 0;}
-        .total-bold{font-weight:bold;border-top:1px dashed #000;padding-top:6px;font-size:16px;}
-        .footer{text-align:center;margin-top:30px;font-size:11px;border-top:1px dashed #000;padding-top:10px;}
-        @media print{body{margin:0;}.receipt{max-width:100%;}}
-      </style></head><body>
-      <div class="receipt">
-        <div class="header">
-          <div class="title">EncartShop</div>
-          <div class="info">PEDIDO #${String(o.id).slice(-5).toUpperCase()}</div>
-          <div class="info">Data: ${dateStr}</div>
-        </div>
-        <div class="info"><strong>Cliente:</strong> ${o.customer_name || 'Não informado'}</div>
-        <table>
-          <thead><tr><th>Item</th><th>Total</th></tr></thead>
-          <tbody>${itemsHtml}</tbody>
-        </table>
-        <div class="totals">
-          <div class="total-row"><span>Subtotal:</span><span>${UIRender.fmtPrice(subtotal)}</span></div>
-          <div class="total-row"><span>Entrega:</span><span>${isCombine ? 'A combinar' : UIRender.fmtPrice(deliveryFee)}</span></div>
-          <div class="total-row total-bold"><span>TOTAL:</span><span>${UIRender.fmtPrice(total)}</span></div>
-        </div>
-        <div class="footer">Obrigado pela preferência!</div>
-      </div>
-      <script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<\/script>
-    </body></html>`);
+    printWindow.document.open();
+    printWindow.document.write(receiptHtml);
     printWindow.document.close();
   };
 
