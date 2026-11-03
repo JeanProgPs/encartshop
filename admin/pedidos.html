@@ -531,7 +531,7 @@
     /* ── Configuração Estrita de Impressão (@media print) ── */
     @page {
       size: auto;
-      margin: 0;
+      margin: 0 4mm; /* 4mm lateral: zona não-imprimível da impressora térmica */
     }
     @media print {
       body {
@@ -547,7 +547,7 @@
         width: 100% !important;
         max-width: 80mm !important;
         margin: 0 auto !important;
-        padding: 3mm 3mm 0 3mm !important;
+        padding: 3mm 5mm 0 5mm !important;
         border: none !important;
         box-shadow: none !important;
         border-radius: 0 !important;
