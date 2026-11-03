@@ -222,7 +222,7 @@
 
     try {
       if (window.StoreModule) {
-        try { currentStore = await StoreModule.getActive(); } catch (_) {}
+        StoreModule.getActive().then(s => { currentStore = s; }).catch(() => {});
       }
       await renderOrders();
 
@@ -793,7 +793,7 @@
     </div>
   </div>
 
-  <script>
+  ${'<' + 'script>'}
     (function() {
       function doPrint() {
         window.focus();
@@ -810,7 +810,7 @@
         try { window.close(); } catch (_) {}
       };
     })();
-  </script>
+  ${'<' + '/script>'}
 </body>
 </html>`;
   };
