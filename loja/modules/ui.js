@@ -15,7 +15,7 @@ window.StoreUI = (() => {
       store = data.store;
       _setEl('header-store-name', store.name || '');
       _setEl('store-banner',      store.banner_text || 'Confira nossas ofertas!');
-      _setEl('header-hours',      store.hours || '');
+      _renderStoreStatus(store);
       EventBus.log('StoreUI', 'Header atualizado');
     });
 
@@ -167,7 +167,34 @@ window.StoreUI = (() => {
           <p style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">Adicione produtos para continuar</p>
         </div>`;
       if (footer) footer.innerHTML = '';
+      const scheduleAlert = document.getElementById('cart-schedule-alert');
+      if (scheduleAlert) {
+        scheduleAlert.style.display = 'none';
+        scheduleAlert.innerHTML = '';
+      }
       return;
+    }
+
+    const scheduleAlert = document.getElementById('cart-schedule-alert');
+    if (scheduleAlert) {
+      const storeRef = (window.StoreContext && window.StoreContext.getStore()) || store;
+      const scheduleStatus = (window.StoreSchedule && storeRef?.hours) ? window.StoreSchedule.evaluate(storeRef.hours) : null;
+      if (scheduleStatus && scheduleStatus.hasSchedule && !scheduleStatus.isOpen) {
+        scheduleAlert.style.display = 'block';
+        const nextHint = scheduleStatus.nextOpening ? ` (${escapeHTML(scheduleStatus.nextOpening)})` : '';
+        scheduleAlert.innerHTML = `
+          <div class="cart-closed-notice">
+            <span style="font-size:1.15rem;line-height:1;">🌙</span>
+            <div>
+              <strong>Loja fechada no momento</strong>
+              <p>Seu pedido será recebido e atendido no próximo horário de atendimento${nextHint}.</p>
+            </div>
+          </div>
+        `;
+      } else {
+        scheduleAlert.style.display = 'none';
+        scheduleAlert.innerHTML = '';
+      }
     }
 
     const fmt = v => UIRender.fmtPrice(v);
@@ -310,5 +337,42 @@ window.StoreUI = (() => {
     if (e.target.id === 'cart-modal') window.closeCart();
   };
 
-  return { init };
+  function _renderStoreStatus(storeObj) {
+    const hours = (storeObj && storeObj.hours) ? storeObj.hours.trim() : '';
+    const hoursEl = document.getElementById('header-hours');
+    const badgeEl = document.getElementById('store-status-badge');
+    const rowEl   = document.getElementById('store-status-row');
+
+    if (!hours) {
+      if (hoursEl) hoursEl.textContent = '';
+      if (badgeEl) badgeEl.classList.add('hidden');
+      if (rowEl) rowEl.style.display = 'none';
+      return;
+    }
+
+    if (rowEl) rowEl.style.display = 'flex';
+    if (hoursEl) hoursEl.textContent = hours;
+
+    if (!window.StoreSchedule || !badgeEl) return;
+
+    const status = window.StoreSchedule.evaluate(hours);
+    if (!status || !status.hasSchedule) {
+      badgeEl.classList.add('hidden');
+      return;
+    }
+
+    badgeEl.classList.remove('hidden', 'open', 'closed');
+    if (status.isOpen) {
+      badgeEl.classList.add('open');
+      badgeEl.innerHTML = `<span class="status-dot"></span><span>${escapeHTML(status.badgeText || 'Aberto agora')}</span>`;
+      badgeEl.title = 'Loja aberta no momento';
+    } else {
+      badgeEl.classList.add('closed');
+      const extra = status.nextOpening ? ` • ${status.nextOpening}` : '';
+      badgeEl.innerHTML = `<span class="status-dot"></span><span>${escapeHTML((status.badgeText || 'Fechado') + extra)}</span>`;
+      badgeEl.title = status.nextOpening ? `Fechado no momento. ${status.nextOpening}` : 'Loja fechada no momento';
+    }
+  }
+
+  return { init, renderStoreStatus: _renderStoreStatus };
 })();

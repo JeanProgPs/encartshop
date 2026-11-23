@@ -827,6 +827,84 @@ select.form-input option {
   letter-spacing: 0.02em;
 }
 
+/* ── Badge de Status de Funcionamento (Aberto / Fechado) ── */
+.store-status-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.store-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  letter-spacing: 0.01em;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.store-status-badge.open {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.store-status-badge.closed {
+  background: #fff1f2;
+  color: #9f1239;
+  border: 1px solid #fecdd3;
+}
+
+.store-status-badge .status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.store-status-badge.open .status-dot {
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulseDot 2s infinite;
+}
+
+.store-status-badge.closed .status-dot {
+  background: #ef4444;
+}
+
+.cart-closed-notice {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: #991b1b;
+  line-height: 1.4;
+}
+
+.cart-closed-notice strong {
+  display: block;
+  font-size: 0.85rem;
+  color: #7f1d1d;
+  margin-bottom: 2px;
+}
+
+.cart-closed-notice p {
+  margin: 0;
+  opacity: 0.9;
+}
+
 .store-header {
   background: var(--primary);
   border-bottom: 1px solid var(--border);

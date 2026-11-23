@@ -282,11 +282,14 @@ window.CartManager = (() => {
         DIV2,
       ].join('\n');
 
+      const isClosed = (window.StoreSchedule && storeObj.hours) ? !window.StoreSchedule.evaluate(storeObj.hours).isOpen : false;
+      const closedNotice = isClosed ? '\n\n⚠️ *Aviso:* Pedido enviado fora do horário de atendimento.' : '';
+
       const footerMsg = storeObj.whatsapp_footer
         ? `\n\n${storeObj.whatsapp_footer.trim()}`
         : `\n\n🔗 *Gerenciar no Painel:*\n${window.location.origin}/admin/pedidos.html?ref=${orderRef}`;
 
-      const msg = `🧾 *Novo Pedido*${phoneMsg}${addressMsg}\n\n\`\`\`\n${receipt}\n\`\`\`${footerMsg}`;
+      const msg = `🧾 *Novo Pedido*${phoneMsg}${addressMsg}\n\n\`\`\`\n${receipt}\n\`\`\`${closedNotice}${footerMsg}`;
 
       // Monta dados do pedido
       const orderPayload = {

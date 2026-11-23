@@ -392,7 +392,10 @@
 <main id="main-content">
   <div class="store-banner-area">
     <h2 id="store-banner">Carregando ofertas...</h2>
-    <p id="header-hours"></p>
+    <div class="store-status-row" id="store-status-row">
+      <span id="store-status-badge" class="store-status-badge hidden"></span>
+      <p id="header-hours"></p>
+    </div>
   </div>
 
   <div id="fashion-hero-area"></div>
@@ -476,6 +479,7 @@
         <div id="correios-options" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;"></div>
       </div>
       <div class="cart-summary" id="cart-subtotals"></div>
+      <div id="cart-schedule-alert" style="display:none;"></div>
 
       <!-- form autocomplete="off" suprime a barra de AutoFill do iOS (chave/cartão/localização) -->
       <form autocomplete="off" data-form-type="other" onsubmit="return false;" style="margin:0;padding:0;">
@@ -562,6 +566,7 @@
 <!-- Módulos da Vitrine (Event-Driven) -->
 <script src="/loja/modules/eventbus.js?v=2"></script>
 <script src="/loja/modules/store.js?v=2"></script>
+<script src="/loja/modules/schedule.js?v=2"></script>
 <script src="/loja/modules/ui.js?v=2"></script>
 <script src="/loja/modules/banner.js?v=2"></script>
 <script src="/loja/modules/delivery.js?v=2"></script>
