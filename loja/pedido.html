@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acompanhar Pedido — EncartShop</title>
+  <meta name="description" content="Acompanhe o status do seu pedido em tempo real.">
+  <meta name="robots" content="noindex, follow">
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/css/store-modern.css">
+
+  <style>
+    :root {
+      --brand: #4f46e5;
+      --brand-glow: rgba(79, 70, 229, 0.2);
+    }
+    body {
+      background: #f8fafc;
+      color: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Top Bar */
+    .track-top-bar {
+      background: #ffffff;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .track-store-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .track-store-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--brand);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      overflow: hidden;
+    }
+    .track-store-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .track-store-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .track-back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #475569;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: #f1f5f9;
+      transition: all 0.2s;
+    }
+    .track-back-link:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    /* Main Container */
+    .track-container {
+      max-width: 680px;
+      width: 100%;
+      margin: 24px auto;
+      padding: 0 16px 40px;
+      box-sizing: border-box;
+      flex: 1;
+    }
+
+    /* Cards */
+    .track-card {
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
+    }
+
+    /* Stepper */
+    .stepper-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #f1f5f9;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .stepper-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin: 0;
+      color: #0f172a;
+    }
+    .realtime-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #059669;
+      background: #ecfdf5;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      border: 1px solid #a7f3d0;
+    }
+    .realtime-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulseDot 2s infinite;
+    }
+
+    /* Stepper track */
+    .track-stepper {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin: 28px 0 16px;
+    }
+    .track-stepper::before {
+      content: '';
+      position: absolute;
+      top: 18px;
+      left: 30px;
+      right: 30px;
+      height: 3px;
+      background: #e2e8f0;
+      z-index: 1;
+    }
+    .stepper-progress-line {
+      position: absolute;
+      top: 18px;
+      left: 30px;
+      height: 3px;
+      background: var(--brand, #4f46e5);
+      z-index: 2;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+    .stepper-step {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      flex: 1;
+    }
+    .step-icon-wrap {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      border: 2px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      color: #64748b;
+      transition: all 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+      background: #fff;
+    }
+    .stepper-step.completed .step-icon-wrap {
+      background: var(--brand, #4f46e5);
+      border-color: var(--brand, #4f46e5);
+      color: #ffffff;
+    }
+    .stepper-step.active .step-icon-wrap {
+      background: #ffffff;
+      border-color: var(--brand, #4f46e5);
+      color: var(--brand, #4f46e5);
+      box-shadow: 0 0 0 5px var(--brand-glow);
+      transform: scale(1.15);
+    }
+    .step-label {
+      margin-top: 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #64748b;
+      max-width: 90px;
+      line-height: 1.2;
+    }
+    .stepper-step.active .step-label {
+      color: var(--brand, #4f46e5);
+      font-weight: 800;
+    }
+    .stepper-step.completed .step-label {
+      color: #0f172a;
+    }
+
+    /* Status Banner */
+    .status-alert-box {
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 24px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+    }
+    .status-alert-box.cancelled {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+    .status-alert-icon {
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+    .status-alert-title {
+      font-weight: 800;
+      font-size: 0.95rem;
+      margin: 0 0 2px 0;
+    }
+    .status-alert-desc {
+      font-size: 0.82rem;
+      margin: 0;
+      opacity: 0.9;
+    }
+
+    /* Items table */
+    .track-items-list {
+      margin: 16px 0;
+    }
+    .track-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px dotted #e2e8f0;
+      font-size: 0.9rem;
+    }
+    .track-item-qty {
+      font-weight: 800;
+      color: #0f172a;
+      margin-right: 6px;
+    }
+    .track-item-name {
+      color: #334155;
+      font-weight: 600;
+      flex: 1;
+    }
+    .track-item-price {
+      font-weight: 700;
+      color: #0f172a;
+      white-space: nowrap;
+      margin-left: 12px;
+    }
+
+    /* Summary */
+    .track-summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 0.88rem;
+      color: #475569;
+    }
+    .track-summary-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 2px solid #0f172a;
+      padding-top: 10px;
+      margin-top: 8px;
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #0f172a;
+    }
+
+    /* WhatsApp Button */
+    .btn-wa-support {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px;
+      background: #25D366;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 14px rgba(37, 211, 102, 0.3);
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+      margin-top: 12px;
+    }
+    .btn-wa-support:hover {
+      background: #1eb956;
+      transform: translateY(-1px);
+    }
+
+    /* Search Box */
+    .track-search-card {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .track-search-input-wrap {
+      display: flex;
+      max-width: 420px;
+      margin: 20px auto 0;
+      gap: 8px;
+    }
+    .track-search-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .track-search-input:focus {
+      border-color: var(--brand, #4f46e5);
+      box-shadow: 0 0 0 3px var(--brand-glow);
+    }
+    .track-search-btn {
+      padding: 12px 20px;
+      background: var(--brand, #4f46e5);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .track-search-btn:hover {
+      opacity: 0.92;
+    }
+
+    /* Loading state */
+    .track-loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #64748b;
+    }
+    .track-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e2e8f0;
+      border-top-color: var(--brand, #4f46e5);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 480px) {
+      .track-card { padding: 18px 14px; }
+      .step-label { font-size: 0.72rem; max-width: 70px; }
+      .step-icon-wrap { width: 32px; height: 32px; font-size: 0.85rem; }
+      .track-stepper::before, .stepper-progress-line { top: 15px; left: 20px; right: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <header class="track-top-bar">
+    <div class="track-store-info">
+      <div class="track-store-logo" id="track-logo">🛍️</div>
+      <span class="track-store-name" id="track-store-name">EncartShop</span>
+    </div>
+    <a href="/loja/" class="track-back-link" id="track-back-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Loja
+    </a>
+  </header>
+
+  <main class="track-container" id="track-main">
+    <div class="track-loading" id="track-loading-state">
+      <div class="track-spinner"></div>
+      <p style="font-weight:600;margin:0;">Carregando status do pedido...</p>
+    </div>
+
+    <!-- Search / Empty State -->
+    <div class="track-card track-search-card" id="track-search-state" style="display:none;">
+      <div style="font-size:3rem;margin-bottom:12px;">🔍</div>
+      <h2 style="margin:0 0 6px 0;font-size:1.3rem;font-weight:800;">Rastrear Pedido</h2>
+      <p style="color:#64748b;font-size:0.9rem;margin:0;">Informe o código do seu pedido para acompanhar o status em tempo real.</p>
+      
+      <form onsubmit="handleManualSearch(event)" class="track-search-input-wrap">
+        <input type="text" id="manual-ref-input" class="track-search-input" placeholder="Ex: #9527E ou código" autocomplete="off" autofocus>
+        <button type="submit" class="track-search-btn">Buscar</button>
+      </form>
+      <div id="search-error-msg" style="color:#ef4444;font-size:0.85rem;margin-top:10px;display:none;"></div>
+    </div>
+
+    <!-- Order Content -->
+    <div id="track-content-state" style="display:none;">
+      
+      <!-- Stepper Card -->
+      <div class="track-card">
+        <div class="stepper-header">
+          <div>
+            <span style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Acompanhamento</span>
+            <h1 class="stepper-title" id="order-title-ref">Pedido #00000</h1>
+            <span style="font-size:0.8rem;color:#64748b;" id="order-date-text">Data do pedido</span>
+          </div>
+          <div class="realtime-pill" title="Atualizando automaticamente em tempo real via Supabase">
+            <span class="realtime-dot"></span>
+            Tempo Real
+          </div>
+        </div>
+
+        <!-- Visual Stepper -->
+        <div class="track-stepper" id="stepper-container">
+          <div class="stepper-progress-line" id="stepper-line"></div>
+          
+          <div class="stepper-step" id="step-novo">
+            <div class="step-icon-wrap">📝</div>
+            <span class="step-label">Recebido</span>
+          </div>
+
+          <div class="stepper-step" id="step-confirmado">
+            <div class="step-icon-wrap">👨‍🍳</div>
+            <span class="step-label">Em Preparo</span>
+          </div>
+
+          <div class="stepper-step" id="step-em_entrega">
+            <div class="step-icon-wrap">🛵</div>
+            <span class="step-label">Saiu p/ Entrega</span>
+          </div>
+
+          <div class="stepper-step" id="step-finalizado">
+            <div class="step-icon-wrap">✅</div>
+            <span class="step-label">Entregue</span>
+          </div>
+        </div>
+
+        <!-- Status Message Banner -->
+        <div class="status-alert-box" id="status-banner">
+          <span class="status-alert-icon" id="status-banner-icon">⏳</span>
+          <div>
+            <div class="status-alert-title" id="status-banner-title">Aguardando confirmação</div>
+            <div class="status-alert-desc" id="status-banner-desc">O lojista recebeu seu pedido e iniciará o preparo em breve.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Details & Items Card -->
+      <div class="track-card">
+        <h3 style="margin:0 0 14px 0;font-size:1.05rem;font-weight:800;border-bottom:1px solid #f1f5f9;padding-bottom:10px;">Resumo dos Itens</h3>
+        <div class="track-items-list" id="track-items-container">
+          <!-- Itens renderizados via JS -->
+        </div>
+
+        <div style="margin-top:14px;border-top:1px solid #f1f5f9;padding-top:10px;">
+          <div class="track-summary-row">
+            <span>Subtotal</span>
+            <span id="track-subtotal">R$ 0,00</span>
+          </div>
+          <div class="track-summary-row">
+            <span>Entrega</span>
+            <span id="track-delivery">Grátis</span>
+          </div>
+          <div class="track-summary-total">
+            <span>Total</span>
+            <span id="track-total">R$ 0,00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customer & Delivery Info Card -->
+      <div class="track-card" id="track-customer-card">
+        <h3 style="margin:0 0 12px 0;font-size:1.05rem;font-weight:800;">Dados de Entrega</h3>
+        <div style="font-size:0.88rem;color:#334155;line-height:1.5;">
+          <div id="track-customer-name" style="font-weight:700;">Cliente</div>
+          <div id="track-customer-phone" style="color:#64748b;">WhatsApp</div>
+          <div id="track-customer-address" style="margin-top:4px;color:#475569;">Endereço de entrega</div>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div style="margin-top:20px;">
+        <a id="track-wa-btn" href="#" target="_blank" class="btn-wa-support">
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Falar com a loja no WhatsApp
+        </a>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/core/supabase.js"></script>
+  <script src="/js/core/helpers.js"></script>
+  <script src="/js/core/supabaseClient.js"></script>
+  <script src="/js/core/api.js"></script>
+  <script src="/js/modules/orders.js"></script>
+  <script src="/js/ui/render.js"></script>
+
+  <script>
+    let currentOrder = null;
+    let currentStore = null;
+    let realtimeChannel = null;
+
+    const STATUS_INFO = {
+      'novo': {
+        index: 0,
+        pct: '0%',
+        icon: '📝',
+        title: 'Pedido Recebido com Sucesso!',
+        desc: 'O lojista já recebeu seu pedido e iniciará o preparo em instantes.'
+      },
+      'confirmado': {
+        index: 1,
+        pct: '33%',
+        icon: '👨‍🍳',
+        title: 'Pedido Confirmado — Em Preparo!',
+        desc: 'Sua encomenda foi aprovada e já está sendo separada e preparada.'
+      },
+      'em_preparo': {
+        index: 1,
+        pct: '33%',
+        icon: '👨‍🍳',
+        title: 'Pedido Confirmado — Em Preparo!',
+        desc: 'Sua encomenda foi aprovada e já está sendo separada e preparada.'
+      },
+      'em_entrega': {
+        index: 2,
+        pct: '66%',
+        icon: '🛵',
+        title: 'Saiu para Entrega!',
+        desc: 'O entregador já está a caminho com o seu pedido. Fique atento!'
+      },
+      'entregue': {
+        index: 3,
+        pct: '100%',
+        icon: '✅',
+        title: 'Pedido Entregue e Concluído!',
+        desc: 'Agradecemos pela preferência! Bom proveito.'
+      },
+      'finalizado': {
+        index: 3,
+        pct: '100%',
+        icon: '✅',
+        title: 'Pedido Entregue e Concluído!',
+        desc: 'Agradecemos pela preferência! Bom proveito.'
+      },
+      'cancelado': {
+        index: -1,
+        pct: '0%',
+        icon: '❌',
+        title: 'Pedido Cancelado',
+        desc: 'Este pedido foi cancelado pelo estabelecimento. Entre em contato para mais detalhes.'
+      }
+    };
+
+    async function initOrderTracker() {
+      const params = new URLSearchParams(window.location.search);
+      let queryRef = params.get('ref') || params.get('id') || params.get('p') || params.get('order');
+
+      if (!queryRef) {
+        // Tenta recuperar do localStorage (se o cliente comprou recentemente)
+        try {
+          const last = JSON.parse(localStorage.getItem('encart_last_order') || 'null');
+          if (last && (last.id || last.ref)) {
+            queryRef = last.id || last.ref;
+          }
+        } catch (_) {}
+      }
+
+      if (!queryRef) {
+        showSearchState();
+        return;
+      }
+
+      await loadOrder(queryRef);
+    }
+
+    async function loadOrder(ref) {
+      showLoadingState();
+      try {
+        let order = null;
+        if (window.EncartAPI && window.EncartAPI.OrderAPI) {
+          order = await window.EncartAPI.OrderAPI.getByRef(ref);
+        }
+
+        if (!order) {
+          showSearchState(`Pedido "${ref}" não encontrado. Verifique o código e tente novamente.`);
+          return;
+        }
+
+        currentOrder = order;
+
+        // Busca dados da loja
+        if (order.store_id && window.EncartAPI && window.EncartAPI.StoreAPI) {
+          currentStore = await window.EncartAPI.StoreAPI.getById(order.store_id);
+        }
+
+        applyStoreBranding(currentStore);
+        renderOrderDetails(order, currentStore);
+        subscribeToOrderRealtime(order.id);
+        showContentState();
+
+      } catch (err) {
+        console.error('[TrackOrder] Erro:', err);
+        showSearchState('Ocorreu uma falha ao consultar o pedido. Tente novamente.');
+      }
+    }
+
+    function applyStoreBranding(store) {
+      if (!store) return;
+      if (store.color) {
+        document.documentElement.style.setProperty('--brand', store.color);
+        document.documentElement.style.setProperty('--brand-glow', store.color + '22');
+      }
+
+      const nameEl = document.getElementById('track-store-name');
+      if (nameEl) nameEl.textContent = store.name || 'Loja';
+
+      const logoEl = document.getElementById('track-logo');
+      if (logoEl) {
+        if (store.logo_url) {
+          logoEl.innerHTML = `<img src="${escapeHTML(store.logo_url)}" alt="${escapeHTML(store.name)}">`;
+        } else {
+          logoEl.textContent = (store.name || 'L')[0].toUpperCase();
+        }
+      }
+
+      const backBtn = document.getElementById('track-back-btn');
+      if (backBtn) {
+        backBtn.href = store.slug ? `/loja/?s=${encodeURIComponent(store.slug)}` : '/loja/';
+      }
+    }
+
+    function renderOrderDetails(order, store) {
+      const orderRef = String(order.id || '').slice(-5).toUpperCase();
+      const titleEl = document.getElementById('order-title-ref');
+      if (titleEl) titleEl.textContent = `Pedido #${orderRef}`;
+
+      const dateEl = document.getElementById('order-date-text');
+      if (dateEl) {
+        const d = order.created_at ? new Date(order.created_at) : new Date();
+        dateEl.textContent = `Realizado em ${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+      }
+
+      updateStepper(order.status);
+
+      // Itens
+      const itemsContainer = document.getElementById('track-items-container');
+      const items = Array.isArray(order.items) ? order.items : [];
+      if (itemsContainer) {
+        itemsContainer.innerHTML = items.map(item => {
+          const qty = item.qty || item.quantity || 1;
+          const unit = item.unit || 'un';
+          const qtyStr = unit === 'kg' ? (qty < 1 ? `${qty * 1000}g` : `${qty}kg`) : `${qty}x`;
+          const price = Number(item.price) || 0;
+          const totalItem = price * qty;
+          return `
+            <div class="track-item-row">
+              <span class="track-item-name"><strong class="track-item-qty">${escapeHTML(qtyStr)}</strong> ${escapeHTML(item.name || 'Item')}</span>
+              <span class="track-item-price">${UIRender.fmtPrice(totalItem)}</span>
+            </div>
+          `;
+        }).join('') || '<div style="color:#64748b;padding:8px 0;">Nenhum item informado.</div>';
+      }
+
+      // Totais
+      const subtotal = items.reduce((s, i) => s + (Number(i.price) || 0) * (Number(i.qty || i.quantity) || 1), 0);
+      const deliveryFee = Number(order.delivery_fee) || 0;
+      const isCombine = order.delivery_fee === -1;
+      const total = Number(order.total) || (subtotal + (isCombine ? 0 : deliveryFee));
+
+      document.getElementById('track-subtotal').textContent = UIRender.fmtPrice(subtotal);
+      document.getElementById('track-delivery').textContent = isCombine ? 'A combinar' : (deliveryFee === 0 ? 'Grátis' : UIRender.fmtPrice(deliveryFee));
+      document.getElementById('track-total').textContent = UIRender.fmtPrice(total);
+
+      // Dados do cliente
+      const custName = document.getElementById('track-customer-name');
+      if (custName) custName.textContent = order.customer_name || 'Cliente';
+
+      const custPhone = document.getElementById('track-customer-phone');
+      if (custPhone) {
+        custPhone.textContent = order.customer_phone ? `WhatsApp: ${order.customer_phone}` : '';
+        custPhone.style.display = order.customer_phone ? 'block' : 'none';
+      }
+
+      const custAddress = document.getElementById('track-customer-address');
+      if (custAddress) {
+        custAddress.textContent = order.customer_address ? `📍 ${order.customer_address}` : 'Retirada no local / A combinar';
+      }
+
+      // WhatsApp Support Button
+      const waBtn = document.getElementById('track-wa-btn');
+      if (waBtn && store) {
+        const phone = (store.whatsapp || store.phone || '').replace(/\D/g, '');
+        if (phone) {
+          const text = encodeURIComponent(`Olá! Gostaria de falar sobre o meu pedido #${orderRef}.`);
+          waBtn.href = `https://wa.me/${phone}?text=${text}`;
+          waBtn.style.display = 'flex';
+        } else {
+          waBtn.style.display = 'none';
+        }
+      }
+    }
+
+    function updateStepper(status) {
+      const s = (status || 'novo').toLowerCase();
+      const info = STATUS_INFO[s] || STATUS_INFO['novo'];
+      const isCancelled = s === 'cancelado';
+
+      const stepperEl = document.getElementById('stepper-container');
+      const bannerEl = document.getElementById('status-banner');
+      const lineEl = document.getElementById('stepper-line');
+
+      if (isCancelled) {
+        if (stepperEl) stepperEl.style.display = 'none';
+        if (bannerEl) {
+          bannerEl.className = 'status-alert-box cancelled';
+          document.getElementById('status-banner-icon').textContent = info.icon;
+          document.getElementById('status-banner-title').textContent = info.title;
+          document.getElementById('status-banner-desc').textContent = info.desc;
+        }
+        return;
+      }
+
+      if (stepperEl) stepperEl.style.display = 'flex';
+      if (lineEl) lineEl.style.width = info.pct;
+
+      if (bannerEl) {
+        bannerEl.className = 'status-alert-box';
+        document.getElementById('status-banner-icon').textContent = info.icon;
+        document.getElementById('status-banner-title').textContent = info.title;
+        document.getElementById('status-banner-desc').textContent = info.desc;
+      }
+
+      const steps = ['novo', 'confirmado', 'em_entrega', 'finalizado'];
+      const targetIndex = info.index;
+
+      steps.forEach((stepName, idx) => {
+        const el = document.getElementById(`step-${stepName}`);
+        if (!el) return;
+        el.classList.remove('completed', 'active');
+        if (idx < targetIndex) {
+          el.classList.add('completed');
+        } else if (idx === targetIndex) {
+          el.classList.add('active');
+        }
+      });
+    }
+
+    function subscribeToOrderRealtime(orderId) {
+      if (!window.sb || !orderId) return;
+
+      if (realtimeChannel) {
+        try { window.sb.removeChannel(realtimeChannel); } catch (_) {}
+      }
+
+      realtimeChannel = window.sb
+        .channel(`order-track-${orderId}`)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${orderId}`
+        }, payload => {
+          if (payload.new) {
+            console.log('[Realtime] Status atualizado:', payload.new.status);
+            currentOrder = payload.new;
+            updateStepper(payload.new.status);
+            if (window.showToast) {
+              const label = OrderModule.getStatusLabel(payload.new.status);
+              window.showToast(`Status atualizado para: ${label}!`, 'success');
+            }
+          }
+        })
+        .subscribe();
+    }
+
+    function handleManualSearch(e) {
+      e.preventDefault();
+      const input = document.getElementById('manual-ref-input');
+      const val = input ? input.value.trim() : '';
+      if (!val) return;
+
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('ref', val);
+      window.history.pushState({}, '', newUrl.toString());
+      loadOrder(val);
+    }
+
+    function showLoadingState() {
+      document.getElementById('track-loading-state').style.display = 'block';
+      document.getElementById('track-search-state').style.display = 'none';
+      document.getElementById('track-content-state').style.display = 'none';
+    }
+
+    function showSearchState(errorMsg = '') {
+      document.getElementById('track-loading-state').style.display = 'none';
+      document.getElementById('track-search-state').style.display = 'block';
+      document.getElementById('track-content-state').style.display = 'none';
+
+      const errEl = document.getElementById('search-error-msg');
+      if (errEl) {
+        if (errorMsg) {
+          errEl.textContent = errorMsg;
+          errEl.style.display = 'block';
+        } else {
+          errEl.style.display = 'none';
+        }
+      }
+    }
+
+    function showContentState() {
+      document.getElementById('track-loading-state').style.display = 'none';
+      document.getElementById('track-search-state').style.display = 'none';
+      document.getElementById('track-content-state').style.display = 'block';
+    }
+
+    // Inicialização ao carregar o DOM
+    document.addEventListener('DOMContentLoaded', initOrderTracker);
+  </script>
+</body>
+</html>

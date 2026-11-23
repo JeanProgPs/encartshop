@@ -145,10 +145,60 @@ const OrderAPI = {
     if (!storeId) throw new Error('store_id obrigatório');
     try {
       // customer_phone e customer_address são opcionais — o trigger no banco cria/atualiza o cliente automaticamente
-      const { error } = await window.sb.from('orders').insert([{ ...orderData, store_id: storeId }]);
+      const { data, error } = await window.sb.from('orders').insert([{ ...orderData, store_id: storeId }]).select('id').single();
       if (error) throw error;
-      return true;
+      return data || true;
     } catch (e) { throw e; }
+  },
+  async getById(id) {
+    if (!id) return null;
+    try {
+      const { data, error } = await window.sb
+        .from('orders')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (error) { console.error('OrderAPI.getById:', error); return null; }
+      return data || null;
+    } catch (e) { return null; }
+  },
+  async getByRef(ref, storeId = null) {
+    if (!ref) return null;
+    const cleanRef = String(ref).trim().replace(/^#/, '');
+    if (!cleanRef) return null;
+
+    // 1. UUID completo
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanRef)) {
+      return await OrderAPI.getById(cleanRef);
+    }
+
+    // 2. Busca por padrão no customer_name [#REF]
+    try {
+      let query = window.sb
+        .from('orders')
+        .select('*')
+        .ilike('customer_name', `%[#${cleanRef}]%`);
+
+      if (storeId) query = query.eq('store_id', storeId);
+
+      const { data, error } = await query.order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (!error && data) return data;
+    } catch (_) {}
+
+    // 3. Fallback: Se for os últimos caracteres do UUID
+    try {
+      let query = window.sb
+        .from('orders')
+        .select('*')
+        .ilike('id::text', `%${cleanRef}`);
+
+      if (storeId) query = query.eq('store_id', storeId);
+
+      const { data, error } = await query.order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (!error && data) return data;
+    } catch (_) {}
+
+    return null;
   },
   async updateStatus(id, newStatus) {
     if (!id || !newStatus) throw new Error('ID e status obrigatórios');

@@ -285,11 +285,14 @@ window.CartManager = (() => {
       const isClosed = (window.StoreSchedule && storeObj.hours) ? !window.StoreSchedule.evaluate(storeObj.hours).isOpen : false;
       const closedNotice = isClosed ? '\n\n⚠️ *Aviso:* Pedido enviado fora do horário de atendimento.' : '';
 
+      const trackingUrl = `${window.location.origin}/loja/pedido.html?ref=${orderRef}`;
+      const trackingMsg = `\n\n📍 *Acompanhe seu pedido em tempo real:*\n${trackingUrl}`;
+
       const footerMsg = storeObj.whatsapp_footer
         ? `\n\n${storeObj.whatsapp_footer.trim()}`
         : `\n\n🔗 *Gerenciar no Painel:*\n${window.location.origin}/admin/pedidos.html?ref=${orderRef}`;
 
-      const msg = `🧾 *Novo Pedido*${phoneMsg}${addressMsg}\n\n\`\`\`\n${receipt}\n\`\`\`${closedNotice}${footerMsg}`;
+      const msg = `🧾 *Novo Pedido*${phoneMsg}${addressMsg}\n\n\`\`\`\n${receipt}\n\`\`\`${closedNotice}${trackingMsg}${footerMsg}`;
 
       // Monta dados do pedido
       const orderPayload = {
@@ -301,10 +304,24 @@ window.CartManager = (() => {
       if (phoneRaw)   orderPayload.customer_phone   = phoneRaw;
       if (addressRaw) orderPayload.customer_address = addressRaw;
 
+      let createdOrder = null;
       if (window.EncartAPI && window.EncartAPI.OrderAPI) {
-        window.EncartAPI.OrderAPI.create(storeObj.id, orderPayload)
-          .catch(e => EventBus.log('CartManager', 'Pedido não salvo na base', e.message, true));
+        try {
+          createdOrder = await window.EncartAPI.OrderAPI.create(storeObj.id, orderPayload);
+        } catch (e) {
+          EventBus.log('CartManager', 'Pedido não salvo na base', e.message, true);
+        }
       }
+
+      try {
+        localStorage.setItem('encart_last_order', JSON.stringify({
+          ref: orderRef,
+          id: (createdOrder && createdOrder.id) || null,
+          storeId: storeObj.id,
+          storeName: storeObj.name,
+          date: new Date().toISOString()
+        }));
+      } catch (_) {}
 
       cart = []; 
       _saveCart(); 
