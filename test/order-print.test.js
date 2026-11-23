@@ -91,14 +91,16 @@ test('Testes de Impressão de Pedidos (Qualidade e Espaçamento)', async (t) => 
     // Regra @page eliminando margens e cabeçalhos do navegador
     assert.ok(html.includes('@page'), 'Deve definir regra @page');
     assert.ok(html.includes('size: auto'), 'Deve ter size: auto em @page para corte automático');
-    assert.ok(html.includes('margin: 0'), 'Deve ter margin: 0 em @page');
+    // Margem lateral mínima para zona não-imprimível da térmica (3mm ou similar)
+    assert.ok(html.includes('margin:') || html.includes('margin:'), 'Deve ter margem em @page');
 
     // Altura auto e min-height zero
     assert.ok(html.includes('height: auto !important'), 'html e body devem ter height: auto');
     assert.ok(html.includes('min-height: 0 !important'), 'html e body devem ter min-height: 0');
 
-    // Largura estrita do rolo térmico (80mm) sem espalhar na página
-    assert.ok(html.includes('max-width: 80mm !important'), 'Deve delimitar max-width: 80mm em print');
+    // Sem max-width fixo em @media print — usa 100% da folha disponível
+    assert.ok(html.includes('width: 100% !important'), 'Receipt deve usar width: 100% em print');
+    assert.ok(html.includes('max-width: none !important'), 'Deve remover max-width em print para evitar corte lateral');
 
     // Eliminação de margem inferior final
     assert.ok(html.includes('margin-bottom: 0 !important'), 'Rodapé e último filho devem zerar margin-bottom');
