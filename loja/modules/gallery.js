@@ -12,6 +12,7 @@ window.GalleryManager = (() => {
     
     // Delega evento de clique nas imagens de produto para abrir galeria
     document.addEventListener('click', (e) => {
+      if (e.target.closest('.btn-share-product')) return;
       const imageWrap = e.target.closest('.product-image-wrap');
       if (!imageWrap) return;
       
@@ -184,8 +185,17 @@ window.GalleryManager = (() => {
         </style>
 
         <div class="gallery-modal-content" onclick="event.stopPropagation()">
-          <!-- Close Button -->
-          <button class="gallery-close-btn" onclick="GalleryManager.closeGallery()">✕</button>
+          <!-- Close & Share Buttons -->
+          <div style="position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:8px;z-index:20;">
+            <button class="gallery-share-btn" type="button" title="Compartilhar produto" onclick="window.shareProduct && window.shareProduct('${product.id}')" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                <polyline points="16 6 12 2 8 6"/>
+                <line x1="12" y1="2" x2="12" y2="15"/>
+              </svg>
+            </button>
+            <button class="gallery-close-btn" style="position:static;top:auto;right:auto;" onclick="GalleryManager.closeGallery()">✕</button>
+          </div>
 
           <!-- Left Pane (Image & Controls) -->
           <div class="gallery-left-pane">

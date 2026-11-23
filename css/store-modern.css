@@ -154,7 +154,7 @@
 .promo-badge {
   position: absolute;
   top: 8px;
-  right: 8px;
+  left: 8px;
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: #fff;
   padding: 6px 10px;
@@ -163,6 +163,65 @@
   font-weight: 800;
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
   letter-spacing: 0.02em;
+  z-index: 4;
+}
+
+/* ── Botão Flutuante de Compartilhar Produto ── */
+.btn-share-product {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #374151;
+  cursor: pointer;
+  z-index: 5;
+  transition: all 0.2s cubic-bezier(0.34, 1.2, 0.64, 1);
+  padding: 0;
+  outline: none;
+}
+
+.btn-share-product:hover {
+  background: #ffffff;
+  color: var(--brand, #4f46e5);
+  transform: scale(1.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.btn-share-product:active {
+  transform: scale(0.92);
+}
+
+/* ── Animação de Destaque para Deep Link (?p=ID) ── */
+@keyframes productHighlightGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
+    transform: scale(1.02);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(79, 70, 229, 0.2);
+    transform: scale(1.02);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+    transform: scale(1);
+  }
+}
+
+.product-card.highlight-product {
+  animation: productHighlightGlow 1.6s ease-out 2;
+  border-color: var(--brand, #4f46e5) !important;
+  z-index: 10;
+  position: relative;
 }
 
 .discount-banner {
@@ -683,5 +742,16 @@
 
   .cat-tab {
     border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .btn-share-product {
+    background: rgba(30, 41, 59, 0.88);
+    color: #e2e8f0;
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .btn-share-product:hover {
+    background: #1e293b;
+    color: #fff;
   }
 }

@@ -85,6 +85,13 @@ const UIRender = (() => {
           ${showHoverImage ? `<img src="${escapeHTML(galleryImages[1])}" alt="${escapeHTML(p.name)} hover" loading="lazy" class="product-hover-image" onerror="this.src='${defaultImg}'">` : ''}
           ${isPromo ? `<div class="promo-badge">${storeSegment === 'fashion' ? 'OUTLET' : '🔥 OFERTA'}</div>` : ''}
           ${hasMultipleImages ? `<div class="gallery-indicator" style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.7rem;padding:4px 8px;border-radius:4px;font-weight:600;">📸 ${galleryImages.length}</div>` : ''}
+          <button class="btn-share-product" type="button" title="Compartilhar produto" aria-label="Compartilhar produto" onclick="event.stopPropagation(); window.shareProduct && window.shareProduct('${p.id}')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+              <polyline points="16 6 12 2 8 6"/>
+              <line x1="12" y1="2" x2="12" y2="15"/>
+            </svg>
+          </button>
         </div>
         ${isPromo && discountPct > 0 ? `<div class="discount-banner">-${discountPct}% OFF</div>` : ''}
         <div class="product-info">

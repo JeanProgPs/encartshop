@@ -32,6 +32,7 @@ window.ProductCatalog = (() => {
         EventBus.emit(EventBus.EVENTS.PRODUCTS_LOADED, { products: allProducts });
         
         renderProducts();
+        _checkDeepLinkProduct();
       } catch (err) {
         EventBus.log('ProductCatalog', 'Falha ao buscar produtos', err.message, true);
         if (area) {
@@ -256,5 +257,101 @@ window.ProductCatalog = (() => {
     return item ? item.qty : 0;
   }
 
-  return { init, getProducts };
+  // ── Compartilhamento de Produto e Deep Link ──────────────────
+  async function shareProduct(productId) {
+    try {
+      const prod = allProducts.find(p => String(p.id) === String(productId));
+      if (!prod) return;
+
+      const store = (window.StoreContext && window.StoreContext.getStore()) || null;
+      const storeName = store ? store.name : 'EncartShop';
+
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('p', prod.id);
+      currentUrl.searchParams.delete('fbclid');
+      currentUrl.searchParams.delete('gclid');
+      const shareUrl = currentUrl.toString();
+
+      const price = prod.promo_price || prod.price;
+      const priceFormatted = window.UIRender ? window.UIRender.fmtPrice(price) : `R$ ${Number(price).toFixed(2).replace('.', ',')}`;
+      const shareTitle = `${prod.name} — ${storeName}`;
+      const shareText = `Confira ${prod.name} por ${priceFormatted} na loja ${storeName}!`;
+
+      // 1. Tenta Web Share API nativa (mobile / navegadores com suporte)
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: shareTitle,
+            text: shareText,
+            url: shareUrl
+          });
+          return;
+        } catch (shareErr) {
+          if (shareErr.name === 'AbortError') return;
+          console.warn('[Share] Web Share cancelado ou com erro, usando fallback:', shareErr);
+        }
+      }
+
+      // 2. Fallback: Copiar para área de transferência
+      let copied = false;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          copied = true;
+        } catch (_) {}
+      }
+
+      if (!copied) {
+        const ta = document.createElement('textarea');
+        ta.value = shareUrl;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        copied = true;
+      }
+
+      if (window.showToast) {
+        window.showToast('Link do produto copiado!', 'success');
+      }
+    } catch (err) {
+      console.error('[Share] Erro ao compartilhar produto:', err);
+    }
+  }
+
+  function _checkDeepLinkProduct() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const targetId = params.get('p') || params.get('produto');
+      if (!targetId) return;
+
+      const prod = allProducts.find(p => String(p.id) === String(targetId));
+      if (!prod) return;
+
+      // Se não estiver na categoria Todos e o produto pertencer a outra categoria, muda para Todos
+      if (activeCategory !== 'Todos' && prod.category !== activeCategory && !prod.promo_price) {
+        activeCategory = 'Todos';
+        renderProducts();
+      }
+
+      setTimeout(() => {
+        const el = document.getElementById(`prod-${prod.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('highlight-product');
+          setTimeout(() => {
+            el.classList.remove('highlight-product');
+          }, 3500);
+        }
+      }, 400);
+    } catch (e) {
+      console.warn('[DeepLink] Erro ao processar produto compartilhado:', e);
+    }
+  }
+
+  window.shareProduct = shareProduct;
+
+  return { init, getProducts, shareProduct };
 })();
