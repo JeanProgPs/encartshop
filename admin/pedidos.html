@@ -360,8 +360,32 @@
     if (success) {
       showToast(`Status atualizado: ${OrdersModule.getStatusLabel(newStatus)}`, 'success');
       await renderOrders();
+      triggerAutomaticWhatsAppNotify(orderId, newStatus);
     } else {
       showToast(error || 'Falha ao atualizar status.', 'error');
+    }
+  }
+
+  async function triggerAutomaticWhatsAppNotify(orderId, newStatus) {
+    if (!currentStore || !currentStore.id) return;
+    if (currentStore.whatsapp_auto_notify === false) return;
+
+    try {
+      const { data, error } = await window.sb.functions.invoke('whatsapp-notify', {
+        body: {
+          action: 'send-order-notification',
+          storeId: currentStore.id,
+          orderId,
+          newStatus
+        }
+      });
+      if (!error && data && data.success) {
+        if (window.showToast) {
+          showToast('Mensagem enviada automaticamente para o cliente via WhatsApp! 📲', 'success');
+        }
+      }
+    } catch (e) {
+      console.warn('[AutoWhatsApp] Falha ao enviar notificação automática:', e);
     }
   }
 
@@ -373,7 +397,7 @@
   }
 
   // ── Notificação via WhatsApp ───────────────────────────────────────────
-  window.handleWhatsAppNotify = function(id) {
+  window.handleWhatsAppNotify = async function(id) {
     const o = allOrders.find(order => order.id === id);
     if (!o) return;
 
@@ -388,6 +412,27 @@
     } else if (phone.length < 10) {
       if (window.showToast) showToast('Telefone inválido para o WhatsApp.', 'warning');
       return;
+    }
+
+    // Se o WhatsApp automático estiver conectado, tenta envio direto
+    if (currentStore && currentStore.whatsapp_connected && currentStore.whatsapp_auto_notify !== false) {
+      try {
+        if (window.showToast) showToast('Enviando mensagem pelo WhatsApp...', 'info');
+        const { data, error } = await window.sb.functions.invoke('whatsapp-notify', {
+          body: {
+            action: 'send-order-notification',
+            storeId: currentStore.id,
+            orderId: o.id,
+            newStatus: o.status
+          }
+        });
+        if (!error && data && data.success) {
+          if (window.showToast) showToast('Mensagem enviada com sucesso! 📲', 'success');
+          return;
+        }
+      } catch (_) {
+        // Falha no envio automático: prossegue para o link manual abaixo
+      }
     }
 
     const customerName = o.customer_name ? String(o.customer_name).split(' ')[0] : 'Cliente';

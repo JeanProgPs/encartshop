@@ -199,6 +199,57 @@
             <textarea id="s-whatsapp-footer" rows="2" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" placeholder="Ex: Nos siga no Instagram @minha_loja!"></textarea>
             <p class="text-xs text-textSecondary mt-1">Substitui o link padrão de "Gerenciar no Painel" enviado para o cliente.</p>
           </div>
+
+          <!-- Divisor e Seção de Automação Evolution API -->
+          <div class="border-t border-borderColor pt-5 mt-2">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <i data-lucide="zap" class="w-4 h-4 text-accent"></i>
+                <h4 class="text-sm font-semibold text-textPrimary">Envio Automático de Pedidos (Evolution API)</h4>
+              </div>
+              <span id="wa-connection-badge" class="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-600">
+                ⚪ Desconectado
+              </span>
+            </div>
+            <p class="text-xs text-textSecondary mb-4">
+              Dispara mensagens automáticas no WhatsApp do cliente quando você muda o status do pedido (*Confirmado*, *Em Preparo*, *Saiu para Entrega*), sem precisar abrir o WhatsApp Web.
+            </p>
+
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" id="s-whatsapp-auto-notify" class="w-4 h-4 rounded text-accent border-borderColor focus:ring-accent">
+                <label for="s-whatsapp-auto-notify" class="text-sm text-textPrimary cursor-pointer font-medium">
+                  Ativar envio automático de atualizações de pedido
+                </label>
+              </div>
+
+              <!-- Botões de Ação QR Code -->
+              <div class="flex items-center gap-3 mt-1 flex-wrap">
+                <button type="button" id="btn-wa-connect" onclick="openWhatsAppConnectModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors shadow-sm">
+                  <i data-lucide="qr-code" class="w-4 h-4"></i> Conectar WhatsApp (QR Code)
+                </button>
+                <button type="button" id="btn-wa-disconnect" onclick="disconnectWhatsApp()" class="hidden px-3 py-2 border border-danger/40 text-danger hover:bg-danger/10 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                  <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Desconectar
+                </button>
+                <button type="button" onclick="toggleAdvancedEvolutionConfig()" class="text-xs text-textSecondary hover:text-textPrimary underline">
+                  Configurações da API
+                </button>
+              </div>
+
+              <!-- Configuração Avançada (URL / API Key) -->
+              <div id="wa-advanced-config" class="hidden flex flex-col gap-3 mt-2 p-3 bg-bgPrimary rounded-lg border border-borderColor">
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-textPrimary">URL da Evolution API</label>
+                  <input id="s-evolution-url" type="url" class="w-full bg-cardBg border border-borderColor rounded-md px-3 py-1.5 text-xs text-textPrimary" placeholder="https://evolution.up.railway.app">
+                  <p class="text-[11px] text-textSecondary">URL da sua instância (ex: Railway, Render ou VPS). Se não informada, usa a URL padrão do sistema.</p>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs font-medium text-textPrimary">Chave da API (Global API Key)</label>
+                  <input id="s-evolution-key" type="password" class="w-full bg-cardBg border border-borderColor rounded-md px-3 py-1.5 text-xs text-textPrimary" placeholder="Sua Chave API secreta">
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -384,9 +435,13 @@
       document.getElementById('s-banner').value = bt;
     }
     
-    document.getElementById('s-whatsapp').value      = _store.whatsapp      || '';
+    document.getElementById('s-whatsapp').value        = _store.whatsapp        || '';
     document.getElementById('s-whatsapp-footer').value = _store.whatsapp_footer || '';
-    document.getElementById('s-origin-zip').value    = _store.origin_zip    || '';
+    document.getElementById('s-whatsapp-auto-notify').checked = !!_store.whatsapp_auto_notify;
+    document.getElementById('s-evolution-url').value   = _store.evolution_api_url || '';
+    document.getElementById('s-evolution-key').value   = _store.evolution_api_key || '';
+    updateWhatsAppConnectionUI(!!_store.whatsapp_connected);
+    document.getElementById('s-origin-zip').value      = _store.origin_zip      || '';
     
     const isCombine = _store.delivery_fee === -1;
     document.getElementById('s-delivery-combine').checked = isCombine;
@@ -509,6 +564,9 @@
         seo_keywords:    document.getElementById('s-seo-keywords').value.trim() || null,
         whatsapp:        wa,
         whatsapp_footer: document.getElementById('s-whatsapp-footer').value.trim() || null,
+        whatsapp_auto_notify: document.getElementById('s-whatsapp-auto-notify').checked,
+        evolution_api_url: document.getElementById('s-evolution-url').value.trim() || null,
+        evolution_api_key: document.getElementById('s-evolution-key').value.trim() || null,
         origin_zip:      document.getElementById('s-origin-zip').value.replace(/\D/g, '') || null,
         delivery_fee:    isCombine ? -1 : (parseFloat(document.getElementById('s-delivery-fee').value) || 0),
         delivery_free:   isCombine ? 0 : (parseFloat(document.getElementById('s-delivery-free').value) || 0),
@@ -931,7 +989,161 @@
     }
   }
 
+  // ── Integração Evolution API (WhatsApp Automático) ────────────────────────
+  let waQrCheckInterval = null;
+
+  function toggleAdvancedEvolutionConfig() {
+    const el = document.getElementById('wa-advanced-config');
+    if (el) el.classList.toggle('hidden');
+  }
+
+  function updateWhatsAppConnectionUI(isConnected) {
+    const badge = document.getElementById('wa-connection-badge');
+    const btnConnect = document.getElementById('btn-wa-connect');
+    const btnDisconnect = document.getElementById('btn-wa-disconnect');
+
+    if (badge) {
+      if (isConnected) {
+        badge.className = 'px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-700';
+        badge.textContent = '🟢 Conectado';
+      } else {
+        badge.className = 'px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-600';
+        badge.textContent = '⚪ Desconectado';
+      }
+    }
+
+    if (btnConnect) btnConnect.style.display = isConnected ? 'none' : 'inline-flex';
+    if (btnDisconnect) btnDisconnect.style.display = isConnected ? 'inline-flex' : 'none';
+  }
+
+  async function openWhatsAppConnectModal() {
+    if (!_store || !_store.id) return;
+    const modal = document.getElementById('wa-qr-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    const qrImg = document.getElementById('wa-qr-img');
+    const qrLoading = document.getElementById('wa-qr-loading');
+    const qrStatus = document.getElementById('wa-qr-status');
+
+    if (qrImg) qrImg.classList.add('hidden');
+    if (qrLoading) qrLoading.style.display = 'flex';
+    if (qrStatus) qrStatus.textContent = 'Gerando QR Code...';
+
+    // Salva configurações atuais antes de conectar
+    try {
+      await window.sb.from('stores').update({
+        evolution_api_url: document.getElementById('s-evolution-url').value.trim() || null,
+        evolution_api_key: document.getElementById('s-evolution-key').value.trim() || null,
+        whatsapp_auto_notify: document.getElementById('s-whatsapp-auto-notify').checked
+      }).eq('id', _store.id);
+    } catch (_) {}
+
+    try {
+      const { data, error } = await window.sb.functions.invoke('whatsapp-notify', {
+        body: { action: 'get-qr', storeId: _store.id }
+      });
+
+      if (error || !data || !data.success) {
+        throw new Error(data?.error || error?.message || 'Falha ao conectar com a Evolution API.');
+      }
+
+      if (data.state === 'open') {
+        showToast('WhatsApp já está conectado!', 'success');
+        updateWhatsAppConnectionUI(true);
+        closeWhatsAppConnectModal();
+        return;
+      }
+
+      if (data.qrcode) {
+        if (qrImg) {
+          qrImg.src = data.qrcode.startsWith('data:') ? data.qrcode : `data:image/png;base64,${data.qrcode}`;
+          qrImg.classList.remove('hidden');
+        }
+        if (qrLoading) qrLoading.style.display = 'none';
+        if (qrStatus) qrStatus.textContent = 'Aguardando leitura no WhatsApp...';
+
+        if (waQrCheckInterval) clearInterval(waQrCheckInterval);
+        waQrCheckInterval = setInterval(checkWhatsAppStatusPolling, 3000);
+      } else {
+        throw new Error('QR Code não retornado pela API.');
+      }
+    } catch (err) {
+      console.error('[WhatsApp Connect]', err);
+      showToast(err.message || 'Erro ao gerar QR Code. Verifique a URL e Chave da API.', 'error');
+      if (qrStatus) qrStatus.textContent = 'Falha ao carregar QR Code.';
+      if (qrLoading) qrLoading.style.display = 'none';
+    }
+  }
+
+  function closeWhatsAppConnectModal() {
+    const modal = document.getElementById('wa-qr-modal');
+    if (modal) modal.classList.add('hidden');
+    if (waQrCheckInterval) {
+      clearInterval(waQrCheckInterval);
+      waQrCheckInterval = null;
+    }
+  }
+
+  async function checkWhatsAppStatusPolling() {
+    if (!_store || !_store.id) return;
+    try {
+      const { data } = await window.sb.functions.invoke('whatsapp-notify', {
+        body: { action: 'check-status', storeId: _store.id }
+      });
+
+      if (data && data.connected) {
+        showToast('WhatsApp conectado com sucesso! 🎉', 'success');
+        updateWhatsAppConnectionUI(true);
+        closeWhatsAppConnectModal();
+      }
+    } catch (_) {}
+  }
+
+  async function disconnectWhatsApp() {
+    if (!confirm('Deseja desconectar esta sessão do WhatsApp?')) return;
+    try {
+      await window.sb.functions.invoke('whatsapp-notify', {
+        body: { action: 'disconnect', storeId: _store.id }
+      });
+      showToast('WhatsApp desconectado.', 'info');
+      updateWhatsAppConnectionUI(false);
+    } catch (err) {
+      showToast('Erro ao desconectar.', 'error');
+    }
+  }
+
   load();
+</script>
+
+<!-- Modal QR Code WhatsApp Evolution -->
+<div id="wa-qr-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <div class="bg-cardBg border border-borderColor rounded-2xl max-w-sm w-full p-6 text-center shadow-xl relative animate-in fade-in zoom-in-95">
+    <button onclick="closeWhatsAppConnectModal()" class="absolute top-4 right-4 text-textSecondary hover:text-textPrimary text-lg">✕</button>
+    
+    <div class="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto mb-3">
+      <i data-lucide="message-circle" class="w-6 h-6"></i>
+    </div>
+    
+    <h3 class="text-lg font-bold text-textPrimary mb-1">Conectar WhatsApp</h3>
+    <p class="text-xs text-textSecondary mb-4">
+      Abra o WhatsApp no celular > Aparelhos Conectados > <strong>Conectar aparelho</strong> e aponte para o QR Code abaixo:
+    </p>
+
+    <div id="wa-qr-box" class="w-56 h-56 mx-auto bg-white p-3 rounded-xl border border-borderColor flex items-center justify-center shadow-inner">
+      <div id="wa-qr-loading" class="flex flex-col items-center gap-2 text-textSecondary text-xs">
+        <div class="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+        <span>Gerando QR Code...</span>
+      </div>
+      <img id="wa-qr-img" class="hidden w-full h-full object-contain" alt="QR Code WhatsApp">
+    </div>
+
+    <div class="mt-4 flex items-center justify-center gap-2 text-xs text-textSecondary">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span id="wa-qr-status">Aguardando leitura do QR Code...</span>
+    </div>
+  </div>
+</div>
 </script>
 </body>
 </html>
