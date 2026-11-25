@@ -237,7 +237,7 @@
               </div>
 
               <!-- Configuração Avançada (URL / API Key) -->
-              <div id="wa-advanced-config" class="hidden flex flex-col gap-3 mt-2 p-3 bg-bgPrimary rounded-lg border border-borderColor">
+              <div id="wa-advanced-config" class="hidden flex flex-col gap-3 mt-2 p-3 bg-bgPrimary rounded-lg border border-borderColor" data-admin-only="true">
                 <div class="flex flex-col gap-1">
                   <label class="text-xs font-medium text-textPrimary">URL da Evolution API</label>
                   <input id="s-evolution-url" type="url" class="w-full bg-cardBg border border-borderColor rounded-md px-3 py-1.5 text-xs text-textPrimary" placeholder="https://evolution.up.railway.app">
@@ -438,8 +438,9 @@
     document.getElementById('s-whatsapp').value        = _store.whatsapp        || '';
     document.getElementById('s-whatsapp-footer').value = _store.whatsapp_footer || '';
     document.getElementById('s-whatsapp-auto-notify').checked = !!_store.whatsapp_auto_notify;
-    document.getElementById('s-evolution-url').value   = _store.evolution_api_url || '';
-    document.getElementById('s-evolution-key').value   = _store.evolution_api_key || '';
+    const { data: cfg } = await window.sb.from('global_config').select('evolution_api_url,evolution_api_key').single();
+    document.getElementById('s-evolution-url').value = cfg?.evolution_api_url || '';
+    document.getElementById('s-evolution-key').value = cfg?.evolution_api_key || '';
     updateWhatsAppConnectionUI(!!_store.whatsapp_connected);
     document.getElementById('s-origin-zip').value      = _store.origin_zip      || '';
     
@@ -638,7 +639,18 @@
       }
 
       showToast('Configurações salvas com sucesso!', 'success');
-      await load();
+      await     // Função de teste de conexão
+    async function testWhatsAppConnection() {
+      // Usa o polling já existente para checar o status
+      await checkWhatsAppStatusPolling();
+    }
+
+    load();
+
+    // Controle de visibilidade admin‑only
+    if (!window.user || !window.user.isAdmin) {
+      document.querySelectorAll('[data-admin-only]').forEach(el => el.style.display = 'none');
+    }
     } catch (err) {
       console.error('Erro ao salvar configurações:', err);
       showToast('Erro inesperado ao salvar.', 'error');
@@ -976,7 +988,18 @@
       } else {
         if (data.verified) {
            showToast('Domínio verificado com sucesso!', 'success');
-           await load(); // reload state
+           await     // Função de teste de conexão
+    async function testWhatsAppConnection() {
+      // Usa o polling já existente para checar o status
+      await checkWhatsAppStatusPolling();
+    }
+
+    load();
+
+    // Controle de visibilidade admin‑only
+    if (!window.user || !window.user.isAdmin) {
+      document.querySelectorAll('[data-admin-only]').forEach(el => el.style.display = 'none');
+    } // reload state
         } else {
            showToast('Aguardando DNS. Verifique se o CNAME está correto.', 'warning');
         }
@@ -1113,7 +1136,18 @@
     }
   }
 
-  load();
+      // Função de teste de conexão
+    async function testWhatsAppConnection() {
+      // Usa o polling já existente para checar o status
+      await checkWhatsAppStatusPolling();
+    }
+
+    load();
+
+    // Controle de visibilidade admin‑only
+    if (!window.user || !window.user.isAdmin) {
+      document.querySelectorAll('[data-admin-only]').forEach(el => el.style.display = 'none');
+    }
 </script>
 
 <!-- Modal QR Code WhatsApp Evolution -->
