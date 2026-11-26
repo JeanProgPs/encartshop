@@ -43,7 +43,7 @@
         <form id="evo-global-form" class="flex flex-col gap-5 max-w-2xl">
           <div class="flex flex-col gap-1.5">
             <label for="evo-api-url" class="text-sm font-semibold text-textPrimary">URL da Evolution API</label>
-            <input id="evo-api-url" type="url" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3.5 py-2.5 text-sm text-textPrimary focus:outline-none focus:border-indigo-500" placeholder="https://sua-instancia.up.railway.app" required>
+            <input id="evo-api-url" type="text" inputmode="url" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3.5 py-2.5 text-sm text-textPrimary focus:outline-none focus:border-indigo-500" placeholder="https://sua-instancia.up.railway.app" required>
             <span class="text-xs text-textSecondary">Informe a URL base sem barra no final (ex: https://evolution.seudominio.com).</span>
           </div>
 
@@ -142,7 +142,12 @@
   document.getElementById('evo-global-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('btn-save-evo');
-    const url = document.getElementById('evo-api-url').value.trim();
+    const urlInput = document.getElementById('evo-api-url');
+    let url = urlInput.value.trim().replace(/\/+$/, '');
+    if (url && !/^https?:\/\//i.test(url)) {
+      url = `https://${url}`;
+      urlInput.value = url;
+    }
     const key = document.getElementById('evo-api-key').value.trim();
 
     btn.disabled = true;
@@ -153,6 +158,7 @@
       });
       document.getElementById('evo-api-key').value = '';
       if (res?.data) {
+        urlInput.value = res.data.evolution_api_url || url;
         const maskedEl = document.getElementById('evo-key-masked');
         if (res.data.has_api_key && res.data.masked_api_key) {
           maskedEl.textContent = `Chave atual: ${res.data.masked_api_key}`;
