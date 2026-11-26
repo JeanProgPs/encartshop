@@ -129,7 +129,7 @@ window.CartManager = (() => {
     EventBus.emit(EventBus.EVENTS.CART_UPDATED, { cart });
   };
 
-  window.checkout = function() {
+  window.checkout = async function() {
     const storeObj = store || (window.StoreContext && window.StoreContext.getStore());
     if (!storeObj) {
       if (window.showToast) window.showToast('Aguarde o carregamento dos dados da loja.', 'warning');
