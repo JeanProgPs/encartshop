@@ -64,11 +64,64 @@ const PlatformAPI = (() => {
     return await fetchFromEdge('stores_overview', { page, search, filter });
   }
 
+  async function postToEdge(action, body = {}) {
+    try {
+      const token = await AuthService.getToken();
+      if (!token) throw new Error('Não autenticado');
+
+      const SUPABASE_URL = SupabaseCore.SUPABASE_URL;
+      const queryParams = new URLSearchParams({ action }).toString();
+      const url = `${SUPABASE_URL}/functions/v1/${FUNCTION_NAME}?${queryParams}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'apikey': SupabaseCore.SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.error || data?.message || 'Erro ao comunicar com o servidor');
+      }
+
+      return data;
+    } catch (e) {
+      console.error(`[PlatformAPI] Erro ao enviar action=${action}:`, e);
+      throw e;
+    }
+  }
+
   async function releaseStore(storeId) {
     return await fetchFromEdge('release_store', { store_id: storeId });
   }
 
-  return { getStats, getRecentClients, getClients, getClientDetail, getStoresOverview, releaseStore };
+  async function getGlobalConfig() {
+    return await fetchFromEdge('get_global_config');
+  }
+
+  async function saveGlobalConfig(payload) {
+    return await postToEdge('save_global_config', payload);
+  }
+
+  async function testEvolutionApi() {
+    return await postToEdge('test_evolution_api', {});
+  }
+
+  return {
+    getStats,
+    getRecentClients,
+    getClients,
+    getClientDetail,
+    getStoresOverview,
+    releaseStore,
+    getGlobalConfig,
+    saveGlobalConfig,
+    testEvolutionApi
+  };
 })();
 
 window.PlatformAPI = PlatformAPI;

@@ -207,12 +207,17 @@
                 <i data-lucide="zap" class="w-4 h-4 text-accent"></i>
                 <h4 class="text-sm font-semibold text-textPrimary">Envio Automático de Pedidos (Evolution API)</h4>
               </div>
-              <span id="wa-connection-badge" class="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-600">
-                ⚪ Desconectado
-              </span>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span id="wa-connection-badge" class="px-2.5 py-1 text-xs font-bold rounded-full bg-slate-100 text-slate-600">
+                  ⚪ Desconectado
+                </span>
+                <span id="wa-connected-phone-wrap" class="hidden px-2.5 py-1 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Número: <strong id="wa-connected-phone"></strong>
+                </span>
+              </div>
             </div>
             <p class="text-xs text-textSecondary mb-4">
-              Dispara mensagens automáticas no WhatsApp do cliente quando você muda o status do pedido (*Confirmado*, *Em Preparo*, *Saiu para Entrega*), sem precisar abrir o WhatsApp Web.
+              Dispara mensagens automáticas no WhatsApp do cliente quando você muda o status do pedido (*Confirmado*, *Em Entrega*, *Finalizado*, *Cancelado*), sem precisar abrir o WhatsApp Web.
             </p>
 
             <div class="flex flex-col gap-3">
@@ -228,25 +233,12 @@
                 <button type="button" id="btn-wa-connect" onclick="openWhatsAppConnectModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors shadow-sm">
                   <i data-lucide="qr-code" class="w-4 h-4"></i> Conectar WhatsApp (QR Code)
                 </button>
+                <button type="button" id="btn-wa-refresh" onclick="testWhatsAppConnection()" class="px-3 py-2 border border-borderColor text-textPrimary hover:bg-bgPrimary rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Atualizar conexão
+                </button>
                 <button type="button" id="btn-wa-disconnect" onclick="disconnectWhatsApp()" class="hidden px-3 py-2 border border-danger/40 text-danger hover:bg-danger/10 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors">
                   <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Desconectar
                 </button>
-                <button type="button" onclick="toggleAdvancedEvolutionConfig()" class="text-xs text-textSecondary hover:text-textPrimary underline">
-                  Configurações da API
-                </button>
-              </div>
-
-              <!-- Configuração Avançada (URL / API Key) -->
-              <div id="wa-advanced-config" class="hidden flex flex-col gap-3 mt-2 p-3 bg-bgPrimary rounded-lg border border-borderColor" data-admin-only="true">
-                <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-textPrimary">URL da Evolution API</label>
-                  <input id="s-evolution-url" type="url" class="w-full bg-cardBg border border-borderColor rounded-md px-3 py-1.5 text-xs text-textPrimary" placeholder="https://evolution.up.railway.app">
-                  <p class="text-[11px] text-textSecondary">URL da sua instância (ex: Railway, Render ou VPS). Se não informada, usa a URL padrão do sistema.</p>
-                </div>
-                <div class="flex flex-col gap-1">
-                  <label class="text-xs font-medium text-textPrimary">Chave da API (Global API Key)</label>
-                  <input id="s-evolution-key" type="password" class="w-full bg-cardBg border border-borderColor rounded-md px-3 py-1.5 text-xs text-textPrimary" placeholder="Sua Chave API secreta">
-                </div>
               </div>
             </div>
           </div>
@@ -438,10 +430,7 @@
     document.getElementById('s-whatsapp').value        = _store.whatsapp        || '';
     document.getElementById('s-whatsapp-footer').value = _store.whatsapp_footer || '';
     document.getElementById('s-whatsapp-auto-notify').checked = !!_store.whatsapp_auto_notify;
-    const { data: cfg } = await window.sb.from('global_config').select('evolution_api_url,evolution_api_key').single();
-    document.getElementById('s-evolution-url').value = cfg?.evolution_api_url || '';
-    document.getElementById('s-evolution-key').value = cfg?.evolution_api_key || '';
-    updateWhatsAppConnectionUI(!!_store.whatsapp_connected);
+    updateWhatsAppConnectionUI(!!_store.whatsapp_connected, _store.whatsapp_connected_phone || null);
     document.getElementById('s-origin-zip').value      = _store.origin_zip      || '';
     
     const isCombine = _store.delivery_fee === -1;
@@ -566,8 +555,6 @@
         whatsapp:        wa,
         whatsapp_footer: document.getElementById('s-whatsapp-footer').value.trim() || null,
         whatsapp_auto_notify: document.getElementById('s-whatsapp-auto-notify').checked,
-        evolution_api_url: document.getElementById('s-evolution-url').value.trim() || null,
-        evolution_api_key: document.getElementById('s-evolution-key').value.trim() || null,
         origin_zip:      document.getElementById('s-origin-zip').value.replace(/\D/g, '') || null,
         delivery_fee:    isCombine ? -1 : (parseFloat(document.getElementById('s-delivery-fee').value) || 0),
         delivery_free:   isCombine ? 0 : (parseFloat(document.getElementById('s-delivery-free').value) || 0),
@@ -639,18 +626,7 @@
       }
 
       showToast('Configurações salvas com sucesso!', 'success');
-      await     // Função de teste de conexão
-    async function testWhatsAppConnection() {
-      // Usa o polling já existente para checar o status
-      await checkWhatsAppStatusPolling();
-    }
-
-    load();
-
-    // Controle de visibilidade admin‑only
-    if (!window.user || !window.user.isAdmin) {
-      document.querySelectorAll('[data-admin-only]').forEach(el => el.style.display = 'none');
-    }
+      await load();
     } catch (err) {
       console.error('Erro ao salvar configurações:', err);
       showToast('Erro inesperado ao salvar.', 'error');
@@ -988,18 +964,7 @@
       } else {
         if (data.verified) {
            showToast('Domínio verificado com sucesso!', 'success');
-           await     // Função de teste de conexão
-    async function testWhatsAppConnection() {
-      // Usa o polling já existente para checar o status
-      await checkWhatsAppStatusPolling();
-    }
-
-    load();
-
-    // Controle de visibilidade admin‑only
-    if (!window.user || !window.user.isAdmin) {
-      document.querySelectorAll('[data-admin-only]').forEach(el => el.style.display = 'none');
-    } // reload state
+           await load(); // reload state
         } else {
            showToast('Aguardando DNS. Verifique se o CNAME está correto.', 'warning');
         }
@@ -1014,14 +979,26 @@
 
   // ── Integração Evolution API (WhatsApp Automático) ────────────────────────
   let waQrCheckInterval = null;
+  let waQrExpireTimer = null;
 
-  function toggleAdvancedEvolutionConfig() {
-    const el = document.getElementById('wa-advanced-config');
-    if (el) el.classList.toggle('hidden');
+  function formatWaPhone(phone) {
+    if (!phone) return '';
+    const d = String(phone).replace(/\D/g, '');
+    if (d.startsWith('55') && d.length >= 12) {
+      const local = d.slice(2);
+      const ddd = local.slice(0, 2);
+      const num = local.slice(2);
+      return num.length === 9
+        ? `+55 (${ddd}) ${num.slice(0, 5)}-${num.slice(5)}`
+        : `+55 (${ddd}) ${num.slice(0, 4)}-${num.slice(4)}`;
+    }
+    return `+${d}`;
   }
 
-  function updateWhatsAppConnectionUI(isConnected) {
+  function updateWhatsAppConnectionUI(isConnected, connectedPhone = null) {
     const badge = document.getElementById('wa-connection-badge');
+    const phoneWrap = document.getElementById('wa-connected-phone-wrap');
+    const phoneEl = document.getElementById('wa-connected-phone');
     const btnConnect = document.getElementById('btn-wa-connect');
     const btnDisconnect = document.getElementById('btn-wa-disconnect');
 
@@ -1035,8 +1012,45 @@
       }
     }
 
+    if (phoneWrap && phoneEl) {
+      if (isConnected && connectedPhone) {
+        phoneEl.textContent = formatWaPhone(connectedPhone);
+        phoneWrap.classList.remove('hidden');
+      } else {
+        phoneEl.textContent = '';
+        phoneWrap.classList.add('hidden');
+      }
+    }
+
     if (btnConnect) btnConnect.style.display = isConnected ? 'none' : 'inline-flex';
     if (btnDisconnect) btnDisconnect.style.display = isConnected ? 'inline-flex' : 'none';
+  }
+
+  function clearWaTimers() {
+    if (waQrCheckInterval) {
+      clearInterval(waQrCheckInterval);
+      waQrCheckInterval = null;
+    }
+    if (waQrExpireTimer) {
+      clearTimeout(waQrExpireTimer);
+      waQrExpireTimer = null;
+    }
+  }
+
+  function markQrCodeExpired() {
+    clearWaTimers();
+    const qrImg = document.getElementById('wa-qr-img');
+    const qrLoading = document.getElementById('wa-qr-loading');
+    const qrStatus = document.getElementById('wa-qr-status');
+    const retryBtn = document.getElementById('btn-wa-retry-qr');
+
+    if (qrImg) {
+      qrImg.src = '';
+      qrImg.classList.add('hidden');
+    }
+    if (qrLoading) qrLoading.style.display = 'none';
+    if (qrStatus) qrStatus.textContent = 'QR Code expirado. Gere um novo código para conectar.';
+    if (retryBtn) retryBtn.classList.remove('hidden');
   }
 
   async function openWhatsAppConnectModal() {
@@ -1044,20 +1058,24 @@
     const modal = document.getElementById('wa-qr-modal');
     if (!modal) return;
     modal.classList.remove('hidden');
+    clearWaTimers();
 
     const qrImg = document.getElementById('wa-qr-img');
     const qrLoading = document.getElementById('wa-qr-loading');
     const qrStatus = document.getElementById('wa-qr-status');
+    const retryBtn = document.getElementById('btn-wa-retry-qr');
 
-    if (qrImg) qrImg.classList.add('hidden');
+    if (qrImg) {
+      qrImg.src = '';
+      qrImg.classList.add('hidden');
+    }
+    if (retryBtn) retryBtn.classList.add('hidden');
     if (qrLoading) qrLoading.style.display = 'flex';
     if (qrStatus) qrStatus.textContent = 'Gerando QR Code...';
 
-    // Salva configurações atuais antes de conectar
+    // Salva apenas a preferência de envio automático da loja (nunca URL/API Key)
     try {
       await window.sb.from('stores').update({
-        evolution_api_url: document.getElementById('s-evolution-url').value.trim() || null,
-        evolution_api_key: document.getElementById('s-evolution-key').value.trim() || null,
         whatsapp_auto_notify: document.getElementById('s-whatsapp-auto-notify').checked
       }).eq('id', _store.id);
     } catch (_) {}
@@ -1071,9 +1089,9 @@
         throw new Error(data?.error || error?.message || 'Falha ao conectar com a Evolution API.');
       }
 
-      if (data.state === 'open') {
+      if (data.state === 'open' || data.connected) {
         showToast('WhatsApp já está conectado!', 'success');
-        updateWhatsAppConnectionUI(true);
+        updateWhatsAppConnectionUI(true, data.connectedPhone || _store.whatsapp_connected_phone || null);
         closeWhatsAppConnectModal();
         return;
       }
@@ -1084,70 +1102,94 @@
           qrImg.classList.remove('hidden');
         }
         if (qrLoading) qrLoading.style.display = 'none';
-        if (qrStatus) qrStatus.textContent = 'Aguardando leitura no WhatsApp...';
+        if (qrStatus) qrStatus.textContent = 'Aguardando leitura no WhatsApp (expira em 45s)...';
 
-        if (waQrCheckInterval) clearInterval(waQrCheckInterval);
-        waQrCheckInterval = setInterval(checkWhatsAppStatusPolling, 3000);
+        waQrCheckInterval = setInterval(() => checkWhatsAppStatusPolling(true), 3000);
+        waQrExpireTimer = setTimeout(markQrCodeExpired, 45000);
       } else {
-        throw new Error('QR Code não retornado pela API.');
+        throw new Error('QR Code não retornado pela API. Tente novamente.');
       }
     } catch (err) {
       console.error('[WhatsApp Connect]', err);
-      showToast(err.message || 'Erro ao gerar QR Code. Verifique a URL e Chave da API.', 'error');
-      if (qrStatus) qrStatus.textContent = 'Falha ao carregar QR Code.';
+      showToast(err.message || 'Erro ao gerar QR Code.', 'error');
+      if (qrStatus) qrStatus.textContent = err.message || 'Falha ao carregar QR Code.';
       if (qrLoading) qrLoading.style.display = 'none';
+      if (retryBtn) retryBtn.classList.remove('hidden');
     }
   }
 
   function closeWhatsAppConnectModal() {
     const modal = document.getElementById('wa-qr-modal');
     if (modal) modal.classList.add('hidden');
-    if (waQrCheckInterval) {
-      clearInterval(waQrCheckInterval);
-      waQrCheckInterval = null;
+    clearWaTimers();
+    const qrImg = document.getElementById('wa-qr-img');
+    if (qrImg) {
+      qrImg.src = '';
+      qrImg.classList.add('hidden');
     }
   }
 
-  async function checkWhatsAppStatusPolling() {
-    if (!_store || !_store.id) return;
+  async function checkWhatsAppStatusPolling(silent = false) {
+    if (!_store || !_store.id) return false;
     try {
-      const { data } = await window.sb.functions.invoke('whatsapp-notify', {
+      const { data, error } = await window.sb.functions.invoke('whatsapp-notify', {
         body: { action: 'check-status', storeId: _store.id }
       });
 
-      if (data && data.connected) {
-        showToast('WhatsApp conectado com sucesso! 🎉', 'success');
-        updateWhatsAppConnectionUI(true);
-        closeWhatsAppConnectModal();
+      if (error || !data || !data.success) {
+        if (!silent) showToast(data?.error || error?.message || 'Erro ao verificar status do WhatsApp.', 'error');
+        return false;
       }
-    } catch (_) {}
+
+      _store.whatsapp_connected = !!data.connected;
+      _store.whatsapp_connected_phone = data.connectedPhone || null;
+      updateWhatsAppConnectionUI(!!data.connected, data.connectedPhone || null);
+
+      if (data.connected) {
+        showToast('WhatsApp conectado com sucesso! 🎉', 'success');
+        closeWhatsAppConnectModal();
+        return true;
+      }
+
+      if (!silent) {
+        showToast('WhatsApp ainda está desconectado.', 'info');
+      }
+      return false;
+    } catch (err) {
+      if (!silent) showToast('Erro ao consultar status da conexão.', 'error');
+      return false;
+    }
   }
 
   async function disconnectWhatsApp() {
     if (!confirm('Deseja desconectar esta sessão do WhatsApp?')) return;
     try {
-      await window.sb.functions.invoke('whatsapp-notify', {
+      const { data, error } = await window.sb.functions.invoke('whatsapp-notify', {
         body: { action: 'disconnect', storeId: _store.id }
       });
+      if (error || !data?.success) {
+        throw new Error(data?.error || error?.message || 'Erro ao desconectar.');
+      }
+      _store.whatsapp_connected = false;
+      _store.whatsapp_connected_phone = null;
       showToast('WhatsApp desconectado.', 'info');
-      updateWhatsAppConnectionUI(false);
+      updateWhatsAppConnectionUI(false, null);
     } catch (err) {
-      showToast('Erro ao desconectar.', 'error');
+      showToast(err.message || 'Erro ao desconectar.', 'error');
     }
   }
 
-      // Função de teste de conexão
-    async function testWhatsAppConnection() {
-      // Usa o polling já existente para checar o status
-      await checkWhatsAppStatusPolling();
+  async function testWhatsAppConnection() {
+    const btn = document.getElementById('btn-wa-refresh');
+    if (btn) btn.disabled = true;
+    try {
+      await checkWhatsAppStatusPolling(false);
+    } finally {
+      if (btn) btn.disabled = false;
     }
+  }
 
-    load();
-
-    // Controle de visibilidade admin‑only
-    if (!window.user || !window.user.isAdmin) {
-      document.querySelectorAll('[data-admin-only]').forEach(el => el.style.display = 'none');
-    }
+  load();
 </script>
 
 <!-- Modal QR Code WhatsApp Evolution -->
@@ -1176,8 +1218,11 @@
       <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
       <span id="wa-qr-status">Aguardando leitura do QR Code...</span>
     </div>
+
+    <button type="button" id="btn-wa-retry-qr" onclick="openWhatsAppConnectModal()" class="hidden mt-4 w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-colors">
+      Gerar novo QR Code
+    </button>
   </div>
 </div>
-</script>
 </body>
 </html>

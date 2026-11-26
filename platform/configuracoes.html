@@ -24,12 +24,49 @@
     </header>
 
     <div class="flex-1 p-4 md:p-8 flex flex-col gap-6 max-w-[1400px] w-full mx-auto">
-      <div class="bg-cardBg border border-borderColor rounded-xl p-8 shadow-card flex flex-col items-center justify-center text-center">
-        <div class="w-16 h-16 bg-indigo-500/10 rounded-full flex items-center justify-center mb-4">
-          <i data-lucide="settings" class="w-8 h-8 text-indigo-500"></i>
+      <div class="bg-cardBg border border-borderColor rounded-xl p-6 md:p-8 shadow-card">
+        <div class="flex items-start justify-between gap-4 flex-wrap mb-6">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 bg-emerald-500/10 rounded-xl flex items-center justify-center shrink-0">
+              <i data-lucide="message-circle" class="w-6 h-6 text-emerald-500"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-textPrimary">Integração WhatsApp — Evolution API</h3>
+              <p class="text-xs text-textSecondary">Configuração global utilizada por todas as lojas para conectar seus números via QR Code e enviar notificações automáticas.</p>
+            </div>
+          </div>
+          <span id="evo-updated-at" class="text-xs text-textSecondary bg-bgPrimary border border-borderColor px-3 py-1.5 rounded-lg">
+            Última atualização: —
+          </span>
         </div>
-        <h3 class="text-xl font-bold text-textPrimary mb-2">Configurações Gerais</h3>
-        <p class="text-textSecondary max-w-md">Esta seção está em desenvolvimento. Futuramente você poderá configurar chaves de API, webhooks e parâmetros globais do EncartShop aqui.</p>
+
+        <form id="evo-global-form" class="flex flex-col gap-5 max-w-2xl">
+          <div class="flex flex-col gap-1.5">
+            <label for="evo-api-url" class="text-sm font-semibold text-textPrimary">URL da Evolution API</label>
+            <input id="evo-api-url" type="url" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3.5 py-2.5 text-sm text-textPrimary focus:outline-none focus:border-indigo-500" placeholder="https://sua-instancia.up.railway.app" required>
+            <span class="text-xs text-textSecondary">Informe a URL base sem barra no final (ex: https://evolution.seudominio.com).</span>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <label for="evo-api-key" class="text-sm font-semibold text-textPrimary">Global API Key</label>
+              <span id="evo-key-masked" class="hidden text-xs font-mono bg-emerald-500/10 text-emerald-600 px-2.5 py-0.5 rounded-md border border-emerald-500/20"></span>
+            </div>
+            <input id="evo-api-key" type="password" autocomplete="new-password" class="w-full bg-bgPrimary border border-borderColor rounded-lg px-3.5 py-2.5 text-sm text-textPrimary focus:outline-none focus:border-indigo-500" placeholder="Digite a API Key global (ou deixe em branco para manter a atual)">
+            <span class="text-xs text-textSecondary">Por segurança, a chave nunca é exibida em texto claro após o cadastro e só é acessível pelo backend.</span>
+          </div>
+
+          <div class="flex items-center gap-3 flex-wrap pt-1">
+            <button type="submit" id="btn-save-evo" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm">
+              <i data-lucide="save" class="w-4 h-4"></i> Salvar Configurações
+            </button>
+            <button type="button" id="btn-test-evo" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm">
+              <i data-lucide="activity" class="w-4 h-4"></i> Testar Comunicação
+            </button>
+          </div>
+
+          <div id="evo-test-result" class="hidden rounded-lg p-3.5 text-sm border"></div>
+        </form>
       </div>
     </div>
   </main>
@@ -48,9 +85,108 @@
 <!-- Platform Scripts -->
 <script src="/js/platform/platformGuard.js"></script>
 <script src="/js/platform/platformCommon.js"></script>
+<script src="/js/platform/platformAPI.js"></script>
 
 <script>
-  setTimeout(() => lucide.createIcons(), 50);
+  function formatDateBr(iso) {
+    if (!iso) return '—';
+    try {
+      return new Date(iso).toLocaleString('pt-BR');
+    } catch {
+      return iso;
+    }
+  }
+
+  function renderTestResult(ok, message, testedAt) {
+    const box = document.getElementById('evo-test-result');
+    if (!box) return;
+    box.classList.remove('hidden', 'bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-700', 'bg-red-500/10', 'border-red-500/30', 'text-red-700');
+    if (ok) {
+      box.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-700');
+      box.textContent = `✅ ${message}${testedAt ? ` (${formatDateBr(testedAt)})` : ''}`;
+    } else {
+      box.classList.add('bg-red-500/10', 'border-red-500/30', 'text-red-700');
+      box.textContent = `❌ ${message}${testedAt ? ` (${formatDateBr(testedAt)})` : ''}`;
+    }
+  }
+
+  async function loadEvolutionGlobalConfig() {
+    try {
+      const res = await PlatformAPI.getGlobalConfig();
+      const cfg = res?.data || {};
+      document.getElementById('evo-api-url').value = cfg.evolution_api_url || '';
+
+      const maskedEl = document.getElementById('evo-key-masked');
+      if (cfg.has_api_key && cfg.masked_api_key) {
+        maskedEl.textContent = `Chave atual: ${cfg.masked_api_key}`;
+        maskedEl.classList.remove('hidden');
+      } else {
+        maskedEl.classList.add('hidden');
+      }
+
+      document.getElementById('evo-updated-at').textContent = `Última atualização: ${formatDateBr(cfg.updated_at)}`;
+
+      if (cfg.last_tested_at !== null && cfg.last_test_ok !== null) {
+        renderTestResult(
+          cfg.last_test_ok,
+          cfg.last_test_ok ? 'Último teste: conexão estabelecida' : 'Último teste: falha na comunicação',
+          cfg.last_tested_at
+        );
+      }
+    } catch (err) {
+      console.error('[PlatformConfig]', err);
+      if (window.showToast) showToast(err.message || 'Erro ao carregar configurações.', 'error');
+    }
+  }
+
+  document.getElementById('evo-global-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-evo');
+    const url = document.getElementById('evo-api-url').value.trim();
+    const key = document.getElementById('evo-api-key').value.trim();
+
+    btn.disabled = true;
+    try {
+      const res = await PlatformAPI.saveGlobalConfig({
+        evolution_api_url: url,
+        evolution_api_key: key || undefined
+      });
+      document.getElementById('evo-api-key').value = '';
+      if (res?.data) {
+        const maskedEl = document.getElementById('evo-key-masked');
+        if (res.data.has_api_key && res.data.masked_api_key) {
+          maskedEl.textContent = `Chave atual: ${res.data.masked_api_key}`;
+          maskedEl.classList.remove('hidden');
+        }
+        document.getElementById('evo-updated-at').textContent = `Última atualização: ${formatDateBr(res.data.updated_at)}`;
+      }
+      if (window.showToast) showToast('Configurações globais da Evolution API salvas!', 'success');
+    } catch (err) {
+      if (window.showToast) showToast(err.message || 'Falha ao salvar configurações.', 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById('btn-test-evo')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-test-evo');
+    btn.disabled = true;
+    try {
+      const res = await PlatformAPI.testEvolutionApi();
+      renderTestResult(!!res.ok, res.message || 'Teste concluído.', res.testedAt);
+      if (window.showToast) showToast(res.ok ? 'Evolution API respondeu com sucesso!' : (res.message || 'Falha no teste.'), res.ok ? 'success' : 'error');
+    } catch (err) {
+      renderTestResult(false, err.message || 'Erro ao testar comunicação.');
+      if (window.showToast) showToast(err.message || 'Erro ao testar comunicação.', 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    loadEvolutionGlobalConfig();
+    setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 50);
+  });
 </script>
 </body>
 </html>

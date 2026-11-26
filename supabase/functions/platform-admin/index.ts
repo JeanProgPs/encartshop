@@ -421,6 +421,162 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ success: true, data }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
+    // ── Configurações Globais da Evolution API (SUPER_ADMIN) ───────
+    const maskKey = (key: string | null | undefined) => {
+      if (!key) return ''
+      if (key.length <= 8) return '••••••••'
+      return `${key.slice(0, 4)}••••••••${key.slice(-4)}`
+    }
+
+    if (action === 'get_global_config') {
+      const { data: cfg, error: cfgErr } = await supabaseAdmin
+        .from('global_config')
+        .select('id, evolution_api_url, evolution_api_key, updated_at, last_tested_at, last_test_ok')
+        .limit(1)
+        .maybeSingle()
+
+      if (cfgErr) throw cfgErr
+
+      return new Response(JSON.stringify({
+        success: true,
+        data: {
+          evolution_api_url: cfg?.evolution_api_url || '',
+          has_api_key: Boolean(cfg?.evolution_api_key),
+          masked_api_key: maskKey(cfg?.evolution_api_key),
+          updated_at: cfg?.updated_at || null,
+          last_tested_at: cfg?.last_tested_at || null,
+          last_test_ok: cfg?.last_test_ok ?? null
+        }
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    if (action === 'save_global_config') {
+      const body = await req.json().catch(() => ({}))
+      const rawUrl = String(body.evolution_api_url || '').trim().replace(/\/+$/, '')
+      const rawKey = String(body.evolution_api_key || '').trim()
+
+      if (rawUrl && !/^https?:\/\/.+/i.test(rawUrl)) {
+        return new Response(JSON.stringify({ success: false, error: 'URL inválida. Deve começar com http:// ou https://' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      const { data: existing } = await supabaseAdmin
+        .from('global_config')
+        .select('id, evolution_api_key')
+        .limit(1)
+        .maybeSingle()
+
+      const finalKey = rawKey ? rawKey : (existing?.evolution_api_key || null)
+      const nowIso = new Date().toISOString()
+
+      let saved: any = null
+      if (existing?.id) {
+        const { data, error } = await supabaseAdmin
+          .from('global_config')
+          .update({
+            evolution_api_url: rawUrl || null,
+            evolution_api_key: finalKey,
+            updated_at: nowIso
+          })
+          .eq('id', existing.id)
+          .select('evolution_api_url, evolution_api_key, updated_at, last_tested_at, last_test_ok')
+          .single()
+        if (error) throw error
+        saved = data
+      } else {
+        const { data, error } = await supabaseAdmin
+          .from('global_config')
+          .insert({
+            evolution_api_url: rawUrl || null,
+            evolution_api_key: finalKey,
+            updated_at: nowIso
+          })
+          .select('evolution_api_url, evolution_api_key, updated_at, last_tested_at, last_test_ok')
+          .single()
+        if (error) throw error
+        saved = data
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        data: {
+          evolution_api_url: saved.evolution_api_url || '',
+          has_api_key: Boolean(saved.evolution_api_key),
+          masked_api_key: maskKey(saved.evolution_api_key),
+          updated_at: saved.updated_at,
+          last_tested_at: saved.last_tested_at ?? null,
+          last_test_ok: saved.last_test_ok ?? null
+        }
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    if (action === 'test_evolution_api') {
+      const { data: cfg } = await supabaseAdmin
+        .from('global_config')
+        .select('id, evolution_api_url, evolution_api_key')
+        .limit(1)
+        .maybeSingle()
+
+      const apiUrl = String(cfg?.evolution_api_url || '').trim().replace(/\/+$/, '')
+      const apiKey = String(cfg?.evolution_api_key || '').trim()
+
+      if (!apiUrl || !apiKey) {
+        return new Response(JSON.stringify({
+          success: false,
+          ok: false,
+          error: 'Cadastre e salve a URL e a API Key antes de testar a comunicação.'
+        }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+
+      const nowIso = new Date().toISOString()
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 10000)
+
+      let testOk = false
+      let message = ''
+      let statusCode = 0
+
+      try {
+        const res = await fetch(`${apiUrl}/instance/fetchInstances`, {
+          method: 'GET',
+          headers: { 'apikey': apiKey },
+          signal: controller.signal
+        })
+        statusCode = res.status
+        if (res.ok) {
+          testOk = true
+          message = 'Comunicação com a Evolution API estabelecida com sucesso.'
+        } else if (res.status === 401 || res.status === 403) {
+          message = 'API Key inválida ou sem permissão na Evolution API.'
+        } else {
+          message = `Evolution API respondeu com status HTTP ${res.status}.`
+        }
+      } catch (err: any) {
+        message = err?.name === 'AbortError'
+          ? 'Tempo limite excedido ao conectar com a Evolution API.'
+          : 'Evolution API indisponível ou URL incorreta.'
+      } finally {
+        clearTimeout(timer)
+      }
+
+      if (cfg?.id) {
+        await supabaseAdmin
+          .from('global_config')
+          .update({ last_tested_at: nowIso, last_test_ok: testOk })
+          .eq('id', cfg.id)
+      }
+
+      return new Response(JSON.stringify({
+        success: testOk,
+        ok: testOk,
+        statusCode,
+        message,
+        testedAt: nowIso
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
     return new Response(JSON.stringify({ error: 'Invalid action' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   } catch (err) {

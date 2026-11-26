@@ -356,17 +356,20 @@
     const currentStatus = btn.dataset.currentStatus;
     const newStatus     = btn.dataset.newStatus;
 
+    if (currentStatus === newStatus) return;
     const { success, error } = await OrdersModule.updateStatus(orderId, currentStatus, newStatus);
     if (success) {
       showToast(`Status atualizado: ${OrdersModule.getStatusLabel(newStatus)}`, 'success');
       await renderOrders();
-      triggerAutomaticWhatsAppNotify(orderId, newStatus);
+      triggerAutomaticWhatsAppNotify(orderId, newStatus, currentStatus);
     } else {
       showToast(error || 'Falha ao atualizar status.', 'error');
     }
   }
 
-  async function triggerAutomaticWhatsAppNotify(orderId, newStatus) {
+  async function triggerAutomaticWhatsAppNotify(orderId, newStatus, previousStatus = null) {
+    if (!currentStore || !currentStore.id) return;
+    if (previousStatus && previousStatus === newStatus) return;
     if (!currentStore || !currentStore.id) return;
     if (currentStore.whatsapp_auto_notify === false) return;
 
@@ -376,7 +379,8 @@
           action: 'send-order-notification',
           storeId: currentStore.id,
           orderId,
-          newStatus
+          newStatus,
+          previousStatus
         }
       });
       if (!error && data && data.success) {
@@ -423,7 +427,8 @@
             action: 'send-order-notification',
             storeId: currentStore.id,
             orderId: o.id,
-            newStatus: o.status
+            newStatus,
+          previousStatus: o.status
           }
         });
         if (!error && data && data.success) {
